@@ -1,0 +1,41 @@
+import express from 'express';
+import cors from 'cors';
+import cookieParser from 'cookie-parser';
+import { env } from './config/env.js';
+import { errorHandler } from './middleware/error.js';
+import { authenticate } from './middleware/auth.js';
+import { tenantContext } from './middleware/tenant-context.js';
+import { iamRouter } from './modules/iam/iam.router.js';
+import { organizationRouter } from './modules/organization/organization.router.js';
+import { employeesRouter } from './modules/employees/employees.router.js';
+import { notificationsRouter } from './modules/notifications/notifications.router.js';
+
+export function createApp() {
+  const app = express();
+
+  app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
+  app.use(express.json({ limit: '1mb' }));
+  app.use(cookieParser());
+
+  // Public health check — no auth required.
+  app.get('/healthz', (_req, res) => res.json({ status: 'ok', ts: new Date().toISOString() }));
+
+  // Auth routes — login/refresh are public; logout/me use authenticate inside the router.
+  app.use('/auth', iamRouter);
+
+  // SSE endpoint — authenticate but NOT tenantContext (long-lived connection,
+  // org is read from req.user directly by the stream handler).
+  app.use('/notifications', authenticate, notificationsRouter);
+
+  // All remaining routes require authentication + tenant context.
+  app.use(authenticate);
+  app.use(tenantContext);
+
+  app.use('/centers', organizationRouter);
+  app.use('/employees', employeesRouter);
+
+  // Central error handler must be last.
+  app.use(errorHandler);
+
+  return app;
+}

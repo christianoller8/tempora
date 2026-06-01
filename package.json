@@ -1,0 +1,22 @@
+{
+  "name": "tempora",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "npm@11.13.0",
+  "workspaces": [
+    "packages/shared",
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "build:shared": "npm run build -w @tempora/shared",
+    "dev:backend": "npm run dev -w backend",
+    "dev:frontend": "npm run start -w frontend",
+    "db:up": "docker compose up -d postgres",
+    "db:migrate": "npm run prisma:migrate -w backend",
+    "prepare": "npm run build:shared"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3"
+  }
+}

@@ -1,0 +1,502 @@
+// backend/prisma/schema.prisma
+// -----------------------------------------------------------------------------
+// MULTI-TENANCY: every tenant-owned model carries organizationId @db.Uuid.
+// RLS policies (see design §8) enforce organizationId = current_setting('app.current_org').
+// IMMUTABILITY: TimeEntry and AuditLog are INSERT-ONLY. They intentionally have
+//   NO @updatedAt and participate in NO cascade deletes. DB privileges (design §8)
+//   revoke UPDATE/DELETE for the app role on these tables.
+// INDEXING: composite indexes always lead with organizationId.
+// -----------------------------------------------------------------------------
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+// ----------------------------- ENUMS -----------------------------
+
+enum Role {
+  ADMIN
+  MANAGER
+  EMPLOYEE
+}
+
+enum EmployeeCategory {
+  MEDICO
+  ENFERMERO
+  TCAE
+  FISIOTERAPEUTA
+  TERAPEUTA_OCUPACIONAL
+  PSICOLOGO
+  TRABAJADOR_SOCIAL
+  CELADOR
+  ADMINISTRATIVO
+  COCINERO
+  AUXILIAR_SERVICIOS
+}
+
+enum ContractType {
+  INDEFINIDO
+  TEMPORAL
+  INTERINIDAD
+  OBRA_Y_SERVICIO
+  TIEMPO_PARCIAL
+}
+
+enum ShiftType {
+  MANANA
+  TARDE
+  NOCHE
+  GUARDIA
+  RETEN
+  REFUERZO
+  LIBRANZA
+}
+
+enum ScheduleStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum AbsenceType {
+  VACACIONES
+  IT
+  PERMISO_RETRIBUIDO
+  AUSENCIA_INJUSTIFICADA
+  LACTANCIA
+  REDUCCION_JORNADA
+}
+
+enum EntryStatus {
+  OPEN
+  CLOSED
+}
+
+enum CorrectionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum SwapStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum AbsenceStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum RuleViolation {
+  MIN_REST_12H
+  MAX_DAILY_9H
+  MAX_ANNUAL_OT_80H
+  WEEKLY_REST_1_5_DAYS
+  CATEGORY_COVERAGE
+  SHIFT_OVERLAP
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  READ
+  APPROVE
+  REJECT
+  PUBLISH
+  LOGIN
+  LOGOUT
+}
+
+// ----------------------------- ORGANIZATION TREE -----------------------------
+
+model Organization {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String
+  cif       String?
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+
+  centers          Center[]
+  departments      Department[]
+  users            User[]
+  employees        Employee[]
+  workingCalendars WorkingCalendar[]
+  ruleSets         RuleSet[]
+  shiftTemplates   ShiftTemplate[]
+  rotationPatterns RotationPattern[]
+  schedules        ShiftSchedule[]
+  assignments      ShiftAssignment[]
+  swaps            CambioTurno[]
+  timeEntries      TimeEntry[]
+  timeCorrections  TimeCorrection[]
+  absences         Absence[]
+  auditLogs        AuditLog[]
+
+  @@map("organizations")
+}
+
+model Center {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @db.Uuid
+  name           String
+  address        String?
+  createdAt      DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(6)
+
+  organization     Organization    @relation(fields: [organizationId], references: [id])
+  departments      Department[]
+  primaryEmployees Employee[]      @relation("PrimaryCenter")
+  schedules        ShiftSchedule[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@map("centers")
+}
+
+model Department {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @db.Uuid
+  centerId       String   @db.Uuid
+  name           String
+  createdAt      DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(6)
+
+  organization Organization    @relation(fields: [organizationId], references: [id])
+  center       Center          @relation(fields: [centerId], references: [id])
+  schedules    ShiftSchedule[]
+  assignments  ShiftAssignment[]
+
+  @@unique([centerId, name])
+  @@index([organizationId])
+  @@index([organizationId, centerId])
+  @@map("departments")
+}
+
+// ----------------------------- IAM -----------------------------
+
+model User {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String    @db.Uuid
+  email          String
+  passwordHash   String
+  role           Role      @default(EMPLOYEE)
+  isActive       Boolean   @default(true)
+  employeeId     String?   @unique @db.Uuid
+  lastLoginAt    DateTime? @db.Timestamptz(6)
+  createdAt      DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime  @updatedAt @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  employee     Employee?    @relation(fields: [employeeId], references: [id])
+
+  @@unique([organizationId, email])
+  @@index([organizationId])
+  @@index([organizationId, role])
+  @@map("users")
+}
+
+model TokenBlocklist {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  jti       String   @unique
+  reason    String
+  expiresAt DateTime @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([expiresAt])
+  @@map("token_blocklist")
+}
+
+// ----------------------------- EMPLOYEES -----------------------------
+
+model Employee {
+  id                     String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId         String           @db.Uuid
+  firstName              String
+  lastName               String
+  nif                    String?
+  category               EmployeeCategory
+  contractType           ContractType
+  contractedHoursPerWeek Decimal          @db.Decimal(5, 2)
+  primaryCenterId        String           @db.Uuid
+  workingCalendarId      String?          @db.Uuid
+  hireDate               DateTime         @db.Date
+  terminationDate        DateTime?        @db.Date
+  isActive               Boolean          @default(true)
+  createdAt              DateTime         @default(now()) @db.Timestamptz(6)
+  updatedAt              DateTime         @updatedAt @db.Timestamptz(6)
+
+  organization    Organization    @relation(fields: [organizationId], references: [id])
+  primaryCenter   Center          @relation("PrimaryCenter", fields: [primaryCenterId], references: [id])
+  workingCalendar WorkingCalendar? @relation(fields: [workingCalendarId], references: [id])
+  user            User?
+  assignments     ShiftAssignment[]
+  timeEntries     TimeEntry[]
+  absences        Absence[]
+
+  @@index([organizationId])
+  @@index([organizationId, primaryCenterId])
+  @@index([organizationId, category])
+  @@map("employees")
+}
+
+model WorkingCalendar {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @db.Uuid
+  name           String
+  year           Int
+  annualHours    Decimal  @db.Decimal(7, 2)
+  holidays       Json
+  createdAt      DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  employees    Employee[]
+
+  @@unique([organizationId, name, year])
+  @@index([organizationId])
+  @@map("working_calendars")
+}
+
+// ----------------------------- RULES -----------------------------
+
+model RuleSet {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId    String   @db.Uuid
+  name              String
+  isDefault         Boolean  @default(false)
+  minRestHours      Decimal  @default(12.00) @db.Decimal(4, 2)
+  maxDailyHours     Decimal  @default(9.00) @db.Decimal(4, 2)
+  maxAnnualOvertime Decimal  @default(80.00) @db.Decimal(6, 2)
+  weeklyRestDays    Decimal  @default(1.50) @db.Decimal(3, 2)
+  params            Json
+  createdAt         DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime @updatedAt @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@map("rule_sets")
+}
+
+// ----------------------------- SHIFTS -----------------------------
+
+model ShiftTemplate {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId       String    @db.Uuid
+  name                 String
+  shiftType            ShiftType
+  startTime            String
+  endTime              String
+  crossesMidnight      Boolean   @default(false)
+  breakMinutes         Int       @default(0)
+  categoryRequirements Json
+  createdAt            DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt            DateTime  @updatedAt @db.Timestamptz(6)
+
+  organization Organization      @relation(fields: [organizationId], references: [id])
+  assignments  ShiftAssignment[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@map("shift_templates")
+}
+
+model RotationPattern {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @db.Uuid
+  name           String
+  cycleLength    Int
+  cycle          Json
+  createdAt      DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@map("rotation_patterns")
+}
+
+model ShiftSchedule {
+  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String         @db.Uuid
+  centerId       String         @db.Uuid
+  departmentId   String?        @db.Uuid
+  year           Int
+  month          Int
+  status         ScheduleStatus @default(DRAFT)
+  publishedAt    DateTime?      @db.Timestamptz(6)
+  publishedBy    String?        @db.Uuid
+  createdAt      DateTime       @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime       @updatedAt @db.Timestamptz(6)
+
+  organization Organization      @relation(fields: [organizationId], references: [id])
+  center       Center            @relation(fields: [centerId], references: [id])
+  department   Department?       @relation(fields: [departmentId], references: [id])
+  assignments  ShiftAssignment[]
+
+  @@unique([organizationId, centerId, departmentId, year, month])
+  @@index([organizationId])
+  @@index([organizationId, centerId, status])
+  @@map("shift_schedules")
+}
+
+model ShiftAssignment {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId  String   @db.Uuid
+  scheduleId      String   @db.Uuid
+  employeeId      String   @db.Uuid
+  shiftTemplateId String   @db.Uuid
+  departmentId    String?  @db.Uuid
+  date            DateTime @db.Date
+  createdAt       DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @db.Timestamptz(6)
+
+  organization  Organization  @relation(fields: [organizationId], references: [id])
+  schedule      ShiftSchedule @relation(fields: [scheduleId], references: [id])
+  employee      Employee      @relation(fields: [employeeId], references: [id])
+  shiftTemplate ShiftTemplate @relation(fields: [shiftTemplateId], references: [id])
+  department    Department?   @relation(fields: [departmentId], references: [id])
+
+  requestedSwaps CambioTurno[] @relation("RequesterAssignment")
+  targetedSwaps  CambioTurno[] @relation("TargetAssignment")
+
+  @@unique([employeeId, date, shiftTemplateId])
+  @@index([organizationId])
+  @@index([organizationId, scheduleId])
+  @@index([organizationId, employeeId, date])
+  @@map("shift_assignments")
+}
+
+model CambioTurno {
+  id                    String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId        String     @db.Uuid
+  requesterAssignmentId String     @db.Uuid
+  targetAssignmentId    String?    @db.Uuid
+  status                SwapStatus @default(REQUESTED)
+  reason                String?
+  approverId            String?    @db.Uuid
+  decidedAt             DateTime?  @db.Timestamptz(6)
+  createdAt             DateTime   @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime   @updatedAt @db.Timestamptz(6)
+
+  organization        Organization     @relation(fields: [organizationId], references: [id])
+  requesterAssignment ShiftAssignment  @relation("RequesterAssignment", fields: [requesterAssignmentId], references: [id])
+  targetAssignment    ShiftAssignment? @relation("TargetAssignment", fields: [targetAssignmentId], references: [id])
+
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@map("cambios_turno")
+}
+
+// ----------------------------- TIME TRACKING -----------------------------
+
+// IMMUTABLE / INSERT-ONLY. No @updatedAt. No cascade. App role has INSERT + controlled UPDATE only.
+// The only permitted UPDATE is the OPEN -> CLOSED clock-out transition, enforced by a DB trigger.
+// Corrections never mutate this row; they create a linked TimeCorrection.
+model TimeEntry {
+  id               String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId   String      @db.Uuid
+  employeeId       String      @db.Uuid
+  clockIn          DateTime    @db.Timestamptz(6)
+  clockOut         DateTime?   @db.Timestamptz(6)
+  status           EntryStatus @default(OPEN)
+  source           String      @default("web")
+  capturedAtClient DateTime?   @db.Timestamptz(6)
+  createdAt        DateTime    @default(now()) @db.Timestamptz(6)
+
+  organization Organization     @relation(fields: [organizationId], references: [id])
+  employee     Employee         @relation(fields: [employeeId], references: [id])
+  corrections  TimeCorrection[]
+
+  @@index([organizationId])
+  @@index([organizationId, employeeId, clockIn])
+  @@index([organizationId, status])
+  @@map("time_entries")
+}
+
+model TimeCorrection {
+  id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId   String           @db.Uuid
+  timeEntryId      String           @db.Uuid
+  requestedById    String           @db.Uuid
+  proposedClockIn  DateTime?        @db.Timestamptz(6)
+  proposedClockOut DateTime?        @db.Timestamptz(6)
+  justification    String
+  status           CorrectionStatus @default(PENDING)
+  approverId       String?          @db.Uuid
+  decidedAt        DateTime?        @db.Timestamptz(6)
+  createdAt        DateTime         @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime         @updatedAt @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  timeEntry    TimeEntry    @relation(fields: [timeEntryId], references: [id])
+
+  @@index([organizationId])
+  @@index([organizationId, timeEntryId])
+  @@index([organizationId, status])
+  @@map("time_corrections")
+}
+
+// ----------------------------- ABSENCES -----------------------------
+
+model Absence {
+  id               String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId   String        @db.Uuid
+  employeeId       String        @db.Uuid
+  type             AbsenceType
+  startDate        DateTime      @db.Date
+  endDate          DateTime      @db.Date
+  status           AbsenceStatus @default(PENDING)
+  causeEncrypted   Bytes?
+  approverId       String?       @db.Uuid
+  decidedAt        DateTime?     @db.Timestamptz(6)
+  createdAt        DateTime      @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime      @updatedAt @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  employee     Employee     @relation(fields: [employeeId], references: [id])
+
+  @@index([organizationId])
+  @@index([organizationId, employeeId, startDate])
+  @@index([organizationId, type, status])
+  @@map("absences")
+}
+
+// ----------------------------- AUDIT -----------------------------
+
+// APPEND-ONLY. No @updatedAt. No cascade. App role has INSERT only (no UPDATE/DELETE).
+model AuditLog {
+  id             String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String      @db.Uuid
+  actorUserId    String?     @db.Uuid
+  action         AuditAction
+  entityType     String
+  entityId       String?     @db.Uuid
+  before         Json?
+  after          Json?
+  ip             String?
+  userAgent      String?
+  createdAt      DateTime    @default(now()) @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+  @@index([organizationId, entityType, entityId])
+  @@index([organizationId, action, createdAt])
+  @@index([organizationId, actorUserId, createdAt])
+  @@map("audit_logs")
+}

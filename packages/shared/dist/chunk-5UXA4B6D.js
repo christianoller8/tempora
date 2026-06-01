@@ -1,0 +1,50 @@
+// src/constants/roles.ts
+var ROLES = ["ADMIN", "MANAGER", "EMPLOYEE"];
+
+// src/constants/permissions.ts
+var PERMISSIONS = {
+  "employees:write": ["ADMIN"],
+  "employees:read": ["ADMIN", "MANAGER"],
+  "shifts:write": ["ADMIN", "MANAGER"],
+  "shifts:publish": ["ADMIN", "MANAGER"],
+  "time:approve": ["ADMIN", "MANAGER"],
+  "time:clock-self": ["ADMIN", "MANAGER", "EMPLOYEE"],
+  "swaps:request": ["ADMIN", "MANAGER", "EMPLOYEE"],
+  "swaps:approve": ["ADMIN", "MANAGER"],
+  "absences:approve": ["ADMIN", "MANAGER"],
+  "reports:export": ["ADMIN", "MANAGER"],
+  "centers:manage": ["ADMIN"]
+};
+
+// src/constants/error-codes.ts
+var ERROR_CODES = {
+  // Generic
+  INTERNAL_SERVER_ERROR: "INTERNAL_SERVER_ERROR",
+  NOT_FOUND: "NOT_FOUND",
+  VALIDATION_ERROR: "VALIDATION_ERROR",
+  CONFLICT: "CONFLICT",
+  // Auth
+  UNAUTHENTICATED: "UNAUTHENTICATED",
+  INVALID_TOKEN: "INVALID_TOKEN",
+  FORBIDDEN: "FORBIDDEN",
+  INVALID_CREDENTIALS: "INVALID_CREDENTIALS",
+  TOKEN_BLOCKLISTED: "TOKEN_BLOCKLISTED",
+  // Tenant
+  NO_TENANT_CONTEXT: "NO_TENANT_CONTEXT",
+  TENANT_MISMATCH: "TENANT_MISMATCH",
+  // Rules engine
+  RULE_VIOLATION: "RULE_VIOLATION",
+  // Business
+  DUPLICATE_CLOCK_IN: "DUPLICATE_CLOCK_IN",
+  NO_OPEN_ENTRY: "NO_OPEN_ENTRY",
+  INSUFFICIENT_BALANCE: "INSUFFICIENT_BALANCE",
+  OVERLAPPING_ABSENCE: "OVERLAPPING_ABSENCE",
+  SCHEDULE_ALREADY_PUBLISHED: "SCHEDULE_ALREADY_PUBLISHED",
+  DEPENDENCY_CONFLICT: "DEPENDENCY_CONFLICT"
+};
+
+export {
+  ROLES,
+  PERMISSIONS,
+  ERROR_CODES
+};
