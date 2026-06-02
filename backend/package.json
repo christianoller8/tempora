@@ -10,7 +10,7 @@
     "start": "node dist/server.js",
     "prisma:migrate": "prisma migrate dev",
     "prisma:generate": "prisma generate",
-    "db:seed": "ts-node prisma/seed.ts",
+    "db:seed": "ts-node --transpile-only prisma/seed.ts",
     "db:rls": "ts-node -r tsconfig-paths/register src/db/run-rls.ts",
     "test": "vitest run"
   },
@@ -27,6 +27,9 @@
     "pdfkit": "^0.15.2",
     "pg": "^8.13.0",
     "zod": "^3.24.0"
+  },
+  "prisma": {
+    "seed": "ts-node --transpile-only prisma/seed.ts"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.8",
