@@ -135,37 +135,37 @@ Chain strategy: pending
 
 ### 2.1 Backend: ShiftTemplate + RotationPattern
 
-- [ ] TASK-P2-1: Create `backend/src/modules/shifts/templates.service.ts` — `createTemplate`, `listTemplates`, `updateTemplate`, `deleteTemplate` (admin only); validate `startTime`/`endTime` format; set `crossesMidnight` if `endTime < startTime` — satisfies FR-SHIFT-1
-- [ ] TASK-P2-2: Create `backend/src/modules/shifts/rotations.service.ts` — `createPattern`, `listPatterns`, `updatePattern`, `deletePattern`; validate `cycle` array length matches `cycleLength` — satisfies FR-SHIFT-2
-- [ ] TASK-P2-3: Create `backend/src/modules/shifts/shifts.router.ts` and `shifts.controller.ts` — routes for `/shift-templates` and `/rotation-patterns`; admin/manager guard on writes — acceptance: AC-SHIFT-1 precondition (templates creatable)
+- [x] TASK-P2-1: Create `backend/src/modules/shifts/templates.service.ts` — `createTemplate`, `listTemplates`, `updateTemplate`, `deleteTemplate` (admin only); validate `startTime`/`endTime` format; set `crossesMidnight` if `endTime < startTime` — satisfies FR-SHIFT-1
+- [x] TASK-P2-2: Create `backend/src/modules/shifts/rotations.service.ts` — `createPattern`, `listPatterns`, `updatePattern`, `deletePattern`; validate `cycle` array length matches `cycleLength` — satisfies FR-SHIFT-2
+- [x] TASK-P2-3: Create `backend/src/modules/shifts/shifts.router.ts` and `shifts.controller.ts` — routes for `/shift-templates` and `/rotation-patterns`; admin/manager guard on writes — acceptance: AC-SHIFT-1 precondition (templates creatable)
 
 ### 2.2 Backend: ShiftSchedule (cuadrante)
 
-- [ ] TASK-P2-4: Create `backend/src/modules/shifts/schedules.service.ts` — `createSchedule` (creates in DRAFT), `getSchedule`, `listSchedules`; manager can only create for own center — satisfies FR-SHIFT-3, FR-SHIFT-6; acceptance: AC-SHIFT-1
-- [ ] TASK-P2-5: Create `schedules.service.ts: publishSchedule(scheduleId)` — runs Rules Engine check on all assignments in the draft, blocks if any BLOCK violations exist, transitions status to PUBLISHED (immutable after), emits `SHIFT_PUBLISHED` SSE event via `eventBus.publish`, writes PUBLISH audit row — satisfies FR-SHIFT-4, FR-SHIFT-5, FR-SHIFT-7 [COMPLIANCE]; acceptance: AC-SHIFT-2, AC-SHIFT-3, AC-SHIFT-4
+- [x] TASK-P2-4: Create `backend/src/modules/shifts/schedules.service.ts` — `createSchedule` (creates in DRAFT), `getSchedule`, `listSchedules`; manager can only create for own center — satisfies FR-SHIFT-3, FR-SHIFT-6; acceptance: AC-SHIFT-1
+- [x] TASK-P2-5: Create `schedules.service.ts: publishSchedule(scheduleId)` — runs Rules Engine check on all assignments in the draft, blocks if any BLOCK violations exist, transitions status to PUBLISHED (immutable after), emits `SHIFT_PUBLISHED` SSE event via `eventBus.publish`, writes PUBLISH audit row — satisfies FR-SHIFT-4, FR-SHIFT-5, FR-SHIFT-7 [COMPLIANCE]; acceptance: AC-SHIFT-2, AC-SHIFT-3, AC-SHIFT-4
 
 ### 2.3 Backend: ShiftAssignment + Rules Engine (core)
 
-- [ ] TASK-P2-6: Create `backend/src/modules/rules/types.ts` — `RuleSeverity`, `RuleCheckResult`, `RuleSetConfig`, `RuleContext`, `Rule`, `RuleEngine` interfaces (from design §6)
-- [ ] TASK-P2-7: Create `backend/src/modules/rules/rules/min-rest.ts` — `minRest12h` pure rule: gap between previous shift end and candidate start < `ruleSet.minRestHours` → `block`; handles overnight shifts and cross-midnight gaps — satisfies FR-RULES-2, AC-RULES-1
-- [ ] TASK-P2-8: Create `backend/src/modules/rules/rules/max-daily.ts` — `maxDaily9h` pure rule: effective hours in one work day > `ruleSet.maxDailyHours` → `warn` (or `block` if configured) — satisfies FR-RULES-2
-- [ ] TASK-P2-9: Create `backend/src/modules/rules/rules/max-annual-ot.ts` — `maxAnnualOt80h` pure rule: `annualOvertimeHours + candidateOT > ruleSet.maxAnnualOvertime` → `block` — satisfies FR-RULES-2, AC-RULES-3
-- [ ] TASK-P2-10: Create `backend/src/modules/rules/rules/weekly-rest.ts` — `weeklyRest` pure rule: consecutive rest in the rolling 7-day window < `ruleSet.weeklyRestDays × 24` hours → `warn` — satisfies FR-RULES-2, AC-RULES-4
-- [ ] TASK-P2-11: Create `backend/src/modules/rules/index.ts` — `REGISTRY` array + `ruleEngine.check(context, ruleSet)` that maps all rules, filters nulls, returns `RuleCheckResult[]` — satisfies FR-RULES-1 (pure, no I/O), FR-RULES-3; acceptance: AC-RULES-5 (no DB writes), AC-RULES-6
-- [ ] TASK-P2-12: Create `backend/src/modules/shifts/assignments.service.ts` — `createAssignment` (validates schedule is DRAFT, fetches RuleSetConfig, assembles RuleContext from recent assignments, calls `ruleEngine.check`, rejects with 422 on BLOCK, persists assignment, writes audit row) — satisfies FR-SHIFT-5, FR-RULES-5 [COMPLIANCE]; acceptance: AC-RULES-1, AC-RULES-2
+- [x] TASK-P2-6: Create `backend/src/modules/rules/types.ts` — `RuleSeverity`, `RuleCheckResult`, `RuleSetConfig`, `RuleContext`, `Rule`, `RuleEngine` interfaces (from design §6)
+- [x] TASK-P2-7: Create `backend/src/modules/rules/rules/min-rest.ts` — `minRest12h` pure rule: gap between previous shift end and candidate start < `ruleSet.minRestHours` → `block`; handles overnight shifts and cross-midnight gaps — satisfies FR-RULES-2, AC-RULES-1
+- [x] TASK-P2-8: Create `backend/src/modules/rules/rules/max-daily.ts` — `maxDaily9h` pure rule: effective hours in one work day > `ruleSet.maxDailyHours` → `warn` (or `block` if configured) — satisfies FR-RULES-2
+- [x] TASK-P2-9: Create `backend/src/modules/rules/rules/max-annual-ot.ts` — `maxAnnualOt80h` pure rule: `annualOvertimeHours + candidateOT > ruleSet.maxAnnualOvertime` → `block` — satisfies FR-RULES-2, AC-RULES-3
+- [x] TASK-P2-10: Create `backend/src/modules/rules/rules/weekly-rest.ts` — `weeklyRest` pure rule: consecutive rest in the rolling 7-day window < `ruleSet.weeklyRestDays × 24` hours → `warn` — satisfies FR-RULES-2, AC-RULES-4
+- [x] TASK-P2-11: Create `backend/src/modules/rules/index.ts` — `REGISTRY` array + `ruleEngine.check(context, ruleSet)` that maps all rules, filters nulls, returns `RuleCheckResult[]` — satisfies FR-RULES-1 (pure, no I/O), FR-RULES-3; acceptance: AC-RULES-5 (no DB writes), AC-RULES-6
+- [x] TASK-P2-12: Create `backend/src/modules/shifts/assignments.service.ts` — `createAssignment` (validates schedule is DRAFT, fetches RuleSetConfig, assembles RuleContext from recent assignments, calls `ruleEngine.check`, rejects with 422 on BLOCK, persists assignment, writes audit row) — satisfies FR-SHIFT-5, FR-RULES-5 [COMPLIANCE]; acceptance: AC-RULES-1, AC-RULES-2
 
 ### 2.4 Backend: CambioTurno (swaps)
 
-- [ ] TASK-P2-13: Create `backend/src/modules/shifts/swaps.service.ts` — `requestSwap` (records requester + target assignments at creation time per FR-SHIFT-8), `approveSwap` (runs Rules Engine on the post-swap state, blocks on BLOCK, swaps assignments, emits `SWAP_APPROVED` event, writes audit rows for both assignments), `rejectSwap` — satisfies FR-SHIFT-8 through FR-SHIFT-11 [COMPLIANCE]; acceptance: AC-SHIFT-5, AC-SHIFT-6, AC-SHIFT-7
-- [ ] TASK-P2-14: Add swap routes to `shifts.router.ts` — `POST /swaps`, `POST /swaps/:id/approve`, `POST /swaps/:id/reject`, `GET /swaps`; manager/admin guard on approve/reject
+- [x] TASK-P2-13: Create `backend/src/modules/shifts/swaps.service.ts` — `requestSwap` (records requester + target assignments at creation time per FR-SHIFT-8), `approveSwap` (runs Rules Engine on the post-swap state, blocks on BLOCK, swaps assignments, emits `SWAP_APPROVED` event, writes audit rows for both assignments), `rejectSwap` — satisfies FR-SHIFT-8 through FR-SHIFT-11 [COMPLIANCE]; acceptance: AC-SHIFT-5, AC-SHIFT-6, AC-SHIFT-7
+- [x] TASK-P2-14: Add swap routes to `shifts.router.ts` — `POST /swaps`, `POST /swaps/:id/approve`, `POST /swaps/:id/reject`, `GET /swaps`; manager/admin guard on approve/reject
 
 ### 2.5 Frontend: Shifts feature
 
-- [ ] TASK-P2-15: Create `frontend/src/app/features/shifts/data-access/shifts.api.ts` — typed API calls for templates, schedules, assignments, swaps using `ApiService`
-- [ ] TASK-P2-16: Create `frontend/src/app/features/shifts/data-access/schedules.store.ts` — SignalStore with `withEntities<ShiftSchedule>`, `loadSchedules`, `createSchedule`, `publishSchedule` methods; handles warnings from Rules Engine response [TEST]
-- [ ] TASK-P2-17: Create `frontend/src/app/features/shifts/ui/cuadrante-grid.component.ts` — presentational PrimeTable wrapper with frozen employee column, one column per day; `input()` employees + assignments; `output()` assignment click — acceptance: renders a 31-column grid for a monthly schedule
-- [ ] TASK-P2-18: Create `frontend/src/app/features/shifts/feature/cuadrante.component.ts` — smart container; injects `SchedulesStore`; orchestrates load, create, assign, publish flow; shows rule violation warnings via toast [TEST]
-- [ ] TASK-P2-19: Create `frontend/src/app/features/shifts/feature/swap-request.component.ts` and `swap-approval.component.ts` — request form (select target assignment), approval queue for managers; both use `SchedulesStore` [TEST]
+- [x] TASK-P2-15: Create `frontend/src/app/features/shifts/data-access/shifts.api.ts` — typed API calls for templates, schedules, assignments, swaps using `ApiService`
+- [x] TASK-P2-16: Create `frontend/src/app/features/shifts/data-access/schedules.store.ts` — SignalStore with `withEntities<ShiftSchedule>`, `loadSchedules`, `createSchedule`, `publishSchedule` methods; handles warnings from Rules Engine response [TEST]
+- [x] TASK-P2-17: Create `frontend/src/app/features/shifts/ui/cuadrante-grid.component.ts` — presentational PrimeTable wrapper with frozen employee column, one column per day; `input()` employees + assignments; `output()` assignment click — acceptance: renders a 31-column grid for a monthly schedule
+- [x] TASK-P2-18: Create `frontend/src/app/features/shifts/feature/cuadrante.component.ts` — smart container; injects `SchedulesStore`; orchestrates load, create, assign, publish flow; shows rule violation warnings via toast [TEST]
+- [x] TASK-P2-19: Create `frontend/src/app/features/shifts/feature/swap-request.component.ts` and `swap-approval.component.ts` — request form (select target assignment), approval queue for managers; both use `SchedulesStore` [TEST]
 
 ---
 
@@ -173,31 +173,31 @@ Chain strategy: pending
 
 ### 3.1 Backend: TimeEntry (immutable clock-in/out) [COMPLIANCE]
 
-- [ ] TASK-P3-1: Create `backend/src/modules/time-tracking/time.service.ts: clockIn(employeeId)` — checks for existing OPEN entry (returns 409 if found), inserts new `TimeEntry` with server-generated `clockIn`, writes CREATE audit row — satisfies FR-TIME-1, FR-TIME-2, FR-TIME-3 [COMPLIANCE]; acceptance: AC-TIME-1, AC-TIME-3
-- [ ] TASK-P3-2: Create `time.service.ts: clockOut(employeeId)` — finds the OPEN entry, computes effective hours, sets `overtime = true` if > 9h (FR-TIME-4), performs the trigger-guarded UPDATE (`clockOut`, status CLOSED), upserts `OvertimeEntry` accumulator, calls `ruleEngine.check` for overtime cap, emits `CLOCK_OUT` SSE event, writes audit row — satisfies FR-TIME-2, FR-TIME-4, FR-TIME-8, FR-TIME-9 [COMPLIANCE]; acceptance: AC-TIME-2, AC-TIME-7
-- [ ] TASK-P3-3: Create `time.service.ts: listEntries(filter)` — supports filtering by employee, date range, approval status (FR-TIME-10); acceptance: AC-TIME-4 (UPDATE attempt throws via trigger)
+- [x] TASK-P3-1: Create `backend/src/modules/time-tracking/time.service.ts: clockIn(employeeId)` — checks for existing OPEN entry (returns 409 if found), inserts new `TimeEntry` with server-generated `clockIn`, writes CREATE audit row — satisfies FR-TIME-1, FR-TIME-2, FR-TIME-3 [COMPLIANCE]; acceptance: AC-TIME-1, AC-TIME-3
+- [x] TASK-P3-2: Create `time.service.ts: clockOut(employeeId)` — finds the OPEN entry, computes effective hours, sets `overtime = true` if > 9h (FR-TIME-4), performs the trigger-guarded UPDATE (`clockOut`, status CLOSED), upserts `OvertimeEntry` accumulator, calls `ruleEngine.check` for overtime cap, emits `CLOCK_OUT` SSE event, writes audit row — satisfies FR-TIME-2, FR-TIME-4, FR-TIME-8, FR-TIME-9 [COMPLIANCE]; acceptance: AC-TIME-2, AC-TIME-7
+- [x] TASK-P3-3: Create `time.service.ts: listEntries(filter)` — supports filtering by employee, date range, approval status (FR-TIME-10); acceptance: AC-TIME-4 (UPDATE attempt throws via trigger)
 
 ### 3.2 Backend: TimeCorrection workflow
 
-- [ ] TASK-P3-4: Create `time.service.ts: createCorrection(dto)` — validates linked TimeEntry exists, creates `TimeCorrection` in PENDING — satisfies FR-TIME-5; acceptance: AC-TIME-5
-- [ ] TASK-P3-5: Create `time.service.ts: approveCorrection(id, approverId)` / `rejectCorrection(id)` — transitions CorrectionStatus, writes AuditLog row with before/after values (FR-TIME-7) [COMPLIANCE]; acceptance: AC-TIME-6
-- [ ] TASK-P3-6: Create `backend/src/modules/time-tracking/time.router.ts` and `time.controller.ts` — routes: `POST /time-entries/clock-in`, `POST /time-entries/clock-out`, `GET /time-entries`, `POST /time-corrections`, `POST /time-corrections/:id/approve`, `POST /time-corrections/:id/reject`
+- [x] TASK-P3-4: Create `time.service.ts: createCorrection(dto)` — validates linked TimeEntry exists, creates `TimeCorrection` in PENDING — satisfies FR-TIME-5; acceptance: AC-TIME-5
+- [x] TASK-P3-5: Create `time.service.ts: approveCorrection(id, approverId)` / `rejectCorrection(id)` — transitions CorrectionStatus, writes AuditLog row with before/after values (FR-TIME-7) [COMPLIANCE]; acceptance: AC-TIME-6
+- [x] TASK-P3-6: Create `backend/src/modules/time-tracking/time.router.ts` and `time.controller.ts` — routes: `POST /time-entries/clock-in`, `POST /time-entries/clock-out`, `GET /time-entries`, `POST /time-corrections`, `POST /time-corrections/:id/approve`, `POST /time-corrections/:id/reject`
 
 ### 3.3 Backend: SSE hub
 
-- [ ] TASK-P3-7: Create `backend/src/sse/events.ts` — `SseEventType` union, `SseEvent` interface (type, organizationId, targetUserId?, targetRole?, payload, emittedAt) — mirrored in `packages/shared/src/schemas/`
-- [ ] TASK-P3-8: Create `backend/src/sse/event-bus.ts` — `OrgEventBus` class with lazy per-org `EventEmitter` registry, `for(orgId)`, `publish(orgId, event)` methods — satisfies FR-NOTIF-3 (fan-out by org)
-- [ ] TASK-P3-9: Create `backend/src/sse/sse-hub.ts` — `SseHub` class: `register(orgId, userId, role, res)`, `unregister(client)`, `shouldDeliver(client, event)` (org scope + user/role targeting), `closeAll()` — satisfies FR-NOTIF-2, FR-NOTIF-3
-- [ ] TASK-P3-10: Create `backend/src/modules/notifications/notifications.controller.ts` — `stream(req, res)` handler: writes SSE headers, registers client with `sseHub`, subscribes to `eventBus`, sends 25s keep-alive, cleans up on `req.close` — satisfies FR-NOTIF-1; acceptance: AC-NOTIF-1, AC-NOTIF-2
-- [ ] TASK-P3-11: Create `backend/src/modules/notifications/notifications.router.ts` — `GET /notifications/stream` (authenticate, no tenantContext; cookie-based auth fallback active)
+- [x] TASK-P3-7: Create `backend/src/sse/events.ts` — `SseEventType` union, `SseEvent` interface (type, organizationId, targetUserId?, targetRole?, payload, emittedAt) — mirrored in `packages/shared/src/schemas/`
+- [x] TASK-P3-8: Create `backend/src/sse/event-bus.ts` — `OrgEventBus` class with lazy per-org `EventEmitter` registry, `for(orgId)`, `publish(orgId, event)` methods — satisfies FR-NOTIF-3 (fan-out by org)
+- [x] TASK-P3-9: Create `backend/src/sse/sse-hub.ts` — `SseHub` class: `register(orgId, userId, role, res)`, `unregister(client)`, `shouldDeliver(client, event)` (org scope + user/role targeting), `closeAll()` — satisfies FR-NOTIF-2, FR-NOTIF-3
+- [x] TASK-P3-10: Create `backend/src/modules/notifications/notifications.controller.ts` — `stream(req, res)` handler: writes SSE headers, registers client with `sseHub`, subscribes to `eventBus`, sends 25s keep-alive, cleans up on `req.close` — satisfies FR-NOTIF-1; acceptance: AC-NOTIF-1, AC-NOTIF-2
+- [x] TASK-P3-11: Create `backend/src/modules/notifications/notifications.router.ts` — `GET /notifications/stream` (authenticate, no tenantContext; cookie-based auth fallback active)
 
 ### 3.4 Frontend: Time tracking feature
 
-- [ ] TASK-P3-12: Create `frontend/src/app/core/sse/sse.service.ts` — `SseService` with `EventSource` (`withCredentials: true`), `connected` signal, `lastEvent` signal, auto-reconnect on error, `disconnect()` on `DestroyRef` — satisfies FR-NOTIF-6; acceptance: connects, receives events [TEST]
-- [ ] TASK-P3-13: Create `frontend/src/app/features/time-tracking/data-access/time.store.ts` — SignalStore with clock state, `clockIn()`, `clockOut()`, `loadEntries()` methods; `effect()` reacts to `SseService.lastEvent()` for `CLOCK_IN`/`CLOCK_OUT` events [TEST]
-- [ ] TASK-P3-14: Create `frontend/src/app/features/time-tracking/ui/clock-widget.component.ts` — presentational: shows current status (OPEN/CLOSED), elapsed time, clock-in/out buttons; `input()` state, `output()` action events [TEST]
-- [ ] TASK-P3-15: Create `frontend/src/app/features/time-tracking/feature/clock.component.ts` — smart container; injects `TimeStore`; renders `ClockWidgetComponent`; handles correction request form (POST /time-corrections) [TEST]
-- [ ] TASK-P3-16: Create `frontend/src/app/features/time-tracking/feature/live-dashboard.component.ts` — manager view; subscribes to SSE `CLOCK_IN`/`CLOCK_OUT` events via `TimeStore`; renders PrimeTable of employees with real-time status — satisfies FR-TIME-9, AC-TIME-8 [TEST]
+- [x] TASK-P3-12: Create `frontend/src/app/core/sse/sse.service.ts` — `SseService` with `EventSource` (`withCredentials: true`), `connected` signal, `lastEvent` signal, auto-reconnect on error, `disconnect()` on `DestroyRef` — satisfies FR-NOTIF-6; acceptance: connects, receives events [TEST]
+- [x] TASK-P3-13: Create `frontend/src/app/features/time-tracking/data-access/time.store.ts` — SignalStore with clock state, `clockIn()`, `clockOut()`, `loadEntries()` methods; `effect()` reacts to `SseService.lastEvent()` for `CLOCK_IN`/`CLOCK_OUT` events [TEST]
+- [x] TASK-P3-14: Create `frontend/src/app/features/time-tracking/ui/clock-widget.component.ts` — presentational: shows current status (OPEN/CLOSED), elapsed time, clock-in/out buttons; `input()` state, `output()` action events [TEST]
+- [x] TASK-P3-15: Create `frontend/src/app/features/time-tracking/feature/clock.component.ts` — smart container; injects `TimeStore`; renders `ClockWidgetComponent`; handles correction request form (POST /time-corrections) [TEST]
+- [x] TASK-P3-16: Create `frontend/src/app/features/time-tracking/feature/live-dashboard.component.ts` — manager view; subscribes to SSE `CLOCK_IN`/`CLOCK_OUT` events via `TimeStore`; renders PrimeTable of employees with real-time status — satisfies FR-TIME-9, AC-TIME-8 [TEST]
 
 ---
 
@@ -205,32 +205,32 @@ Chain strategy: pending
 
 ### 4.1 Backend: Absence CRUD + GDPR [GDPR]
 
-- [ ] TASK-P4-1: Create `backend/src/modules/absences/crypto.ts` — `encryptCause(plaintext, key)` and `decryptCause(ciphertext, key)` using AES-256-GCM with `FIELD_ENCRYPTION_KEY` from env — satisfies `causeEncrypted` column design; acceptance: round-trip encrypt/decrypt matches [GDPR]
-- [ ] TASK-P4-2: Create `backend/src/modules/absences/absences.service.ts: createAbsence(dto)` — validates absence type, checks for overlapping absences (422 if overlap), checks vacation balance (422 if zero), encrypts IT cause if present, creates record; IT absences by manager/admin go straight to APPROVED — satisfies FR-ABS-1, FR-ABS-2, FR-ABS-3; acceptance: AC-ABS-1, AC-ABS-3, AC-ABS-6 [GDPR]
-- [ ] TASK-P4-3: Create `absences.service.ts: approveAbsence(id)` / `rejectAbsence(id)` — transitions status, decrements vacation balance on approve (FR-ABS-5), writes audit row [COMPLIANCE]; acceptance: AC-ABS-2
-- [ ] TASK-P4-4: Create `absences.service.ts: getAbsence(id)` — decrypts `causeEncrypted` when present, writes `AuditLog action=READ, entityType=Absence` BEFORE returning cause field [GDPR] [COMPLIANCE]; acceptance: AC-ABS-4, AC-AUDIT-3
-- [ ] TASK-P4-5: Create `absences.service.ts: getBalance(employeeId, year)` — computes vacation days used vs entitled for the year — satisfies FR-ABS-5, FR-ABS-7
-- [ ] TASK-P4-6: Create `backend/src/modules/absences/absences.router.ts` and `absences.controller.ts` — routes: `GET/POST /absences`, `GET /absences/:id` (triggers GDPR audit), `POST /absences/:id/approve`, `POST /absences/:id/reject`, `GET /absences/balance` — acceptance: AC-ABS-5 (absence visible in coverage report source data)
+- [x] TASK-P4-1: Create `backend/src/modules/absences/crypto.ts` — `encryptCause(plaintext, key)` and `decryptCause(ciphertext, key)` using AES-256-GCM with `FIELD_ENCRYPTION_KEY` from env — satisfies `causeEncrypted` column design; acceptance: round-trip encrypt/decrypt matches [GDPR]
+- [x] TASK-P4-2: Create `backend/src/modules/absences/absences.service.ts: createAbsence(dto)` — validates absence type, checks for overlapping absences (422 if overlap), checks vacation balance (422 if zero), encrypts IT cause if present, creates record; IT absences by manager/admin go straight to APPROVED — satisfies FR-ABS-1, FR-ABS-2, FR-ABS-3; acceptance: AC-ABS-1, AC-ABS-3, AC-ABS-6 [GDPR]
+- [x] TASK-P4-3: Create `absences.service.ts: approveAbsence(id)` / `rejectAbsence(id)` — transitions status, decrements vacation balance on approve (FR-ABS-5), writes audit row [COMPLIANCE]; acceptance: AC-ABS-2
+- [x] TASK-P4-4: Create `absences.service.ts: getAbsence(id)` — decrypts `causeEncrypted` when present, writes `AuditLog action=READ, entityType=Absence` BEFORE returning cause field [GDPR] [COMPLIANCE]; acceptance: AC-ABS-4, AC-AUDIT-3
+- [x] TASK-P4-5: Create `absences.service.ts: getBalance(employeeId, year)` — computes vacation days used vs entitled for the year — satisfies FR-ABS-5, FR-ABS-7
+- [x] TASK-P4-6: Create `backend/src/modules/absences/absences.router.ts` and `absences.controller.ts` — routes: `GET/POST /absences`, `GET /absences/:id` (triggers GDPR audit), `POST /absences/:id/approve`, `POST /absences/:id/reject`, `GET /absences/balance` — acceptance: AC-ABS-5 (absence visible in coverage report source data)
 
 ### 4.2 Backend: RuleSet admin
 
-- [ ] TASK-P4-7: Create RuleSet CRUD in `organization.service.ts` (or dedicated `ruleset.service.ts`) — `createRuleSet`, `updateRuleSet`, `listRuleSets`; ADMIN only; default ruleset falls back to statutory values — satisfies FR-RULES-2, FR-RULES-4; acceptance: AC-RULES-2 (org-specific rest override)
-- [ ] TASK-P4-8: Add RuleSet routes to `organization.router.ts` — `GET/POST/PATCH /rule-sets`; ADMIN guard
+- [x] TASK-P4-7: Create RuleSet CRUD in `organization.service.ts` (or dedicated `ruleset.service.ts`) — `createRuleSet`, `updateRuleSet`, `listRuleSets`; ADMIN only; default ruleset falls back to statutory values — satisfies FR-RULES-2, FR-RULES-4; acceptance: AC-RULES-2 (org-specific rest override)
+- [x] TASK-P4-8: Add RuleSet routes to `organization.router.ts` — `GET/POST/PATCH /rule-sets`; ADMIN guard
 
 ### 4.3 Backend: Rules Engine extended (absence constraints)
 
-- [ ] TASK-P4-9: Extend `assignments.service.ts` and `time.service.ts` — before invoking `ruleEngine.check`, load any approved absences for the employee in the period and include them in the `RuleContext` so absence days are excluded from weekly-rest and max-daily calculations — satisfies FR-RULES-6 (full integration)
+- [x] TASK-P4-9: Extend `assignments.service.ts` and `time.service.ts` — before invoking `ruleEngine.check`, load any approved absences for the employee in the period and include them in the `RuleContext` so absence days are excluded from weekly-rest and max-daily calculations — satisfies FR-RULES-6 (full integration)
 
 ### 4.4 Frontend: Absences feature
 
-- [ ] TASK-P4-10: Create `frontend/src/app/features/absences/data-access/absences.store.ts` — SignalStore: `loadAbsences`, `createAbsence`, `approveAbsence`, `rejectAbsence`, `balance` computed signal [TEST]
-- [ ] TASK-P4-11: Create `frontend/src/app/features/absences/feature/absence-request.component.ts` — Reactive Form: type selector (enum), date-range picker, optional cause field (shown only for IT); calls `AbsencesStore.createAbsence()` [TEST]
-- [ ] TASK-P4-12: Create `frontend/src/app/features/absences/feature/absence-approval.component.ts` — manager approval queue: PrimeTable of pending absences, approve/reject actions; reads `AbsencesStore` [TEST]
-- [ ] TASK-P4-13: Create `frontend/src/app/features/absences/feature/absence-balance.component.ts` — displays vacation balance from `GET /absences/balance`; presentational [TEST]
+- [x] TASK-P4-10: Create `frontend/src/app/features/absences/data-access/absences.store.ts` — SignalStore: `loadAbsences`, `createAbsence`, `approveAbsence`, `rejectAbsence`, `balance` computed signal [TEST]
+- [x] TASK-P4-11: Create `frontend/src/app/features/absences/feature/absence-request.component.ts` — Reactive Form: type selector (enum), date-range picker, optional cause field (shown only for IT); calls `AbsencesStore.createAbsence()` [TEST]
+- [x] TASK-P4-12: Create `frontend/src/app/features/absences/feature/absence-approval.component.ts` — manager approval queue: PrimeTable of pending absences, approve/reject actions; reads `AbsencesStore` [TEST]
+- [x] TASK-P4-13: Create `frontend/src/app/features/absences/feature/absence-balance.component.ts` — displays vacation balance from `GET /absences/balance`; presentational [TEST]
 
 ### 4.5 Frontend: Admin RuleSet config
 
-- [ ] TASK-P4-14: Create `frontend/src/app/features/admin/feature/rulesets.component.ts` — admin form to create/update per-org `RuleSet` (minRestHours, maxDailyHours, maxAnnualOvertime, weeklyRestDays, params JSON editor) [TEST]
+- [x] TASK-P4-14: Create `frontend/src/app/features/admin/feature/rulesets.component.ts` — admin form to create/update per-org `RuleSet` (minRestHours, maxDailyHours, maxAnnualOvertime, weeklyRestDays, params JSON editor) [TEST]
 
 ---
 

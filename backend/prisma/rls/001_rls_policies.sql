@@ -46,6 +46,9 @@ GRANT SELECT, INSERT, UPDATE         ON absences          TO tempora_app;
 -- Audit log: append-only — INSERT + SELECT only, no UPDATE/DELETE ever.
 GRANT SELECT, INSERT                 ON audit_logs        TO tempora_app;
 
+-- Notifications
+GRANT SELECT, INSERT, UPDATE         ON notifications     TO tempora_app;
+
 -- ─────────────────────────────────────────────────────────────────
 -- 2. ROW-LEVEL SECURITY — tenant isolation
 -- ─────────────────────────────────────────────────────────────────
@@ -180,6 +183,14 @@ ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_logs FORCE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS tenant_isolation ON audit_logs;
 CREATE POLICY tenant_isolation ON audit_logs
+  USING      ("organizationId" = current_setting('app.current_org', true)::uuid)
+  WITH CHECK ("organizationId" = current_setting('app.current_org', true)::uuid);
+
+-- notifications
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notifications FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS tenant_isolation ON notifications;
+CREATE POLICY tenant_isolation ON notifications
   USING      ("organizationId" = current_setting('app.current_org', true)::uuid)
   WITH CHECK ("organizationId" = current_setting('app.current_org', true)::uuid);
 

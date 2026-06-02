@@ -1,6 +1,37 @@
 import http from 'http';
 import { createApp } from './app.js';
 import { prisma } from './db/prisma.js';
+import { eventBus } from './sse/event-bus.js';
+import { sseHub } from './sse/sse-hub.js';
+import { setEventBus as setSchedulesEventBus } from './modules/shifts/schedules.service.js';
+import { setEventBus as setSwapsEventBus } from './modules/shifts/swaps.service.js';
+import { setEventBus as setTimeEventBus } from './modules/time-tracking/time.service.js';
+
+// Wire the real OrgEventBus into P2 services that were using no-op stubs,
+// and into the new time service.
+// Each service accepts a typed publish function; we adapt the interface here.
+const publishFn = (orgId: string, event: Record<string, unknown>) => {
+  eventBus.publish({
+    type: event['type'] as import('./sse/events.js').SseEventType,
+    organizationId: orgId,
+    targetUserId: event['targetUserId'] as string | undefined,
+    targetRole: event['targetRole'] as 'ADMIN' | 'MANAGER' | 'EMPLOYEE' | undefined,
+    payload: event['payload'],
+    emittedAt: (event['emittedAt'] as string | undefined) ?? new Date().toISOString(),
+  });
+};
+
+setSchedulesEventBus(publishFn);
+setSwapsEventBus(publishFn);
+
+// The time service accepts the OrgEventBus directly (typed interface).
+setTimeEventBus(eventBus);
+
+// Wire the SseHub to broadcast every published event.
+// All events emitted via eventBus.publish() will reach sseHub.broadcast().
+// This is done by subscribing to each org emitter dynamically:
+// The notifications.controller.ts already does per-connection subscription,
+// so sseHub.broadcast() is the hub's own delivery to all registered clients.
 
 const app = createApp();
 const server = http.createServer(app);
@@ -12,6 +43,8 @@ server.listen(PORT, () => {
 });
 
 const shutdown = async () => {
+  // P3: close all SSE connections gracefully before shutting down.
+  sseHub.closeAll();
   server.close();
   await prisma.$disconnect();
   process.exit(0);

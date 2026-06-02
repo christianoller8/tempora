@@ -143,6 +143,7 @@ model Organization {
   timeCorrections  TimeCorrection[]
   absences         Absence[]
   auditLogs        AuditLog[]
+  notifications    Notification[]
 
   @@map("organizations")
 }
@@ -198,8 +199,9 @@ model User {
   createdAt      DateTime  @default(now()) @db.Timestamptz(6)
   updatedAt      DateTime  @updatedAt @db.Timestamptz(6)
 
-  organization Organization @relation(fields: [organizationId], references: [id])
-  employee     Employee?    @relation(fields: [employeeId], references: [id])
+  organization  Organization   @relation(fields: [organizationId], references: [id])
+  employee      Employee?      @relation(fields: [employeeId], references: [id])
+  notifications Notification[]
 
   @@unique([organizationId, email])
   @@index([organizationId])
@@ -474,6 +476,27 @@ model Absence {
   @@index([organizationId, employeeId, startDate])
   @@index([organizationId, type, status])
   @@map("absences")
+}
+
+// ----------------------------- AUDIT -----------------------------
+
+// ----------------------------- NOTIFICATIONS -----------------------------
+
+model Notification {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @db.Uuid
+  userId         String   @db.Uuid
+  type           String
+  payload        Json
+  read           Boolean  @default(false)
+  createdAt      DateTime @default(now()) @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@index([organizationId, userId])
+  @@index([organizationId, read])
+  @@map("notifications")
 }
 
 // ----------------------------- AUDIT -----------------------------

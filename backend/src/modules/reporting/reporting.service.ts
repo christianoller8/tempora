@@ -1,0 +1,462 @@
+import { Prisma } from '@prisma/client';
+import type { TenantClient } from '../../db/tenant.js';
+import { auditWriter } from '../../audit/audit-writer.js';
+
+// ---------------------------------------------------------------------------
+// Reporting service — satisfies FR-REP-1..9 [GDPR] [COMPLIANCE]
+//
+// GDPR invariant: causeEncrypted is NEVER included in any report output.
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Shared types
+// ---------------------------------------------------------------------------
+
+export interface MonthlyHoursRow {
+  employeeId: string;
+  firstName: string;
+  lastName: string;
+  regularHours: number;
+  overtimeHours: number;
+  partTimeDeviation: number;
+}
+
+export interface OvertimeRow {
+  employeeId: string;
+  firstName: string;
+  lastName: string;
+  totalOvertimeHours: number;
+  overCapLimit: boolean;
+}
+
+export interface AbsenteeismRow {
+  employeeId: string;
+  totalDays: number;
+  byType: Record<string, number>;
+}
+
+export interface CoverageGapRow {
+  assignmentId: string;
+  employeeId: string;
+  date: string;
+  absenceId: string;
+}
+
+export interface ComplianceExportResult {
+  timeEntries: Record<string, unknown>[];
+  auditLogs: Record<string, unknown>[];
+}
+
+// ---------------------------------------------------------------------------
+// P5-1: monthlyHoursReport — FR-REP-1, FR-REP-6, FR-REP-8
+// ---------------------------------------------------------------------------
+
+type MonthlyRawRow = {
+  employeeId: string;
+  firstName: string;
+  lastName: string;
+  contractedHoursPerWeek: string;
+  regularHours: string;
+  overtimeHours: string;
+};
+
+type OvertimeRawRow = {
+  employeeId: string;
+  firstName: string;
+  lastName: string;
+  totalOvertimeHours: string;
+};
+
+/**
+ * Returns per-employee hours summary for a given month.
+ * Queries closed TimeEntries. GDPR: causeEncrypted is excluded.
+ * Satisfies FR-REP-1, FR-REP-6, FR-REP-8.
+ */
+export async function monthlyHoursReport(
+  orgId: string,
+  year: number,
+  month: number,
+  centerId: string | undefined,
+  db: TenantClient,
+): Promise<MonthlyHoursRow[]> {
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const weeksInMonth = daysInMonth / 7;
+
+  let rows: MonthlyRawRow[];
+
+  if (centerId) {
+    rows = await db.$queryRaw<MonthlyRawRow[]>`
+      SELECT
+        e.id                AS "employeeId",
+        e."firstName",
+        e."lastName",
+        e."contractedHoursPerWeek",
+        COALESCE(SUM(
+          CASE
+            WHEN EXTRACT(EPOCH FROM (te."clockOut" - te."clockIn")) / 3600 <= 9
+            THEN EXTRACT(EPOCH FROM (te."clockOut" - te."clockIn")) / 3600
+            ELSE 9
+          END
+        ), 0)               AS "regularHours",
+        COALESCE(SUM(
+          CASE
+            WHEN EXTRACT(EPOCH FROM (te."clockOut" - te."clockIn")) / 3600 > 9
+            THEN EXTRACT(EPOCH FROM (te."clockOut" - te."clockIn")) / 3600 - 9
+            ELSE 0
+          END
+        ), 0)               AS "overtimeHours"
+      FROM employees e
+      LEFT JOIN time_entries te
+        ON te."employeeId" = e.id
+        AND te."organizationId" = ${orgId}::uuid
+        AND te.status = 'CLOSED'
+        AND EXTRACT(YEAR  FROM te."clockIn") = ${year}
+        AND EXTRACT(MONTH FROM te."clockIn") = ${month}
+        AND te."clockOut" IS NOT NULL
+      WHERE e."organizationId" = ${orgId}::uuid
+        AND e."primaryCenterId" = ${centerId}::uuid
+      GROUP BY e.id, e."firstName", e."lastName", e."contractedHoursPerWeek"
+      HAVING COALESCE(SUM(EXTRACT(EPOCH FROM (te."clockOut" - te."clockIn")) / 3600), 0) > 0
+      ORDER BY e."lastName", e."firstName"
+    `;
+  } else {
+    rows = await db.$queryRaw<MonthlyRawRow[]>`
+      SELECT
+        e.id                AS "employeeId",
+        e."firstName",
+        e."lastName",
+        e."contractedHoursPerWeek",
+        COALESCE(SUM(
+          CASE
+            WHEN EXTRACT(EPOCH FROM (te."clockOut" - te."clockIn")) / 3600 <= 9
+            THEN EXTRACT(EPOCH FROM (te."clockOut" - te."clockIn")) / 3600
+            ELSE 9
+          END
+        ), 0)               AS "regularHours",
+        COALESCE(SUM(
+          CASE
+            WHEN EXTRACT(EPOCH FROM (te."clockOut" - te."clockIn")) / 3600 > 9
+            THEN EXTRACT(EPOCH FROM (te."clockOut" - te."clockIn")) / 3600 - 9
+            ELSE 0
+          END
+        ), 0)               AS "overtimeHours"
+      FROM employees e
+      LEFT JOIN time_entries te
+        ON te."employeeId" = e.id
+        AND te."organizationId" = ${orgId}::uuid
+        AND te.status = 'CLOSED'
+        AND EXTRACT(YEAR  FROM te."clockIn") = ${year}
+        AND EXTRACT(MONTH FROM te."clockIn") = ${month}
+        AND te."clockOut" IS NOT NULL
+      WHERE e."organizationId" = ${orgId}::uuid
+      GROUP BY e.id, e."firstName", e."lastName", e."contractedHoursPerWeek"
+      HAVING COALESCE(SUM(EXTRACT(EPOCH FROM (te."clockOut" - te."clockIn")) / 3600), 0) > 0
+      ORDER BY e."lastName", e."firstName"
+    `;
+  }
+
+  return rows.map((row) => {
+    const contractedHoursPerWeek = Number(row.contractedHoursPerWeek ?? 0);
+    const regularHours = Number(row.regularHours ?? 0);
+    const overtimeHours = Number(row.overtimeHours ?? 0);
+    const contractedThisMonth = contractedHoursPerWeek * weeksInMonth;
+    const partTimeDeviation = regularHours + overtimeHours - contractedThisMonth;
+
+    return {
+      employeeId: row.employeeId,
+      firstName: row.firstName,
+      lastName: row.lastName,
+      regularHours,
+      overtimeHours,
+      partTimeDeviation,
+    };
+  });
+}
+
+// ---------------------------------------------------------------------------
+// P5-2: overtimeReport — FR-REP-2, AC-REP-4
+// ---------------------------------------------------------------------------
+
+const ANNUAL_OT_CAP = 80;
+
+/**
+ * Returns YTD overtime hours per employee for the given year.
+ * Flags employees where total overtime hours exceed the 80h statutory cap.
+ * Satisfies FR-REP-2; acceptance: AC-REP-4.
+ */
+export async function overtimeReport(
+  orgId: string,
+  year: number,
+  employeeId: string | undefined,
+  db: TenantClient,
+): Promise<OvertimeRow[]> {
+  let rows: OvertimeRawRow[];
+
+  if (employeeId) {
+    rows = await db.$queryRaw<OvertimeRawRow[]>`
+      SELECT
+        e.id           AS "employeeId",
+        e."firstName",
+        e."lastName",
+        COALESCE(SUM(
+          CASE
+            WHEN EXTRACT(EPOCH FROM (te."clockOut" - te."clockIn")) / 3600 > 9
+            THEN EXTRACT(EPOCH FROM (te."clockOut" - te."clockIn")) / 3600 - 9
+            ELSE 0
+          END
+        ), 0)          AS "totalOvertimeHours"
+      FROM employees e
+      LEFT JOIN time_entries te
+        ON te."employeeId" = e.id
+        AND te."organizationId" = ${orgId}::uuid
+        AND te.status = 'CLOSED'
+        AND EXTRACT(YEAR FROM te."clockIn") = ${year}
+        AND te."clockOut" IS NOT NULL
+      WHERE e."organizationId" = ${orgId}::uuid
+        AND e.id = ${employeeId}::uuid
+      GROUP BY e.id, e."firstName", e."lastName"
+      HAVING COALESCE(SUM(
+        CASE
+          WHEN EXTRACT(EPOCH FROM (te."clockOut" - te."clockIn")) / 3600 > 9
+          THEN EXTRACT(EPOCH FROM (te."clockOut" - te."clockIn")) / 3600 - 9
+          ELSE 0
+        END
+      ), 0) > 0
+      ORDER BY "totalOvertimeHours" DESC
+    `;
+  } else {
+    rows = await db.$queryRaw<OvertimeRawRow[]>`
+      SELECT
+        e.id           AS "employeeId",
+        e."firstName",
+        e."lastName",
+        COALESCE(SUM(
+          CASE
+            WHEN EXTRACT(EPOCH FROM (te."clockOut" - te."clockIn")) / 3600 > 9
+            THEN EXTRACT(EPOCH FROM (te."clockOut" - te."clockIn")) / 3600 - 9
+            ELSE 0
+          END
+        ), 0)          AS "totalOvertimeHours"
+      FROM employees e
+      LEFT JOIN time_entries te
+        ON te."employeeId" = e.id
+        AND te."organizationId" = ${orgId}::uuid
+        AND te.status = 'CLOSED'
+        AND EXTRACT(YEAR FROM te."clockIn") = ${year}
+        AND te."clockOut" IS NOT NULL
+      WHERE e."organizationId" = ${orgId}::uuid
+      GROUP BY e.id, e."firstName", e."lastName"
+      HAVING COALESCE(SUM(
+        CASE
+          WHEN EXTRACT(EPOCH FROM (te."clockOut" - te."clockIn")) / 3600 > 9
+          THEN EXTRACT(EPOCH FROM (te."clockOut" - te."clockIn")) / 3600 - 9
+          ELSE 0
+        END
+      ), 0) > 0
+      ORDER BY "totalOvertimeHours" DESC
+    `;
+  }
+
+  return rows.map((row) => {
+    const totalOvertimeHours = Number(row.totalOvertimeHours ?? 0);
+    return {
+      employeeId: row.employeeId,
+      firstName: row.firstName,
+      lastName: row.lastName,
+      totalOvertimeHours,
+      overCapLimit: totalOvertimeHours > ANNUAL_OT_CAP,
+    };
+  });
+}
+
+// ---------------------------------------------------------------------------
+// P5-3: absenteeismReport — FR-REP-3, AC-REP-6
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns absence day counts by type per employee in the given date range.
+ * GDPR: excludes causeEncrypted entirely.
+ * Satisfies FR-REP-3; acceptance: AC-REP-6.
+ */
+export async function absenteeismReport(
+  orgId: string,
+  startDate: string,
+  endDate: string,
+  centerId: string | undefined,
+  db: TenantClient,
+): Promise<AbsenteeismRow[]> {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  const where: Prisma.AbsenceWhereInput = {
+    organizationId: orgId,
+    status: 'APPROVED',
+    startDate: { lte: end },
+    endDate: { gte: start },
+    ...(centerId ? { employee: { primaryCenterId: centerId } } : {}),
+  };
+
+  const absences = await db.absence.findMany({
+    where,
+    select: {
+      id: true,
+      employeeId: true,
+      type: true,
+      startDate: true,
+      endDate: true,
+      status: true,
+      // causeEncrypted intentionally excluded [GDPR]
+    },
+  });
+
+  const map = new Map<string, AbsenteeismRow>();
+
+  for (const abs of absences) {
+    const absStart = abs.startDate as Date;
+    const absEnd = abs.endDate as Date;
+    const effectiveStart = absStart > start ? absStart : start;
+    const effectiveEnd = absEnd < end ? absEnd : end;
+    const days =
+      Math.floor((effectiveEnd.getTime() - effectiveStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
+    const empId = abs.employeeId as string;
+    if (!map.has(empId)) {
+      map.set(empId, { employeeId: empId, totalDays: 0, byType: {} });
+    }
+
+    const row = map.get(empId)!;
+    row.totalDays += days;
+    const type = abs.type as string;
+    row.byType[type] = (row.byType[type] ?? 0) + days;
+  }
+
+  return Array.from(map.values());
+}
+
+// ---------------------------------------------------------------------------
+// P5-4: coverageGapsReport — FR-REP-4, AC-REP-5
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns shift assignments where the assigned employee has an approved
+ * absence covering the shift date.
+ * Satisfies FR-REP-4; acceptance: AC-REP-5.
+ */
+export async function coverageGapsReport(
+  orgId: string,
+  centerId: string,
+  year: number,
+  month: number,
+  db: TenantClient,
+): Promise<CoverageGapRow[]> {
+  const monthStart = new Date(year, month - 1, 1);
+  const monthEnd = new Date(year, month, 0);
+
+  const assignments = await db.shiftAssignment.findMany({
+    where: {
+      organizationId: orgId,
+      date: { gte: monthStart, lte: monthEnd },
+      schedule: { centerId },
+    },
+    select: { id: true, employeeId: true, date: true },
+  });
+
+  if (assignments.length === 0) return [];
+
+  const employeeIds = [...new Set(assignments.map((a) => a.employeeId as string))];
+
+  const absences = await db.absence.findMany({
+    where: {
+      organizationId: orgId,
+      employeeId: { in: employeeIds },
+      status: 'APPROVED',
+      startDate: { lte: monthEnd },
+      endDate: { gte: monthStart },
+    },
+    select: { id: true, employeeId: true, startDate: true, endDate: true },
+  });
+
+  const gaps: CoverageGapRow[] = [];
+
+  for (const assignment of assignments) {
+    const date = assignment.date as Date;
+    const empId = assignment.employeeId as string;
+
+    const coveringAbsence = absences.find((abs) => {
+      if ((abs.employeeId as string) !== empId) return false;
+      const absStart = abs.startDate as Date;
+      const absEnd = abs.endDate as Date;
+      return absStart <= date && absEnd >= date;
+    });
+
+    if (coveringAbsence) {
+      gaps.push({
+        assignmentId: assignment.id as string,
+        employeeId: empId,
+        date: date.toISOString().slice(0, 10),
+        absenceId: coveringAbsence.id as string,
+      });
+    }
+  }
+
+  return gaps;
+}
+
+// ---------------------------------------------------------------------------
+// P5-11: complianceExport — ADMIN only (enforced in router)
+// ---------------------------------------------------------------------------
+
+/**
+ * Exports all closed TimeEntries and AuditLog rows for the given year.
+ * Writes its own audit row for the export action [COMPLIANCE].
+ * GDPR: causeEncrypted is never included.
+ * Satisfies FR-REP-9 [COMPLIANCE].
+ */
+export async function complianceExport(
+  orgId: string,
+  year: number,
+  actorId: string,
+  db: TenantClient,
+): Promise<ComplianceExportResult> {
+  const yearStart = new Date(year, 0, 1);
+  const yearEnd = new Date(year + 1, 0, 1);
+
+  const timeEntries = await db.timeEntry.findMany({
+    where: {
+      organizationId: orgId,
+      status: 'CLOSED',
+      clockIn: { gte: yearStart, lt: yearEnd },
+    },
+    select: {
+      id: true,
+      employeeId: true,
+      clockIn: true,
+      clockOut: true,
+      status: true,
+      source: true,
+      createdAt: true,
+      // causeEncrypted excluded [GDPR]
+    },
+    orderBy: { clockIn: 'asc' },
+  });
+
+  const auditLogs = await db.auditLog.findMany({
+    where: {
+      organizationId: orgId,
+      createdAt: { gte: yearStart, lt: yearEnd },
+    },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  // Write audit row for the export itself [COMPLIANCE]
+  await auditWriter.write(db, actorId, orgId, {
+    action: 'READ',
+    entityType: 'ComplianceExport',
+    after: { year, exportedAt: new Date().toISOString() },
+  });
+
+  return {
+    timeEntries: timeEntries as unknown as Record<string, unknown>[],
+    auditLogs: auditLogs as unknown as Record<string, unknown>[],
+  };
+}

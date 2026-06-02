@@ -8,7 +8,12 @@ import { tenantContext } from './middleware/tenant-context.js';
 import { iamRouter } from './modules/iam/iam.router.js';
 import { organizationRouter } from './modules/organization/organization.router.js';
 import { employeesRouter } from './modules/employees/employees.router.js';
+import { shiftsRouter } from './modules/shifts/shifts.router.js';
+import { timeRouter } from './modules/time-tracking/time.router.js';
+import { absencesRouter } from './modules/absences/absences.router.js';
+import { rulesetRouter } from './modules/rules/ruleset.router.js';
 import { notificationsRouter } from './modules/notifications/notifications.router.js';
+import { reportingRouter } from './modules/reporting/reporting.router.js';
 
 export function createApp() {
   const app = express();
@@ -33,6 +38,20 @@ export function createApp() {
 
   app.use('/centers', organizationRouter);
   app.use('/employees', employeesRouter);
+  app.use('/shifts', shiftsRouter);
+
+  // Time tracking — mounted on both prefixes per design §3.5.
+  app.use('/time-entries', timeRouter);
+  app.use('/time-corrections', timeRouter);
+
+  // Absences — satisfies FR-ABS-1..7 [GDPR].
+  app.use('/absences', absencesRouter);
+
+  // RuleSet admin — satisfies FR-RULES-2, FR-RULES-4.
+  app.use('/rule-sets', rulesetRouter);
+
+  // Reporting — satisfies FR-REP-1..9 [GDPR] [COMPLIANCE].
+  app.use('/reports', reportingRouter);
 
   // Central error handler must be last.
   app.use(errorHandler);

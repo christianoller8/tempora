@@ -6,3 +6,4 @@ export * from './shift.schema.js';
 export * from './time-entry.schema.js';
 export * from './absence.schema.js';
 export * from './rule.schema.js';
+export * from './sse.schema.js';
