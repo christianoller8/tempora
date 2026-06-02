@@ -1,1 +1,140 @@
-/* You can add global styles to this file, and also import other style files */
+/* ─── Global reset & base ─────────────────────────────────────────────────── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  background: var(--p-surface-ground);
+  color: var(--p-text-color);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+app-root {
+  display: block;
+  height: 100%;
+}
+
+/* ─── Typography helpers ─────────────────────────────────────────────────── */
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--p-text-color);
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: var(--p-primary-color);
+  text-decoration: none;
+}
+
+/* ─── Focus ring ─────────────────────────────────────────────────────────── */
+
+*:focus-visible {
+  outline: 2px solid var(--p-primary-color);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ─── Page layout helpers ────────────────────────────────────────────────── */
+
+.page-header {
+  margin-bottom: 1.5rem;
+}
+
+.page-header__title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--p-text-color);
+}
+
+.page-header__subtitle {
+  font-size: 0.875rem;
+  color: var(--p-text-color-muted, var(--p-text-color-secondary));
+  margin-top: 0.25rem;
+}
+
+/* ─── Scrollbar ──────────────────────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--p-surface-400, #555);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--p-surface-500, #666);
+}
+
+/* ─── PrimeNG overrides ──────────────────────────────────────────────────── */
+
+/* Full-width input fields */
+.p-inputtext.w-full,
+.p-password.w-full .p-inputtext,
+.p-password.w-full,
+.p-password.w-full > div {
+  width: 100%;
+}
+
+/* Button loading state */
+.p-button .p-button-label {
+  font-weight: 600;
+}
+
+/* ─── Auth layout ────────────────────────────────────────────────────────── */
+
+.auth-layout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding: 1.5rem;
+  background: var(--p-surface-ground);
+  background-image:
+    radial-gradient(ellipse at 30% 20%, color-mix(in srgb, var(--p-primary-color) 8%, transparent) 0%, transparent 60%),
+    radial-gradient(ellipse at 70% 80%, color-mix(in srgb, var(--p-primary-color) 5%, transparent) 0%, transparent 60%);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+}
+
+/* ─── Notifications overlay panel ───────────────────────────────────────── */
+
+.notifications-panel {
+  position: fixed;
+  top: 64px;
+  right: 1rem;
+  z-index: 1000;
+  width: 360px;
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+  background: var(--p-surface-card);
+  border: 1px solid var(--p-surface-border);
+  border-radius: var(--p-border-radius-xl, 12px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}

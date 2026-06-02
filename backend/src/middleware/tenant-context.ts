@@ -24,8 +24,11 @@ export const tenantContext: RequestHandler = (req, res, next) => {
     new Promise<void>((resolve, reject) => {
       requestContext.run({ db, user }, () => {
         res.on('finish', resolve);
-        res.on('close', resolve);
-        next((err?: unknown) => (err ? reject(err) : undefined));
+        res.on('close', () => resolve());
+        // Call next() to proceed to the route handler.
+        // If the handler calls next(err), Express routes to the error middleware;
+        // res.close fires there too so the transaction promise resolves naturally.
+        next();
       });
     }),
   ).catch(next);

@@ -1,43 +1,67 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   input,
   output,
-  computed,
 } from '@angular/core';
+import { BadgeModule } from 'primeng/badge';
+import { ButtonModule } from 'primeng/button';
 
 /**
- * NotificationBellComponent — presentational component.
- *
- * Renders a bell button with an unread count badge.
- * Emits `open` event when clicked.
- *
- * Satisfies FR-NOTIF-9 (notification count display).
+ * NotificationBellComponent — topbar bell with unread count badge.
  */
 @Component({
   selector: 'app-notification-bell',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [ButtonModule, BadgeModule],
+  styles: [`
+    :host { display: inline-flex; align-items: center; }
+
+    .bell-btn {
+      position: relative;
+    }
+
+    .bell-badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      min-width: 18px;
+      height: 18px;
+      background: var(--p-red-500, #ef4444);
+      color: #fff;
+      font-size: 0.65rem;
+      font-weight: 700;
+      border-radius: 9px;
+      padding: 0 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      pointer-events: none;
+    }
+  `],
   template: `
-    <button
-      type="button"
-      class="notification-bell"
-      [attr.aria-label]="ariaLabel()"
-      (click)="open.emit()"
-    >
-      <span aria-hidden="true">🔔</span>
+    <div class="bell-btn" style="position: relative; display: inline-flex;">
+      <p-button
+        icon="pi pi-bell"
+        [text]="true"
+        [rounded]="true"
+        severity="secondary"
+        (onClick)="open.emit()"
+        [attr.aria-label]="ariaLabel()"
+      />
       @if (count() > 0) {
-        <span
-          class="badge"
-          aria-live="polite"
-          aria-atomic="true"
-        >{{ count() }}</span>
+        <span class="bell-badge" aria-live="polite" aria-atomic="true">
+          {{ count() > 99 ? '99+' : count() }}
+        </span>
       }
-    </button>
+    </div>
   `,
 })
 export class NotificationBellComponent {
   readonly count = input<number>(0);
-  readonly open = output<void>();
+  readonly open  = output<void>();
 
   readonly ariaLabel = computed(() =>
     this.count() > 0

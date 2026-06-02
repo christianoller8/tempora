@@ -36,8 +36,8 @@ export interface CreateCorrectionDto {
 export class TimeApi {
   private readonly api = inject(ApiService);
 
-  clockIn(): Observable<TimeEntryDto> {
-    return this.api.post<ClockInResponse>('/time-entries/clock-in', {}).pipe(
+  clockIn(opts?: { source?: string }): Observable<TimeEntryDto> {
+    return this.api.post<ClockInResponse>('/time-entries/clock-in', { source: opts?.source ?? 'web' }).pipe(
       map((res) => res.data),
     );
   }
@@ -48,8 +48,13 @@ export class TimeApi {
     );
   }
 
-  listEntries(params?: { employeeId?: string; status?: string }): Observable<TimeEntryDto[]> {
-    return this.api.get<{ data: TimeEntryDto[] }>('/time-entries', params).pipe(
+  listEntries(params?: {
+    employeeId?: string;
+    status?: string;
+    from?: string;  // ISO datetime string
+    to?: string;    // ISO datetime string
+  }): Observable<TimeEntryDto[]> {
+    return this.api.get<{ data: TimeEntryDto[] }>('/time-entries', params as Record<string, string>).pipe(
       map((res) => res.data),
     );
   }

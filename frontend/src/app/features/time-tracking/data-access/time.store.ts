@@ -37,10 +37,13 @@ export const TimeStore = signalStore(
   withMethods((store) => {
     const api = inject(TimeApi);
     return {
-      async clockIn(): Promise<void> {
+      async clockIn(coords?: { lat: number; lng: number }): Promise<void> {
         patchState(store, { isClocking: true, error: null });
         try {
-          const entry = await firstValueFrom(api.clockIn());
+          const source = coords
+            ? `web-gps:${coords.lat.toFixed(5)},${coords.lng.toFixed(5)}`
+            : 'web';
+          const entry = await firstValueFrom(api.clockIn({ source }));
           patchState(store, { currentEntry: entry, isClocking: false });
         } catch (err: unknown) {
           const message = err instanceof Error ? err.message : 'Clock-in failed';
@@ -59,7 +62,7 @@ export const TimeStore = signalStore(
         }
       },
 
-      async loadEntries(params?: { employeeId?: string; status?: string }): Promise<void> {
+      async loadEntries(params?: { employeeId?: string; status?: string; from?: string; to?: string }): Promise<void> {
         try {
           const entries = await firstValueFrom(api.listEntries(params));
           const openEntry = entries.find((e) => e.status === 'OPEN') ?? null;
@@ -92,8 +95,8 @@ export type TimeStore = {
   error(): string | null;
   isClockedIn(): boolean;
   clockInTime(): string | null;
-  clockIn(): Promise<void>;
+  clockIn(coords?: { lat: number; lng: number }): Promise<void>;
   clockOut(): Promise<void>;
-  loadEntries(params?: { employeeId?: string; status?: string }): Promise<void>;
+  loadEntries(params?: { employeeId?: string; status?: string; from?: string; to?: string }): Promise<void>;
   updateEntryFromEvent(entry: TimeEntryDto): void;
 };
