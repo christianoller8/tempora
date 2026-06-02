@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
-import { SseHub } from './sse-hub.js';
-import type { SseClient } from './sse-hub.js';
-import type { SseEvent } from './events.js';
+import { SseHub } from './sse-hub';
+import type { SseClient } from './sse-hub';
+import type { SseEvent } from './events';
 
 function makeRes() {
   return { write: vi.fn(), end: vi.fn() } as unknown as import('express').Response;

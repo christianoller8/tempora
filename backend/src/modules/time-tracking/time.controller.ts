@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { getDb, getUser } from '../../db-context.js';
+import { getDb, getUser } from '../../db-context';
 import {
   clockIn,
   clockOut,
@@ -7,7 +7,7 @@ import {
   createCorrection,
   approveCorrection,
   rejectCorrection,
-} from './time.service.js';
+} from './time.service';
 
 /**
  * POST /time-entries/clock-in

@@ -1,4 +1,4 @@
-import type { Rule, RuleCheckResult, RuleContext, RuleSetConfig } from '../types.js';
+import type { Rule, RuleCheckResult, RuleContext, RuleSetConfig } from '../types';
 
 // ---------------------------------------------------------------------------
 // WEEKLY_REST_1_5_DAYS rule

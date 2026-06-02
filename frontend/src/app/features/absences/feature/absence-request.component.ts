@@ -113,7 +113,7 @@ const ABSENCE_TYPES = Object.keys(ABSENCE_TYPE_LABELS) as AbsenceType[];
   `,
 })
 export class AbsenceRequestComponent {
-  protected readonly store = inject(AbsencesStore);
+  protected readonly store = inject(AbsencesStore) as unknown as AbsencesStore;
   private readonly fb = inject(FormBuilder);
 
   protected readonly absenceTypes = ABSENCE_TYPES;

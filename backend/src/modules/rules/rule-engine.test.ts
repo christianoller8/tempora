@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { ruleEngine, REGISTRY } from './index.js';
-import type { RuleContext, RuleSetConfig } from './types.js';
+import { ruleEngine, REGISTRY } from './index';
+import type { RuleContext, RuleSetConfig } from './types';
 
 const defaultCfg: RuleSetConfig = {
   minRestHours: 12,

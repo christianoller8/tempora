@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { maxAnnualOt80h } from './max-annual-ot.js';
-import type { RuleContext, RuleSetConfig } from '../types.js';
+import { maxAnnualOt80h } from './max-annual-ot';
+import type { RuleContext, RuleSetConfig } from '../types';
 
 const defaultCfg: RuleSetConfig = {
   minRestHours: 12,

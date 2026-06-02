@@ -42,11 +42,13 @@ import {
   RotationPatternSchema,
   RuleCheckResultSchema,
   RuleSetSchema,
+  SSE_EVENT_TYPES,
   ScheduleResponseSchema,
   ShiftAssignmentResponseSchema,
   ShiftAssignmentSchema,
   ShiftTemplateResponseSchema,
   ShiftTemplateSchema,
+  SseEventSchema,
   SwapResponseSchema,
   TimeEntryResponseSchema,
   UpdateCenterSchema,
@@ -55,7 +57,7 @@ import {
   UpdateOrganizationSchema,
   UuidSchema,
   WorkingCalendarSchema
-} from "./chunk-XKFUSBZX.js";
+} from "./chunk-3KCW6S7F.js";
 import {
   ABSENCE_STATUS_VALUES,
   ABSENCE_TYPE_VALUES,
@@ -123,12 +125,14 @@ export {
   RuleSetSchema,
   SCHEDULE_STATUS_VALUES,
   SHIFT_TYPE_VALUES,
+  SSE_EVENT_TYPES,
   SWAP_STATUS_VALUES,
   ScheduleResponseSchema,
   ShiftAssignmentResponseSchema,
   ShiftAssignmentSchema,
   ShiftTemplateResponseSchema,
   ShiftTemplateSchema,
+  SseEventSchema,
   SwapResponseSchema,
   TimeEntryResponseSchema,
   UpdateCenterSchema,

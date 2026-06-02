@@ -1,5 +1,5 @@
 import { EventEmitter } from 'node:events';
-import type { SseEvent } from './events.js';
+import type { SseEvent } from './events';
 
 /**
  * Per-organization in-process event bus.

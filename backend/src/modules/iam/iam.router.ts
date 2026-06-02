@@ -1,13 +1,13 @@
 import { Router } from 'express';
-import { validate } from '../../middleware/validate.js';
-import { authenticate } from '../../middleware/auth.js';
+import { validate } from '../../middleware/validate';
+import { authenticate } from '../../middleware/auth';
 import { LoginRequestSchema } from '@tempora/shared';
 import {
   loginHandler,
   refreshHandler,
   logoutHandler,
   meHandler,
-} from './iam.controller.js';
+} from './iam.controller';
 
 export const iamRouter = Router();
 

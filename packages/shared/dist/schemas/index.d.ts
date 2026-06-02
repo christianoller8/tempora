@@ -1086,4 +1086,42 @@ declare const OperationWithWarningsSchema: <T extends z.ZodTypeAny>(dataSchema: 
     }>, "many">;
 }> extends infer T_2 ? { [k_1 in keyof T_2]: T_2[k_1]; } : never>;
 
-export { AbsenceBalanceQuerySchema, AbsenceBalanceResponseSchema, AbsenceResponseSchema, ApproveAbsenceSchema, ApproveCorrectionSchema, ApproveSwapSchema, CenterResponseSchema, ClockInSchema, ClockOutSchema, CorrectionResponseSchema, CreateAbsenceSchema, CreateCenterSchema, CreateCorrectionSchema, CreateDepartmentSchema, CreateEmployeeSchema, CreateOrganizationSchema, CreateScheduleSchema, CreateSwapSchema, CreateWorkingCalendarSchema, DepartmentResponseSchema, EmployeeResponseSchema, ErrorEnvelopeSchema, IsoDateSchema, IsoDateTimeSchema, LoginRequestSchema, LoginResponseSchema, MeResponseSchema, OperationWithWarningsSchema, OrganizationResponseSchema, OvertimeQuerySchema, PaginatedResultSchema, PaginationQuerySchema, PublishScheduleSchema, RefreshResponseSchema, RotationPatternResponseSchema, RotationPatternSchema, RuleCheckResultSchema, RuleSetSchema, ScheduleResponseSchema, ShiftAssignmentResponseSchema, ShiftAssignmentSchema, ShiftTemplateResponseSchema, ShiftTemplateSchema, SwapResponseSchema, TimeEntryResponseSchema, UpdateCenterSchema, UpdateDepartmentSchema, UpdateEmployeeSchema, UpdateOrganizationSchema, UuidSchema, WorkingCalendarSchema };
+/**
+ * SSE event schemas — shared between backend and frontend.
+ * Mirrors backend/src/sse/events.ts.
+ */
+declare const SSE_EVENT_TYPES: {
+    readonly CLOCK_IN: "CLOCK_IN";
+    readonly CLOCK_OUT: "CLOCK_OUT";
+    readonly SHIFT_PUBLISHED: "SHIFT_PUBLISHED";
+    readonly SWAP_REQUESTED: "SWAP_REQUESTED";
+    readonly SWAP_APPROVED: "SWAP_APPROVED";
+    readonly NOTIFICATION: "NOTIFICATION";
+    readonly NOTIFICATION_READ: "NOTIFICATION_READ";
+};
+type SseEventType = (typeof SSE_EVENT_TYPES)[keyof typeof SSE_EVENT_TYPES];
+declare const SseEventSchema: z.ZodObject<{
+    type: z.ZodEnum<["CLOCK_IN", "CLOCK_OUT", "SHIFT_PUBLISHED", "SWAP_REQUESTED", "SWAP_APPROVED", "NOTIFICATION", "NOTIFICATION_READ"]>;
+    organizationId: z.ZodString;
+    targetUserId: z.ZodOptional<z.ZodString>;
+    targetRole: z.ZodOptional<z.ZodEnum<["ADMIN", "MANAGER", "EMPLOYEE"]>>;
+    payload: z.ZodUnknown;
+    emittedAt: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+    type: "CLOCK_IN" | "CLOCK_OUT" | "SHIFT_PUBLISHED" | "SWAP_REQUESTED" | "SWAP_APPROVED" | "NOTIFICATION" | "NOTIFICATION_READ";
+    organizationId: string;
+    emittedAt: string;
+    targetUserId?: string | undefined;
+    targetRole?: "ADMIN" | "MANAGER" | "EMPLOYEE" | undefined;
+    payload?: unknown;
+}, {
+    type: "CLOCK_IN" | "CLOCK_OUT" | "SHIFT_PUBLISHED" | "SWAP_REQUESTED" | "SWAP_APPROVED" | "NOTIFICATION" | "NOTIFICATION_READ";
+    organizationId: string;
+    emittedAt: string;
+    targetUserId?: string | undefined;
+    targetRole?: "ADMIN" | "MANAGER" | "EMPLOYEE" | undefined;
+    payload?: unknown;
+}>;
+type SseEvent = z.infer<typeof SseEventSchema>;
+
+export { AbsenceBalanceQuerySchema, AbsenceBalanceResponseSchema, AbsenceResponseSchema, ApproveAbsenceSchema, ApproveCorrectionSchema, ApproveSwapSchema, CenterResponseSchema, ClockInSchema, ClockOutSchema, CorrectionResponseSchema, CreateAbsenceSchema, CreateCenterSchema, CreateCorrectionSchema, CreateDepartmentSchema, CreateEmployeeSchema, CreateOrganizationSchema, CreateScheduleSchema, CreateSwapSchema, CreateWorkingCalendarSchema, DepartmentResponseSchema, EmployeeResponseSchema, ErrorEnvelopeSchema, IsoDateSchema, IsoDateTimeSchema, LoginRequestSchema, LoginResponseSchema, MeResponseSchema, OperationWithWarningsSchema, OrganizationResponseSchema, OvertimeQuerySchema, PaginatedResultSchema, PaginationQuerySchema, PublishScheduleSchema, RefreshResponseSchema, RotationPatternResponseSchema, RotationPatternSchema, RuleCheckResultSchema, RuleSetSchema, SSE_EVENT_TYPES, ScheduleResponseSchema, ShiftAssignmentResponseSchema, ShiftAssignmentSchema, ShiftTemplateResponseSchema, ShiftTemplateSchema, type SseEvent, SseEventSchema, type SseEventType, SwapResponseSchema, TimeEntryResponseSchema, UpdateCenterSchema, UpdateDepartmentSchema, UpdateEmployeeSchema, UpdateOrganizationSchema, UuidSchema, WorkingCalendarSchema };

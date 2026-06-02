@@ -1,6 +1,9 @@
-import type { RequestHandler } from 'express';
+import type { Request, RequestHandler } from 'express';
 import type { Role } from '@tempora/shared';
-import { ApiError } from './error.js';
+import { ApiError } from './error';
+import type { AuthUser } from '../types/auth';
+
+type RequestWithUser = Request & { user: AuthUser };
 
 /**
  * RBAC guard middleware factory.
@@ -14,12 +17,13 @@ import { ApiError } from './error.js';
  */
 export function requireRole(roles: Role[]): RequestHandler {
   return (req, _res, next) => {
-    if (!roles.includes(req.user.role as Role)) {
+    const { role } = (req as RequestWithUser).user;
+    if (!roles.includes(role as Role)) {
       return next(
         new ApiError(
           403,
           'FORBIDDEN',
-          `Required role: ${roles.join(' | ')}. Got: ${req.user.role}`,
+          `Required role: ${roles.join(' | ')}. Got: ${role}`,
         ),
       );
     }

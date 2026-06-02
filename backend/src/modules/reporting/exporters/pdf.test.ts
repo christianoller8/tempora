@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { toPdf } from './pdf.js';
+import { toPdf } from './pdf';
 
 const columns = [
   { key: 'name', header: 'Name' },

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createRuleSet, updateRuleSet, listRuleSets } from './ruleset.service.js';
-import type { TenantClient } from '../../db/tenant.js';
-import { ApiError } from '../../middleware/error.js';
+import { createRuleSet, updateRuleSet, listRuleSets } from './ruleset.service';
+import type { TenantClient } from '../../db/tenant';
+import { ApiError } from '../../middleware/error';
 
 vi.mock('../../audit/audit-writer.js', () => ({
   auditWriter: {
@@ -9,7 +9,7 @@ vi.mock('../../audit/audit-writer.js', () => ({
   },
 }));
 
-import { auditWriter } from '../../audit/audit-writer.js';
+import { auditWriter } from '../../audit/audit-writer';
 
 const ORG = 'org-1';
 const ADMIN_ID = 'admin-1';

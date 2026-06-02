@@ -1,9 +1,9 @@
-import type { Rule, RuleEngine, RuleCheckResult } from './types.js';
-import { minRest12h } from './rules/min-rest.js';
-import { maxDaily9h } from './rules/max-daily.js';
-import { maxAnnualOt80h } from './rules/max-annual-ot.js';
-import { weeklyRest } from './rules/weekly-rest.js';
-import type { RuleContext, RuleSetConfig } from './types.js';
+import type { Rule, RuleEngine, RuleCheckResult } from './types';
+import { minRest12h } from './rules/min-rest';
+import { maxDaily9h } from './rules/max-daily';
+import { maxAnnualOt80h } from './rules/max-annual-ot';
+import { weeklyRest } from './rules/weekly-rest';
+import type { RuleContext, RuleSetConfig } from './types';
 
 // ---------------------------------------------------------------------------
 // Rules Registry and Engine (design §6)

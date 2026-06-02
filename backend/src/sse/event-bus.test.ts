@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { OrgEventBus } from './event-bus.js';
-import type { SseEvent } from './events.js';
+import { OrgEventBus } from './event-bus';
+import type { SseEvent } from './events';
 
 function makeEvent(orgId: string, overrides: Partial<SseEvent> = {}): SseEvent {
   return {

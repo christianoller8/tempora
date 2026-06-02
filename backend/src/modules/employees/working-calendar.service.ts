@@ -1,8 +1,8 @@
 import type { WorkingCalendar, Employee } from '@prisma/client';
-import type { TenantClient } from '../../db/tenant.js';
+import type { TenantClient } from '../../db/tenant';
 import type { z } from 'zod';
 import type { CreateWorkingCalendarSchema } from '@tempora/shared';
-import { ApiError } from '../../middleware/error.js';
+import { ApiError } from '../../middleware/error';
 
 type WorkingCalendarInput = z.infer<typeof CreateWorkingCalendarSchema>;
 

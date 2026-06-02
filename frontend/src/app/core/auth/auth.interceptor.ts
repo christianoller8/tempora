@@ -4,7 +4,7 @@ import { catchError, switchMap, throwError } from 'rxjs';
 import { AuthStore } from './auth.store';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  const auth = inject(AuthStore);
+  const auth = inject(AuthStore) as unknown as AuthStore;
   const token = auth.accessToken();
   const authReq = token
     ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })

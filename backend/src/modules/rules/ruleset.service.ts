@@ -1,7 +1,7 @@
 import type { RuleSet } from '@prisma/client';
-import type { TenantClient } from '../../db/tenant.js';
-import { ApiError } from '../../middleware/error.js';
-import { auditWriter } from '../../audit/audit-writer.js';
+import type { TenantClient } from '../../db/tenant';
+import { ApiError } from '../../middleware/error';
+import { auditWriter } from '../../audit/audit-writer';
 
 // ---------------------------------------------------------------------------
 // RuleSet CRUD service — satisfies FR-RULES-2, FR-RULES-4

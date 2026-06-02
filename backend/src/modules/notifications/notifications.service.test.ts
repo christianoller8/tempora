@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { persist, listNotifications, markRead } from './notifications.service.js';
-import type { TenantClient } from '../../db/tenant.js';
+import { persist, listNotifications, markRead } from './notifications.service';
+import type { TenantClient } from '../../db/tenant';
 import type { PrismaClient } from '@prisma/client';
 
 // ---------------------------------------------------------------------------

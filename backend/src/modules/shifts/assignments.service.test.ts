@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createAssignment } from './assignments.service.js';
-import type { TenantClient } from '../../db/tenant.js';
-import { ApiError } from '../../middleware/error.js';
+import { createAssignment } from './assignments.service';
+import type { TenantClient } from '../../db/tenant';
+import { ApiError } from '../../middleware/error';
 
 // Mock the rules engine to control test outcomes.
 vi.mock('../rules/index.js', () => ({
@@ -17,7 +17,7 @@ vi.mock('../../audit/audit-writer.js', () => ({
   },
 }));
 
-import { ruleEngine } from '../rules/index.js';
+import { ruleEngine } from '../rules/index';
 
 function makeMockDb(overrides: Partial<Record<string, unknown>> = {}): TenantClient {
   const defaultSchedule = { id: 'sched-1', status: 'DRAFT', centerId: 'c-1' };

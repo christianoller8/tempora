@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { requireRole } from '../../middleware/require-role.js';
-import { validate } from '../../middleware/validate.js';
+import { requireRole } from '../../middleware/require-role';
+import { validate } from '../../middleware/validate';
 import {
   ShiftTemplateSchema,
   RotationPatternSchema,
@@ -27,7 +27,7 @@ import {
   requestSwapHandler,
   approveSwapHandler,
   rejectSwapHandler,
-} from './shifts.controller.js';
+} from './shifts.controller';
 
 // All routes require authenticate + tenantContext (applied in app.ts).
 // Specific routes apply requireRole guards as specified below.

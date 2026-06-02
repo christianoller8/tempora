@@ -1,8 +1,8 @@
 import type { Employee } from '@prisma/client';
-import type { TenantClient } from '../../db/tenant.js';
-import { prisma } from '../../db/prisma.js';
-import { ApiError } from '../../middleware/error.js';
-import { auditWriter } from '../../audit/audit-writer.js';
+import type { TenantClient } from '../../db/tenant';
+import { prisma } from '../../db/prisma';
+import { ApiError } from '../../middleware/error';
+import { auditWriter } from '../../audit/audit-writer';
 import type { z } from 'zod';
 import type { CreateEmployeeSchema, UpdateEmployeeSchema } from '@tempora/shared';
 

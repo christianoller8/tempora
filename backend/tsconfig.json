@@ -9,15 +9,11 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
+    "ignoreDeprecations": "6.0",
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "sourceMap": true,
-    "declaration": false,
-    "baseUrl": ".",
-    "paths": {
-      "@tempora/shared": ["../packages/shared/src/index.ts"],
-      "@tempora/shared/*": ["../packages/shared/src/*"]
-    }
+    "declaration": false
   },
   "include": ["src/**/*.ts", "prisma/seed.ts"],
   "exclude": ["node_modules", "dist"]

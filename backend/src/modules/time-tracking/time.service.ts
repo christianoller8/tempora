@@ -1,10 +1,10 @@
 import type { TimeEntry, TimeCorrection } from '@prisma/client';
-import type { TenantClient } from '../../db/tenant.js';
-import { ApiError } from '../../middleware/error.js';
-import { auditWriter } from '../../audit/audit-writer.js';
-import { ruleEngine } from '../rules/index.js';
-import type { RuleContext, RuleSetConfig, RuleCheckResult } from '../rules/types.js';
-import type { OrgEventBus } from '../../sse/event-bus.js';
+import type { TenantClient } from '../../db/tenant';
+import { ApiError } from '../../middleware/error';
+import { auditWriter } from '../../audit/audit-writer';
+import { ruleEngine } from '../rules/index';
+import type { RuleContext, RuleSetConfig, RuleCheckResult } from '../rules/types';
+import type { OrgEventBus } from '../../sse/event-bus';
 
 // ---------------------------------------------------------------------------
 // Event bus injection — replaced at startup with real OrgEventBus instance.

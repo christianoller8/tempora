@@ -58,11 +58,13 @@ __export(schemas_exports, {
   RotationPatternSchema: () => RotationPatternSchema,
   RuleCheckResultSchema: () => RuleCheckResultSchema,
   RuleSetSchema: () => RuleSetSchema,
+  SSE_EVENT_TYPES: () => SSE_EVENT_TYPES,
   ScheduleResponseSchema: () => ScheduleResponseSchema,
   ShiftAssignmentResponseSchema: () => ShiftAssignmentResponseSchema,
   ShiftAssignmentSchema: () => ShiftAssignmentSchema,
   ShiftTemplateResponseSchema: () => ShiftTemplateResponseSchema,
   ShiftTemplateSchema: () => ShiftTemplateSchema,
+  SseEventSchema: () => SseEventSchema,
   SwapResponseSchema: () => SwapResponseSchema,
   TimeEntryResponseSchema: () => TimeEntryResponseSchema,
   UpdateCenterSchema: () => UpdateCenterSchema,
@@ -500,6 +502,34 @@ var OperationWithWarningsSchema = (dataSchema) => import_zod8.z.object({
   data: dataSchema,
   warnings: import_zod8.z.array(RuleCheckResultSchema)
 });
+
+// src/schemas/sse.schema.ts
+var import_zod9 = require("zod");
+var SSE_EVENT_TYPES = {
+  CLOCK_IN: "CLOCK_IN",
+  CLOCK_OUT: "CLOCK_OUT",
+  SHIFT_PUBLISHED: "SHIFT_PUBLISHED",
+  SWAP_REQUESTED: "SWAP_REQUESTED",
+  SWAP_APPROVED: "SWAP_APPROVED",
+  NOTIFICATION: "NOTIFICATION",
+  NOTIFICATION_READ: "NOTIFICATION_READ"
+};
+var SseEventSchema = import_zod9.z.object({
+  type: import_zod9.z.enum([
+    "CLOCK_IN",
+    "CLOCK_OUT",
+    "SHIFT_PUBLISHED",
+    "SWAP_REQUESTED",
+    "SWAP_APPROVED",
+    "NOTIFICATION",
+    "NOTIFICATION_READ"
+  ]),
+  organizationId: import_zod9.z.string().uuid(),
+  targetUserId: import_zod9.z.string().uuid().optional(),
+  targetRole: import_zod9.z.enum(["ADMIN", "MANAGER", "EMPLOYEE"]).optional(),
+  payload: import_zod9.z.unknown(),
+  emittedAt: import_zod9.z.string()
+});
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   AbsenceBalanceQuerySchema,
@@ -540,11 +570,13 @@ var OperationWithWarningsSchema = (dataSchema) => import_zod8.z.object({
   RotationPatternSchema,
   RuleCheckResultSchema,
   RuleSetSchema,
+  SSE_EVENT_TYPES,
   ScheduleResponseSchema,
   ShiftAssignmentResponseSchema,
   ShiftAssignmentSchema,
   ShiftTemplateResponseSchema,
   ShiftTemplateSchema,
+  SseEventSchema,
   SwapResponseSchema,
   TimeEntryResponseSchema,
   UpdateCenterSchema,

@@ -38,7 +38,9 @@ export const AbsencesStore = signalStore(
     // Computed signal: pending absences (for approval queue).
     isBalanceLoaded: computed(() => balance() !== null),
   })),
-  withMethods((store, api = inject(AbsencesApi)) => ({
+  withMethods((store) => {
+    const api = inject(AbsencesApi);
+    return ({
     async loadAbsences(filter?: { employeeId?: string; status?: string; type?: string }): Promise<void> {
       patchState(store, { loading: true, error: null });
       try {
@@ -54,10 +56,7 @@ export const AbsencesStore = signalStore(
       patchState(store, { loading: true, error: null });
       try {
         const created = await firstValueFrom(api.createAbsence(dto));
-        patchState(store, (s) => ({
-          absences: [created, ...s.absences],
-          loading: false,
-        }));
+        patchState(store, { absences: [created, ...store.absences()], loading: false });
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Failed to create absence';
         patchState(store, { loading: false, error: message });
@@ -69,10 +68,10 @@ export const AbsencesStore = signalStore(
       patchState(store, { loading: true, error: null });
       try {
         const updated = await firstValueFrom(api.approveAbsence(id));
-        patchState(store, (s) => ({
-          absences: s.absences.map((a) => (a.id === id ? updated : a)),
+        patchState(store, {
+          absences: store.absences().map((a: AbsenceDto) => (a.id === id ? updated : a)),
           loading: false,
-        }));
+        });
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Failed to approve absence';
         patchState(store, { loading: false, error: message });
@@ -83,10 +82,10 @@ export const AbsencesStore = signalStore(
       patchState(store, { loading: true, error: null });
       try {
         const updated = await firstValueFrom(api.rejectAbsence(id));
-        patchState(store, (s) => ({
-          absences: s.absences.map((a) => (a.id === id ? updated : a)),
+        patchState(store, {
+          absences: store.absences().map((a: AbsenceDto) => (a.id === id ? updated : a)),
           loading: false,
-        }));
+        });
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Failed to reject absence';
         patchState(store, { loading: false, error: message });
@@ -103,5 +102,21 @@ export const AbsencesStore = signalStore(
         patchState(store, { loading: false, error: message });
       }
     },
-  })),
+  });
+  }),
 );
+
+// TypeScript 5.9 workaround: export explicit interface for injection sites.
+export type AbsencesStore = {
+  absences(): AbsenceDto[];
+  balance(): AbsenceBalanceDto | null;
+  loading(): boolean;
+  error(): string | null;
+  remainingDays(): number | null;
+  isBalanceLoaded(): boolean;
+  loadAbsences(filter?: { employeeId?: string; status?: string; type?: string }): Promise<void>;
+  createAbsence(dto: CreateAbsenceDto): Promise<void>;
+  approveAbsence(id: string): Promise<void>;
+  rejectAbsence(id: string): Promise<void>;
+  loadBalance(employeeId?: string, year?: number): Promise<void>;
+};

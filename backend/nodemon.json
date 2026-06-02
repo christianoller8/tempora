@@ -2,5 +2,5 @@
   "watch": ["src", "../packages/shared/src"],
   "ext": "ts,json,prisma",
   "ignore": ["dist", "**/*.test.ts"],
-  "exec": "ts-node -r tsconfig-paths/register src/server.ts"
+  "exec": "ts-node --transpile-only src/server.ts"
 }

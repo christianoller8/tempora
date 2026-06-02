@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { requireRole } from '../../middleware/require-role.js';
-import { validate } from '../../middleware/validate.js';
+import { requireRole } from '../../middleware/require-role';
+import { validate } from '../../middleware/validate';
 import { CreateEmployeeSchema, UpdateEmployeeSchema } from '@tempora/shared';
 import {
   listEmployeesHandler,
@@ -9,7 +9,7 @@ import {
   updateEmployeeHandler,
   getContractHandler,
   terminateEmployeeHandler,
-} from './employees.controller.js';
+} from './employees.controller';
 
 export const employeesRouter = Router();
 

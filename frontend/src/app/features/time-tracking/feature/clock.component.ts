@@ -69,7 +69,7 @@ import { firstValueFrom } from 'rxjs';
   `,
 })
 export class ClockComponent {
-  protected readonly store = inject(TimeStore);
+  protected readonly store = inject(TimeStore) as unknown as TimeStore;
   private readonly api = inject(TimeApi);
 
   readonly showCorrectionForm = signal(false);

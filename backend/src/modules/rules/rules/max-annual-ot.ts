@@ -1,4 +1,4 @@
-import type { Rule, RuleCheckResult, RuleContext, RuleSetConfig } from '../types.js';
+import type { Rule, RuleCheckResult, RuleContext, RuleSetConfig } from '../types';
 
 // ---------------------------------------------------------------------------
 // MAX_ANNUAL_OT_80H rule

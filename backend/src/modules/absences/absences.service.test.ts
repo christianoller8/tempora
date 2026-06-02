@@ -5,9 +5,9 @@ import {
   rejectAbsence,
   getAbsence,
   getBalance,
-} from './absences.service.js';
-import type { TenantClient } from '../../db/tenant.js';
-import { ApiError } from '../../middleware/error.js';
+} from './absences.service';
+import type { TenantClient } from '../../db/tenant';
+import { ApiError } from '../../middleware/error';
 
 // ---------------------------------------------------------------------------
 // Mock dependencies — no real DB, crypto uses real node:crypto, env is mocked.
@@ -26,7 +26,7 @@ vi.mock('../../config/env.js', () => ({
   },
 }));
 
-import { auditWriter } from '../../audit/audit-writer.js';
+import { auditWriter } from '../../audit/audit-writer';
 
 // ---------------------------------------------------------------------------
 // Helpers

@@ -5,8 +5,8 @@ import {
   absenteeismReport,
   coverageGapsReport,
   complianceExport,
-} from './reporting.service.js';
-import type { TenantClient } from '../../db/tenant.js';
+} from './reporting.service';
+import type { TenantClient } from '../../db/tenant';
 
 // ---------------------------------------------------------------------------
 // Mock dependencies — no real DB, no real audit
@@ -18,7 +18,7 @@ vi.mock('../../audit/audit-writer.js', () => ({
   },
 }));
 
-import { auditWriter } from '../../audit/audit-writer.js';
+import { auditWriter } from '../../audit/audit-writer';
 
 // ---------------------------------------------------------------------------
 // Helpers

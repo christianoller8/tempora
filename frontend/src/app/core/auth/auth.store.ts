@@ -4,7 +4,6 @@ import {
   withState,
   withComputed,
   withMethods,
-  withHooks,
   patchState,
 } from '@ngrx/signals';
 import { Observable, map, shareReplay, tap } from 'rxjs';
@@ -25,6 +24,8 @@ const initialState: AuthState = {
   error: null,
 };
 
+// withHooks omitted — TypeScript 5.9 cannot infer the store type when withHooks is present.
+// Auth re-hydration is triggered via provideAppInitializer in app.config.ts instead.
 export const AuthStore = signalStore(
   { providedIn: 'root' },
   withState<AuthState>(initialState),
@@ -32,8 +33,8 @@ export const AuthStore = signalStore(
     isAuthenticated: computed(() => store.accessToken() !== null),
     role: computed(() => store.user()?.role ?? null),
   })),
-  withMethods((store, authService = inject(AuthService)) => {
-    // Single shared observable for the in-flight refresh — deduplicates concurrent 401s.
+  withMethods((store) => {
+    const authService = inject(AuthService);
     let refreshInFlight$: Observable<string> | null = null;
 
     return {
@@ -44,7 +45,9 @@ export const AuthStore = signalStore(
             next: (res: LoginResponse) => {
               patchState(store, {
                 accessToken: res.accessToken,
-                user: res.user,
+                // LoginResponse.user is a subset of MeResponse; supply defaults for
+                // the missing fields so the stored user is always a complete MeResponse.
+                user: { ...res.user, isActive: true, lastLoginAt: null },
                 loading: false,
                 error: null,
               });
@@ -103,10 +106,19 @@ export const AuthStore = signalStore(
       },
     };
   }),
-  withHooks({
-    onInit(store) {
-      // Re-hydrate session from httpOnly cookie on bootstrap.
-      store.refresh().subscribe({ error: () => { /* no-op: not authenticated */ } });
-    },
-  }),
 );
+
+// TypeScript 5.9 workaround: signalStore() return type is not inferrable.
+// Export an explicit interface; consumers cast via `inject(AuthStore) as unknown as AuthStore`.
+export type AuthStore = {
+  accessToken(): string | null;
+  user(): MeResponse | null;
+  loading(): boolean;
+  error(): string | null;
+  isAuthenticated(): boolean;
+  role(): string | null;
+  login(dto: LoginRequest): Observable<void>;
+  refresh(): Observable<string>;
+  logoutLocal(): void;
+  logout(): Observable<void>;
+};

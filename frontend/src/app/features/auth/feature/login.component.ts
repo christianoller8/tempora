@@ -33,7 +33,7 @@ import { AuthStore } from '../../../core/auth/auth.store';
   `,
 })
 export class LoginComponent {
-  private readonly auth = inject(AuthStore);
+  private readonly auth = inject(AuthStore) as unknown as AuthStore;
   private readonly router = inject(Router);
 
   readonly form = new FormGroup({

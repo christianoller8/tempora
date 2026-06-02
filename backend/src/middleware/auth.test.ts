@@ -9,7 +9,7 @@ vi.mock('../modules/iam/jwt.js', () => ({
 }));
 
 // Import the mock AFTER vi.mock so Vitest's hoisting gives us the mocked version.
-import { verifyAccessToken } from '../modules/iam/jwt.js';
+import { verifyAccessToken } from '../modules/iam/jwt';
 
 const mockVerify = vi.mocked(verifyAccessToken);
 

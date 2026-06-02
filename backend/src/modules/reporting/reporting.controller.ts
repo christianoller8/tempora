@@ -1,14 +1,14 @@
 import type { Request, Response } from 'express';
-import { getDb, getUser } from '../../db-context.js';
+import { getDb, getUser } from '../../db-context';
 import {
   monthlyHoursReport,
   overtimeReport,
   absenteeismReport,
   coverageGapsReport,
   complianceExport,
-} from './reporting.service.js';
-import { toXlsx } from './exporters/xlsx.js';
-import { toPdf } from './exporters/pdf.js';
+} from './reporting.service';
+import { toXlsx } from './exporters/xlsx';
+import { toPdf } from './exporters/pdf';
 
 // ---------------------------------------------------------------------------
 // Reporting controller — satisfies FR-REP-1..9 [GDPR] [COMPLIANCE]

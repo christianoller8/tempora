@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { requireRole } from '../../middleware/require-role.js';
-import { validate } from '../../middleware/validate.js';
+import { requireRole } from '../../middleware/require-role';
+import { validate } from '../../middleware/validate';
 import { CreateCenterSchema, UpdateCenterSchema, CreateDepartmentSchema } from '@tempora/shared';
 import {
   listCentersHandler,
@@ -9,7 +9,7 @@ import {
   deleteCenterHandler,
   listDepartmentsHandler,
   createDepartmentHandler,
-} from './organization.controller.js';
+} from './organization.controller';
 
 export const organizationRouter = Router();
 

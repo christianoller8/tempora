@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { getDb, getUser } from '../../db-context.js';
+import { getDb, getUser } from '../../db-context';
 import {
   createAbsence,
   approveAbsence,
@@ -7,7 +7,7 @@ import {
   getAbsence,
   listAbsences,
   getBalance,
-} from './absences.service.js';
+} from './absences.service';
 import type { AbsenceStatus, AbsenceType } from '@prisma/client';
 
 // ---------------------------------------------------------------------------

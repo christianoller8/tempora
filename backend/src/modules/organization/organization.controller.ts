@@ -1,5 +1,8 @@
 import type { Request, Response, NextFunction } from 'express';
-import { getDb } from '../../db-context.js';
+import { getDb } from '../../db-context';
+import type { AuthUser } from '../../types/auth';
+
+type RequestWithUser = Request & { user: AuthUser };
 import {
   createCenter,
   updateCenter,
@@ -7,7 +10,7 @@ import {
   softDeleteCenter,
   createDepartment,
   listDepartments,
-} from './organization.service.js';
+} from './organization.service';
 
 // ---------------------------------------------------------------------------
 // Centers
@@ -26,7 +29,7 @@ export async function listCentersHandler(req: Request, res: Response, next: Next
 export async function createCenterHandler(req: Request, res: Response, next: NextFunction) {
   try {
     const db = getDb();
-    const center = await createCenter(req.body, req.user.organizationId, req.user.userId, db);
+    const center = await createCenter(req.body, (req as RequestWithUser).user.organizationId, (req as RequestWithUser).user.userId, db);
     res.status(201).json(center);
   } catch (err) {
     next(err);
@@ -37,10 +40,10 @@ export async function updateCenterHandler(req: Request, res: Response, next: Nex
   try {
     const db = getDb();
     const center = await updateCenter(
-      req.params['id']!,
+      req.params['id'] as string,
       req.body,
-      req.user.organizationId,
-      req.user.userId,
+      (req as RequestWithUser).user.organizationId,
+      (req as RequestWithUser).user.userId,
       db,
     );
     res.json(center);
@@ -53,9 +56,9 @@ export async function deleteCenterHandler(req: Request, res: Response, next: Nex
   try {
     const db = getDb();
     await softDeleteCenter(
-      req.params['id']!,
-      req.user.organizationId,
-      req.user.userId,
+      req.params['id'] as string,
+      (req as RequestWithUser).user.organizationId,
+      (req as RequestWithUser).user.userId,
       db,
     );
     res.status(204).send();
@@ -71,7 +74,7 @@ export async function deleteCenterHandler(req: Request, res: Response, next: Nex
 export async function listDepartmentsHandler(req: Request, res: Response, next: NextFunction) {
   try {
     const db = getDb();
-    const departments = await listDepartments(req.params['id']!, db);
+    const departments = await listDepartments(req.params['id'] as string, db);
     res.json(departments);
   } catch (err) {
     next(err);
@@ -82,10 +85,10 @@ export async function createDepartmentHandler(req: Request, res: Response, next:
   try {
     const db = getDb();
     const department = await createDepartment(
-      req.params['id']!,
+      req.params['id'] as string,
       req.body,
-      req.user.organizationId,
-      req.user.userId,
+      (req as RequestWithUser).user.organizationId,
+      (req as RequestWithUser).user.userId,
       db,
     );
     res.status(201).json(department);

@@ -4,7 +4,7 @@ import { AuthStore } from './auth.store';
 
 export function roleGuard(allowedRoles: string[]): CanActivateFn {
   return () => {
-    const auth = inject(AuthStore);
+    const auth = inject(AuthStore) as unknown as AuthStore;
     const router = inject(Router);
     return allowedRoles.includes(auth.role() ?? '')
       ? true

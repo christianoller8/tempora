@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { requestSwap, approveSwap, rejectSwap } from './swaps.service.js';
-import type { TenantClient } from '../../db/tenant.js';
-import { ApiError } from '../../middleware/error.js';
+import { requestSwap, approveSwap, rejectSwap } from './swaps.service';
+import type { TenantClient } from '../../db/tenant';
+import { ApiError } from '../../middleware/error';
 
 vi.mock('../rules/index.js', () => ({
   ruleEngine: {
@@ -15,7 +15,7 @@ vi.mock('../../audit/audit-writer.js', () => ({
   },
 }));
 
-import { ruleEngine } from '../rules/index.js';
+import { ruleEngine } from '../rules/index';
 
 const requesterTemplate = { id: 'tmpl-req', startTime: '07:00', endTime: '15:00' };
 const targetTemplate = { id: 'tmpl-tgt', startTime: '15:00', endTime: '23:00' };

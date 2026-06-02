@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { weeklyRest } from './weekly-rest.js';
-import type { RuleContext, RuleSetConfig, WeekAssignment } from '../types.js';
+import { weeklyRest } from './weekly-rest';
+import type { RuleContext, RuleSetConfig, WeekAssignment } from '../types';
 
 const defaultCfg: RuleSetConfig = {
   minRestHours: 12,

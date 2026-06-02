@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { toXlsx } from './xlsx.js';
+import { toXlsx } from './xlsx';
 
 const columns = [
   { key: 'name', header: 'Name' },

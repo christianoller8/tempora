@@ -1,5 +1,5 @@
 import type { Response } from 'express';
-import type { SseEvent } from './events.js';
+import type { SseEvent } from './events';
 
 /**
  * Registered SSE client.

@@ -1,9 +1,9 @@
 import type { PrismaClient } from '@prisma/client';
-import { prisma } from '../../db/prisma.js';
-import { verifyPassword } from './password.js';
-import { signAccessToken, signRefreshToken, verifyRefreshToken } from './jwt.js';
-import { ApiError } from '../../middleware/error.js';
-import { auditWriter } from '../../audit/audit-writer.js';
+import { prisma } from '../../db/prisma';
+import { verifyPassword } from './password';
+import { signAccessToken, signRefreshToken, verifyRefreshToken } from './jwt';
+import { ApiError } from '../../middleware/error';
+import { auditWriter } from '../../audit/audit-writer';
 
 // The token is valid for 7 days; we store that as the expiry so the cleanup
 // job can safely purge rows whose token could not be presented anyway.

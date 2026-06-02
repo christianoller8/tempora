@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { asyncHandler } from '../../utils/async-handler.js';
-import { authenticate } from '../../middleware/auth.js';
-import { tenantContext } from '../../middleware/tenant-context.js';
-import { stream, handleListNotifications, handleMarkRead } from './notifications.controller.js';
+import { asyncHandler } from '../../utils/async-handler';
+import { authenticate } from '../../middleware/auth';
+import { tenantContext } from '../../middleware/tenant-context';
+import { stream, handleListNotifications, handleMarkRead } from './notifications.controller';
 
 /**
  * Notifications router — SSE stream + REST notification endpoints.

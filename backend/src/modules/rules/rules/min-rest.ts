@@ -1,4 +1,4 @@
-import type { Rule, RuleCheckResult, RuleContext, RuleSetConfig } from '../types.js';
+import type { Rule, RuleCheckResult, RuleContext, RuleSetConfig } from '../types';
 
 // ---------------------------------------------------------------------------
 // MIN_REST_12H rule

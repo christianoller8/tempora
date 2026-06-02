@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { asyncHandler } from '../../utils/async-handler.js';
-import { requireRole } from '../../middleware/require-role.js';
+import { asyncHandler } from '../../utils/async-handler';
+import { requireRole } from '../../middleware/require-role';
 import {
   handleListAbsences,
   handleCreateAbsence,
@@ -8,7 +8,7 @@ import {
   handleGetAbsence,
   handleApproveAbsence,
   handleRejectAbsence,
-} from './absences.controller.js';
+} from './absences.controller';
 
 /**
  * Absences router — satisfies FR-ABS-1..7 [GDPR] [COMPLIANCE]

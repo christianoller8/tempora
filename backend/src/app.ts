@@ -1,19 +1,19 @@
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import { env } from './config/env.js';
-import { errorHandler } from './middleware/error.js';
-import { authenticate } from './middleware/auth.js';
-import { tenantContext } from './middleware/tenant-context.js';
-import { iamRouter } from './modules/iam/iam.router.js';
-import { organizationRouter } from './modules/organization/organization.router.js';
-import { employeesRouter } from './modules/employees/employees.router.js';
-import { shiftsRouter } from './modules/shifts/shifts.router.js';
-import { timeRouter } from './modules/time-tracking/time.router.js';
-import { absencesRouter } from './modules/absences/absences.router.js';
-import { rulesetRouter } from './modules/rules/ruleset.router.js';
-import { notificationsRouter } from './modules/notifications/notifications.router.js';
-import { reportingRouter } from './modules/reporting/reporting.router.js';
+import { env } from './config/env';
+import { errorHandler } from './middleware/error';
+import { authenticate } from './middleware/auth';
+import { tenantContext } from './middleware/tenant-context';
+import { iamRouter } from './modules/iam/iam.router';
+import { organizationRouter } from './modules/organization/organization.router';
+import { employeesRouter } from './modules/employees/employees.router';
+import { shiftsRouter } from './modules/shifts/shifts.router';
+import { timeRouter } from './modules/time-tracking/time.router';
+import { absencesRouter } from './modules/absences/absences.router';
+import { rulesetRouter } from './modules/rules/ruleset.router';
+import { notificationsRouter } from './modules/notifications/notifications.router';
+import { reportingRouter } from './modules/reporting/reporting.router';
 
 export function createApp() {
   const app = express();

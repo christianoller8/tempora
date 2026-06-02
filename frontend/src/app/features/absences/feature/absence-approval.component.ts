@@ -80,7 +80,7 @@ import type { AbsenceDto } from '../data-access/absences.api';
   `,
 })
 export class AbsenceApprovalComponent implements OnInit {
-  protected readonly store = inject(AbsencesStore);
+  protected readonly store = inject(AbsencesStore) as unknown as AbsencesStore;
 
   ngOnInit(): void {
     this.store.loadAbsences({ status: 'PENDING' });

@@ -65,7 +65,7 @@ import type { TimeEntryDto } from '../data-access/time.api';
   `,
 })
 export class LiveDashboardComponent implements OnInit {
-  protected readonly store = inject(TimeStore);
+  protected readonly store = inject(TimeStore) as unknown as TimeStore;
   protected readonly sse = inject(SseService);
 
   protected readonly entries = computed<TimeEntryDto[]>(() => this.store.entries());

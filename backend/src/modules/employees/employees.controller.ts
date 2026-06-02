@@ -1,5 +1,8 @@
 import type { Request, Response, NextFunction } from 'express';
-import { getDb } from '../../db-context.js';
+import { getDb } from '../../db-context';
+import type { AuthUser } from '../../types/auth';
+
+type RequestWithUser = Request & { user: AuthUser };
 import {
   createEmployee,
   updateEmployee,
@@ -7,7 +10,7 @@ import {
   listEmployees,
   getEmployee,
   getContract,
-} from './employees.service.js';
+} from './employees.service';
 
 export async function listEmployeesHandler(req: Request, res: Response, next: NextFunction) {
   try {
@@ -28,8 +31,8 @@ export async function createEmployeeHandler(req: Request, res: Response, next: N
     const db = getDb();
     const employee = await createEmployee(
       req.body,
-      req.user.organizationId,
-      req.user.userId,
+      (req as RequestWithUser).user.organizationId,
+      (req as RequestWithUser).user.userId,
       db,
     );
     res.status(201).json(employee);
@@ -41,7 +44,7 @@ export async function createEmployeeHandler(req: Request, res: Response, next: N
 export async function getEmployeeHandler(req: Request, res: Response, next: NextFunction) {
   try {
     const db = getDb();
-    const employee = await getEmployee(req.params['id']!, db);
+    const employee = await getEmployee(req.params['id'] as string, db);
     res.json(employee);
   } catch (err) {
     next(err);
@@ -52,10 +55,10 @@ export async function updateEmployeeHandler(req: Request, res: Response, next: N
   try {
     const db = getDb();
     const employee = await updateEmployee(
-      req.params['id']!,
+      req.params['id'] as string,
       req.body,
-      req.user.organizationId,
-      req.user.userId,
+      (req as RequestWithUser).user.organizationId,
+      (req as RequestWithUser).user.userId,
       db,
     );
     res.json(employee);
@@ -67,7 +70,7 @@ export async function updateEmployeeHandler(req: Request, res: Response, next: N
 export async function getContractHandler(req: Request, res: Response, next: NextFunction) {
   try {
     const db = getDb();
-    const contract = await getContract(req.params['id']!, db);
+    const contract = await getContract(req.params['id'] as string, db);
     res.json(contract);
   } catch (err) {
     next(err);
@@ -78,9 +81,9 @@ export async function terminateEmployeeHandler(req: Request, res: Response, next
   try {
     const db = getDb();
     await terminateEmployee(
-      req.params['id']!,
-      req.user.organizationId,
-      req.user.userId,
+      req.params['id'] as string,
+      (req as RequestWithUser).user.organizationId,
+      (req as RequestWithUser).user.userId,
       db,
     );
     res.status(204).send();

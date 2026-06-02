@@ -1,7 +1,10 @@
 import type { Request, Response, NextFunction } from 'express';
-import { login, refresh, logout } from './iam.service.js';
-import { env } from '../../config/env.js';
-import { ApiError } from '../../middleware/error.js';
+import { login, refresh, logout } from './iam.service';
+import { env } from '../../config/env';
+import { ApiError } from '../../middleware/error';
+import type { AuthUser } from '../../types/auth';
+
+type RequestWithUser = Request & { user: AuthUser };
 
 const COOKIE_OPTS = {
   httpOnly: true,
@@ -66,7 +69,8 @@ export async function refreshHandler(req: Request, res: Response, next: NextFunc
  */
 export async function logoutHandler(req: Request, res: Response, next: NextFunction) {
   try {
-    await logout(req.user.jti, req.user.userId, req.user.organizationId);
+    const { jti, userId, organizationId } = (req as RequestWithUser).user;
+    await logout(jti, userId, organizationId);
     clearAuthCookies(res);
     res.status(204).send();
   } catch (err) {
@@ -80,5 +84,5 @@ export async function logoutHandler(req: Request, res: Response, next: NextFunct
  * No DB query — information is already in the verified JWT.
  */
 export function meHandler(req: Request, res: Response) {
-  res.json(req.user);
+  res.json((req as RequestWithUser).user);
 }

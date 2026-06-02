@@ -1,6 +1,9 @@
-import type { RequestHandler } from 'express';
-import { verifyAccessToken } from '../modules/iam/jwt.js';
-import { ApiError } from './error.js';
+import type { Request, RequestHandler } from 'express';
+import { verifyAccessToken } from '../modules/iam/jwt';
+import { ApiError } from './error';
+import type { AuthUser } from '../types/auth';
+
+type RequestWithUser = Request & { user: AuthUser };
 
 /**
  * Authentication middleware.
@@ -26,7 +29,7 @@ export const authenticate: RequestHandler = (req, _res, next) => {
 
   try {
     const claims = verifyAccessToken(rawToken);
-    req.user = {
+    (req as RequestWithUser).user = {
       userId: claims.sub,
       organizationId: claims.org,
       role: claims.role as 'ADMIN' | 'MANAGER' | 'EMPLOYEE',

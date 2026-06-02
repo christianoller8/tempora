@@ -2,28 +2,20 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from '../../../core/http/api.service';
 import type {
-  ShiftTemplateSchema,
-  RotationPatternSchema,
-  CreateScheduleSchema,
-  ShiftAssignmentSchema,
-  CreateSwapSchema,
+  ShiftTemplateResponse,
+  RotationPatternResponse,
+  CreateSchedule as CreateScheduleInput,
+  ShiftAssignmentResponse,
+  CreateSwap as CreateSwapInput,
 } from '@tempora/shared';
 import type { z } from 'zod';
+import type { CreateScheduleSchema, CreateSwapSchema } from '@tempora/shared';
 
-// Re-export inferred types for use throughout the feature.
-export type ShiftTemplate = z.infer<typeof ShiftTemplateSchema> & {
-  id: string;
-  organizationId: string;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type RotationPattern = z.infer<typeof RotationPatternSchema> & {
-  id: string;
-  organizationId: string;
-  createdAt: string;
-  updatedAt: string;
-};
+// Re-export pre-computed response types from @tempora/shared (avoid z.infer with import type
+// for TypeScript 5.9 compatibility — typeof inference on type-only imports is unreliable).
+export type ShiftTemplate = ShiftTemplateResponse;
+export type RotationPattern = RotationPatternResponse;
+export type ShiftAssignment = ShiftAssignmentResponse;
 
 export type ShiftSchedule = {
   id: string;
@@ -35,13 +27,6 @@ export type ShiftSchedule = {
   status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
   publishedAt: string | null;
   publishedBy: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type ShiftAssignment = z.infer<typeof ShiftAssignmentSchema> & {
-  id: string;
-  organizationId: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -76,10 +61,10 @@ export type AssignmentResult = {
   warnings: RuleCheckResult[];
 };
 
-export type CreateShiftTemplate = z.infer<typeof ShiftTemplateSchema>;
-export type CreateRotationPattern = z.infer<typeof RotationPatternSchema>;
+export type CreateShiftTemplate = Omit<ShiftTemplateResponse, 'id' | 'organizationId' | 'createdAt' | 'updatedAt'>;
+export type CreateRotationPattern = Omit<RotationPatternResponse, 'id' | 'organizationId' | 'createdAt' | 'updatedAt'>;
 export type CreateSchedule = z.infer<typeof CreateScheduleSchema>;
-export type CreateShiftAssignment = z.infer<typeof ShiftAssignmentSchema>;
+export type CreateShiftAssignment = Omit<ShiftAssignmentResponse, 'id' | 'organizationId' | 'createdAt' | 'updatedAt'>;
 export type CreateSwap = z.infer<typeof CreateSwapSchema>;
 
 @Injectable({ providedIn: 'root' })

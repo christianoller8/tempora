@@ -1,13 +1,13 @@
 import { Router } from 'express';
-import { asyncHandler } from '../../utils/async-handler.js';
-import { requireRole } from '../../middleware/require-role.js';
+import { asyncHandler } from '../../utils/async-handler';
+import { requireRole } from '../../middleware/require-role';
 import {
   handleMonthlyHours,
   handleOvertime,
   handleAbsenteeism,
   handleCoverage,
   handleCompliance,
-} from './reporting.controller.js';
+} from './reporting.controller';
 
 /**
  * Reporting router — satisfies FR-REP-1..9 [GDPR] [COMPLIANCE]

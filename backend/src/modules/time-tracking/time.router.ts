@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { asyncHandler } from '../../utils/async-handler.js';
-import { requireRole } from '../../middleware/require-role.js';
+import { asyncHandler } from '../../utils/async-handler';
+import { requireRole } from '../../middleware/require-role';
 import {
   handleClockIn,
   handleClockOut,
@@ -8,7 +8,7 @@ import {
   handleCreateCorrection,
   handleApproveCorrection,
   handleRejectCorrection,
-} from './time.controller.js';
+} from './time.controller';
 
 /**
  * Time entries and corrections router.

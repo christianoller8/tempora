@@ -1,6 +1,6 @@
 import type { Request } from 'express';
 import type { AuditAction } from '@prisma/client';
-import type { TenantClient } from '../db/tenant.js';
+import type { TenantClient } from '../db/tenant';
 
 export interface AuditEvent {
   action: AuditAction;
@@ -40,8 +40,10 @@ export class AuditWriter {
         action: event.action,
         entityType: event.entityType,
         entityId: event.entityId ?? null,
-        before: (event.before ?? null) as object | null,
-        after: (event.after ?? null) as object | null,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        before: (event.before ?? null) as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        after: (event.after ?? null) as any,
         ip: req?.ip ?? null,
         userAgent: req?.header('user-agent') ?? null,
       },

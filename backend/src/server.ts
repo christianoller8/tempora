@@ -1,11 +1,11 @@
 import http from 'http';
-import { createApp } from './app.js';
-import { prisma } from './db/prisma.js';
-import { eventBus } from './sse/event-bus.js';
-import { sseHub } from './sse/sse-hub.js';
-import { setEventBus as setSchedulesEventBus } from './modules/shifts/schedules.service.js';
-import { setEventBus as setSwapsEventBus } from './modules/shifts/swaps.service.js';
-import { setEventBus as setTimeEventBus } from './modules/time-tracking/time.service.js';
+import { createApp } from './app';
+import { prisma } from './db/prisma';
+import { eventBus } from './sse/event-bus';
+import { sseHub } from './sse/sse-hub';
+import { setEventBus as setSchedulesEventBus } from './modules/shifts/schedules.service';
+import { setEventBus as setSwapsEventBus } from './modules/shifts/swaps.service';
+import { setEventBus as setTimeEventBus } from './modules/time-tracking/time.service';
 
 // Wire the real OrgEventBus into P2 services that were using no-op stubs,
 // and into the new time service.

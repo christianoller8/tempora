@@ -1,7 +1,7 @@
 import type { PrismaClient, Notification } from '@prisma/client';
-import type { TenantClient } from '../../db/tenant.js';
-import type { SseEvent } from '../../sse/events.js';
-import { ApiError } from '../../middleware/error.js';
+import type { TenantClient } from '../../db/tenant';
+import type { SseEvent } from '../../sse/events';
+import { ApiError } from '../../middleware/error';
 
 // ---------------------------------------------------------------------------
 // Notifications service — satisfies FR-NOTIF-7, FR-NOTIF-8, FR-NOTIF-9

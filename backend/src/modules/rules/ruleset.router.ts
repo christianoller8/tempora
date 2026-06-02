@@ -1,11 +1,11 @@
 import { Router } from 'express';
-import { asyncHandler } from '../../utils/async-handler.js';
-import { requireRole } from '../../middleware/require-role.js';
+import { asyncHandler } from '../../utils/async-handler';
+import { requireRole } from '../../middleware/require-role';
 import {
   handleListRuleSets,
   handleCreateRuleSet,
   handleUpdateRuleSet,
-} from './ruleset.controller.js';
+} from './ruleset.controller';
 
 /**
  * RuleSet router — satisfies FR-RULES-2, FR-RULES-4

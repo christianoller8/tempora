@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { maxDaily9h } from './max-daily.js';
-import type { RuleContext, RuleSetConfig } from '../types.js';
+import { maxDaily9h } from './max-daily';
+import type { RuleContext, RuleSetConfig } from '../types';
 
 const defaultCfg: RuleSetConfig = {
   minRestHours: 12,

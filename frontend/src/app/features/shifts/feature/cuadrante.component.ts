@@ -147,7 +147,7 @@ import type { EmployeeRow, AssignmentClickEvent } from '../ui/cuadrante-grid.com
   `],
 })
 export class CuadranteComponent implements OnInit {
-  protected readonly schedulesStore = inject(SchedulesStore);
+  protected readonly schedulesStore = inject(SchedulesStore) as unknown as SchedulesStore;
   private readonly api = inject(ShiftsApi);
 
   protected readonly selectedYear = signal<number>(new Date().getFullYear());
@@ -160,7 +160,7 @@ export class CuadranteComponent implements OnInit {
 
   protected readonly activeSchedule = computed(() =>
     this.schedulesStore
-      .entities()
+      .schedules()
       .find(
         (s) =>
           s.year === this.selectedYear() &&

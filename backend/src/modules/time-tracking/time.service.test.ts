@@ -7,9 +7,9 @@ import {
   rejectCorrection,
   listEntries,
   setEventBus,
-} from './time.service.js';
-import type { TenantClient } from '../../db/tenant.js';
-import { ApiError } from '../../middleware/error.js';
+} from './time.service';
+import type { TenantClient } from '../../db/tenant';
+import { ApiError } from '../../middleware/error';
 
 // Mock deps — no real DB or SSE in unit tests.
 vi.mock('../../audit/audit-writer.js', () => ({
@@ -24,8 +24,8 @@ vi.mock('../rules/index.js', () => ({
   },
 }));
 
-import { ruleEngine } from '../rules/index.js';
-import { auditWriter } from '../../audit/audit-writer.js';
+import { ruleEngine } from '../rules/index';
+import { auditWriter } from '../../audit/audit-writer';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -442,13 +442,13 @@ describe('listEntries', () => {
     const db = makeMockDb();
     await listEntries({ employeeId: EMPLOYEE }, db);
     const findManyCall = vi.mocked((db as ReturnType<typeof makeMockDb>).timeEntry.findMany).mock.calls[0]![0];
-    expect(findManyCall.where?.employeeId).toBe(EMPLOYEE);
+    expect(findManyCall?.where?.employeeId).toBe(EMPLOYEE);
   });
 
   it('filters by status', async () => {
     const db = makeMockDb();
     await listEntries({ status: 'OPEN' }, db);
     const findManyCall = vi.mocked((db as ReturnType<typeof makeMockDb>).timeEntry.findMany).mock.calls[0]![0];
-    expect(findManyCall.where?.status).toBe('OPEN');
+    expect(findManyCall?.where?.status).toBe('OPEN');
   });
 });

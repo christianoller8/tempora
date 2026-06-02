@@ -48,8 +48,8 @@ import { NotificationListComponent } from '../../features/notifications/feature/
   `,
 })
 export class ShellComponent implements OnInit {
-  private readonly auth = inject(AuthStore);
-  protected readonly notificationsStore = inject(NotificationsStore);
+  private readonly auth = inject(AuthStore) as unknown as AuthStore;
+  protected readonly notificationsStore = inject(NotificationsStore) as unknown as NotificationsStore;
 
   readonly isAdmin = computed(() => this.auth.role() === 'ADMIN');
   readonly isAdminOrManager = computed(() =>

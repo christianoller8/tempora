@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
-import { getDb, getUser } from '../../db-context.js';
-import { createRuleSet, updateRuleSet, listRuleSets } from './ruleset.service.js';
+import { getDb, getUser } from '../../db-context';
+import { createRuleSet, updateRuleSet, listRuleSets } from './ruleset.service';
 
 // ---------------------------------------------------------------------------
 // RuleSet controller — satisfies FR-RULES-2, FR-RULES-4

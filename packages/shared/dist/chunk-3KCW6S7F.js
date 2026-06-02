@@ -384,6 +384,34 @@ var OperationWithWarningsSchema = (dataSchema) => z8.object({
   warnings: z8.array(RuleCheckResultSchema)
 });
 
+// src/schemas/sse.schema.ts
+import { z as z9 } from "zod";
+var SSE_EVENT_TYPES = {
+  CLOCK_IN: "CLOCK_IN",
+  CLOCK_OUT: "CLOCK_OUT",
+  SHIFT_PUBLISHED: "SHIFT_PUBLISHED",
+  SWAP_REQUESTED: "SWAP_REQUESTED",
+  SWAP_APPROVED: "SWAP_APPROVED",
+  NOTIFICATION: "NOTIFICATION",
+  NOTIFICATION_READ: "NOTIFICATION_READ"
+};
+var SseEventSchema = z9.object({
+  type: z9.enum([
+    "CLOCK_IN",
+    "CLOCK_OUT",
+    "SHIFT_PUBLISHED",
+    "SWAP_REQUESTED",
+    "SWAP_APPROVED",
+    "NOTIFICATION",
+    "NOTIFICATION_READ"
+  ]),
+  organizationId: z9.string().uuid(),
+  targetUserId: z9.string().uuid().optional(),
+  targetRole: z9.enum(["ADMIN", "MANAGER", "EMPLOYEE"]).optional(),
+  payload: z9.unknown(),
+  emittedAt: z9.string()
+});
+
 export {
   UuidSchema,
   IsoDateSchema,
@@ -435,5 +463,7 @@ export {
   AbsenceBalanceResponseSchema,
   RuleSetSchema,
   RuleCheckResultSchema,
-  OperationWithWarningsSchema
+  OperationWithWarningsSchema,
+  SSE_EVENT_TYPES,
+  SseEventSchema
 };

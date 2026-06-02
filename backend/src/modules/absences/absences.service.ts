@@ -1,9 +1,9 @@
 import type { Absence, AbsenceStatus, AbsenceType } from '@prisma/client';
-import type { TenantClient } from '../../db/tenant.js';
-import { ApiError } from '../../middleware/error.js';
-import { auditWriter } from '../../audit/audit-writer.js';
-import { encryptCause, decryptCause } from './crypto.js';
-import { env } from '../../config/env.js';
+import type { TenantClient } from '../../db/tenant';
+import { ApiError } from '../../middleware/error';
+import { auditWriter } from '../../audit/audit-writer';
+import { encryptCause, decryptCause } from './crypto';
+import { env } from '../../config/env';
 
 // ---------------------------------------------------------------------------
 // Absence service — satisfies FR-ABS-1..7, AC-ABS-1..6 [GDPR] [COMPLIANCE]
@@ -99,7 +99,8 @@ export async function createAbsence(
       startDate,
       endDate,
       status: initialStatus,
-      causeEncrypted,
+      // Buffer is compatible at runtime; cast bridges the TS 6 ArrayBuffer strict check.
+      causeEncrypted: causeEncrypted as unknown as Uint8Array<ArrayBuffer> | null,
       approverId: initialStatus === 'APPROVED' ? actorId : null,
       decidedAt: initialStatus === 'APPROVED' ? new Date() : null,
     },

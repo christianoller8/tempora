@@ -3,6 +3,7 @@ import {
   Component,
   inject,
 } from '@angular/core';
+import { SlicePipe } from '@angular/common';
 import { NotificationsStore } from '../data-access/notifications.store';
 
 /**
@@ -16,6 +17,7 @@ import { NotificationsStore } from '../data-access/notifications.store';
 @Component({
   selector: 'app-notification-list',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [SlicePipe],
   template: `
     <section aria-label="Notification list" class="notification-list">
       @if (store.loading()) {
@@ -43,7 +45,7 @@ import { NotificationsStore } from '../data-access/notifications.store';
   `,
 })
 export class NotificationListComponent {
-  protected readonly store = inject(NotificationsStore);
+  protected readonly store = inject(NotificationsStore) as unknown as NotificationsStore;
 
   onNotificationClick(id: string): void {
     void this.store.markRead(id);

@@ -23,7 +23,7 @@ describe('AuditWriter.write', () => {
     const writer = new AuditWriter();
     const event = { action: 'UPDATE' as const, entityType: 'TimeEntry', entityId: 'te-1', before: { status: 'OPEN' }, after: { status: 'CLOSED' } };
     await writer.write(db, 'actor-2', 'org-2', event);
-    const [call] = (db as ReturnType<typeof makeMockDb>).auditLog.create.mock.calls;
+    const [call] = vi.mocked((db as ReturnType<typeof makeMockDb>).auditLog.create).mock.calls;
     expect(call[0].data).toMatchObject({
       organizationId: 'org-2',
       actorUserId: 'actor-2',
@@ -43,7 +43,7 @@ describe('AuditWriter.write', () => {
       header: vi.fn().mockReturnValue('Mozilla/5.0'),
     } as never;
     await writer.write(db, 'actor-3', 'org-3', { action: 'LOGIN', entityType: 'Session' }, mockReq);
-    const [call] = (db as ReturnType<typeof makeMockDb>).auditLog.create.mock.calls;
+    const [call] = vi.mocked((db as ReturnType<typeof makeMockDb>).auditLog.create).mock.calls;
     expect(call[0].data.ip).toBe('127.0.0.1');
     expect(call[0].data.userAgent).toBe('Mozilla/5.0');
   });
@@ -52,7 +52,7 @@ describe('AuditWriter.write', () => {
     const db = makeMockDb();
     const writer = new AuditWriter();
     await writer.write(db, 'actor-4', 'org-4', { action: 'LOGOUT', entityType: 'Session' });
-    const [call] = (db as ReturnType<typeof makeMockDb>).auditLog.create.mock.calls;
+    const [call] = vi.mocked((db as ReturnType<typeof makeMockDb>).auditLog.create).mock.calls;
     expect(call[0].data.ip).toBeNull();
     expect(call[0].data.userAgent).toBeNull();
   });

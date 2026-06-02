@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { encryptCause, decryptCause } from './crypto.js';
+import { encryptCause, decryptCause } from './crypto';
 import { randomBytes } from 'node:crypto';
 
 // Generate a valid 32-byte key for tests.

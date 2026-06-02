@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { randomUUID } from 'node:crypto';
-import { env } from '../../config/env.js';
+import { env } from '../../config/env';
 
 interface AccessPayload {
   sub: string;    // userId

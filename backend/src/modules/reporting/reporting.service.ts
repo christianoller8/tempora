@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
-import type { TenantClient } from '../../db/tenant.js';
-import { auditWriter } from '../../audit/audit-writer.js';
+import type { TenantClient } from '../../db/tenant';
+import { auditWriter } from '../../audit/audit-writer';
 
 // ---------------------------------------------------------------------------
 // Reporting service — satisfies FR-REP-1..9 [GDPR] [COMPLIANCE]

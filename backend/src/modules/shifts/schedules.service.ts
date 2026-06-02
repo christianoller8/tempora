@@ -1,10 +1,10 @@
 import type { ShiftSchedule } from '@prisma/client';
-import type { TenantClient } from '../../db/tenant.js';
-import { ApiError } from '../../middleware/error.js';
-import { auditWriter } from '../../audit/audit-writer.js';
-import { ruleEngine } from '../rules/index.js';
-import type { RuleContext, RuleSetConfig, RuleCheckResult } from '../rules/types.js';
-import { getYtdOvertimeHours } from '../time-tracking/time.service.js';
+import type { TenantClient } from '../../db/tenant';
+import { ApiError } from '../../middleware/error';
+import { auditWriter } from '../../audit/audit-writer';
+import { ruleEngine } from '../rules/index';
+import type { RuleContext, RuleSetConfig, RuleCheckResult } from '../rules/types';
+import { getYtdOvertimeHours } from '../time-tracking/time.service';
 import type { z } from 'zod';
 import type { CreateScheduleSchema } from '@tempora/shared';
 

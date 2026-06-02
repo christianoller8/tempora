@@ -1,4 +1,4 @@
-import type { AuthUser } from './auth.js';
+import type { AuthUser } from './auth';
 
 declare global {
   namespace Express {
@@ -7,3 +7,6 @@ declare global {
     }
   }
 }
+
+// export {} makes this a module so declare global works correctly in all TS versions.
+export {};
