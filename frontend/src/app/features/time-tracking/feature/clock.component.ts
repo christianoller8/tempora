@@ -20,8 +20,12 @@ import { MessageModule } from 'primeng/message';
 import { TimeStore } from '../data-access/time.store';
 import { TimeApi } from '../data-access/time.api';
 import { SseService } from '../../../core/sse/sse.service';
+import { ApiService } from '../../../core/http/api.service';
+import { AuthStore } from '../../../core/auth/auth.store';
 import { firstValueFrom } from 'rxjs';
 import type { TimeEntryDto } from '../data-access/time.api';
+
+interface LiveEmployee { id: string; firstName: string; lastName: string; }
 
 type GeoStatus = 'idle' | 'requesting' | 'granted' | 'denied' | 'unavailable';
 
@@ -365,6 +369,57 @@ type GeoStatus = 'idle' | 'requesting' | 'granted' | 'denied' | 'unavailable';
 
     .sse-dot.connected    { background: #22c55e; }
     .sse-dot.disconnected { background: var(--p-red-400, #f87171); }
+
+    /* ── Live team status (admin/manager) ───────────────────────────── */
+    .team-panel {
+      background: var(--p-surface-card);
+      border: 1px solid var(--p-surface-border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+
+    .team-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.625rem 1.25rem;
+      border-bottom: 1px solid var(--p-surface-border);
+      transition: background 0.15s;
+    }
+
+    .team-row:last-child { border-bottom: none; }
+    .team-row:hover { background: color-mix(in srgb, var(--p-primary-color) 5%, transparent); }
+
+    .team-name {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--p-text-color);
+    }
+
+    .team-since {
+      font-size: 0.75rem;
+      color: var(--p-text-color-muted, var(--p-text-color-secondary));
+      margin-top: 1px;
+    }
+
+    .team-duration {
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--p-text-color);
+      white-space: nowrap;
+    }
+
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      background: #22c55e;
+      border-radius: 50%;
+      flex-shrink: 0;
+      box-shadow: 0 0 0 2px color-mix(in srgb, #22c55e 30%, transparent);
+      animation: pulse-green 2s infinite;
+    }
   `],
   template: `
     <!-- Page header -->
@@ -491,6 +546,48 @@ type GeoStatus = 'idle' | 'requesting' | 'granted' | 'denied' | 'unavailable';
       }
     </div>
 
+    <!-- ── Live team status (admin/manager only) ────────────────────── -->
+    @if (isAdminOrManager()) {
+      <div class="section-header">
+        <div class="section-title">
+          <i class="pi pi-wifi"></i>
+          Live Team Status
+        </div>
+        <p-tag
+          [value]="liveEntries().length + ' clocked in'"
+          severity="success"
+          [rounded]="true"
+          [style]="{ fontSize: '0.7rem' }"
+        />
+      </div>
+
+      <div class="team-panel">
+        @if (liveEntriesLoading()) {
+          <div style="padding:1.25rem; display:flex; flex-direction:column; gap:0.75rem;">
+            @for (_ of [1,2,3]; track $index) {
+              <p-skeleton height="2.25rem" borderRadius="6px" />
+            }
+          </div>
+        } @else if (liveEntries().length === 0) {
+          <div class="empty-state">
+            <i class="pi pi-moon"></i>
+            <span>No employees currently clocked in</span>
+          </div>
+        } @else {
+          @for (entry of liveEntries(); track entry.id) {
+            <div class="team-row">
+              <div>
+                <div class="team-name">{{ employeeName(entry.employeeId) }}</div>
+                <div class="team-since">Since {{ entry.clockIn | date:'HH:mm' }}</div>
+              </div>
+              <div class="team-duration">{{ entryDuration(entry) }}</div>
+              <span class="live-dot" title="Online"></span>
+            </div>
+          }
+        }
+      </div>
+    }
+
     <!-- ── Today's entries ─────────────────────────────────────────── -->
     <div class="section-header">
       <div class="section-title">
@@ -603,6 +700,8 @@ export class ClockComponent implements OnInit, OnDestroy {
   protected readonly store = inject(TimeStore) as unknown as TimeStore;
   protected readonly sse   = inject(SseService);
   private  readonly api    = inject(TimeApi);
+  private  readonly apiService = inject(ApiService);
+  private  readonly auth   = inject(AuthStore) as unknown as AuthStore;
 
   readonly today = new Date();
 
@@ -614,6 +713,14 @@ export class ClockComponent implements OnInit, OnDestroy {
     if (!c) return '';
     return `${Math.abs(c.lat).toFixed(2)}°${c.lat >= 0 ? 'N' : 'S'}, ${Math.abs(c.lng).toFixed(2)}°${c.lng >= 0 ? 'E' : 'W'}`;
   });
+
+  readonly isAdminOrManager = computed(() =>
+    ['ADMIN', 'MANAGER'].includes(this.auth.role() ?? ''),
+  );
+
+  readonly liveEntries        = signal<TimeEntryDto[]>([]);
+  readonly liveEntriesLoading = signal(false);
+  private readonly liveEmployees = signal<LiveEmployee[]>([]);
 
   readonly loadingEntries = signal(true);
   readonly forceClockingOut = signal(false);
@@ -660,11 +767,12 @@ export class ClockComponent implements OnInit, OnDestroy {
       }
     }, { allowSignalWrites: true });
 
-    // React to SSE events: refresh entries on clock-in/out events
+    // React to SSE events: refresh entries (and live feed for admin/manager)
     effect(() => {
       const ev = this.sse.lastEvent();
       if (ev && (ev.type === 'CLOCK_IN' || ev.type === 'CLOCK_OUT')) {
         void this.loadTodayEntries();
+        if (this.isAdminOrManager()) void this.loadLiveEntries();
       }
     });
   }
@@ -672,6 +780,7 @@ export class ClockComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.sse.connect();
     void this.loadTodayEntries();
+    if (this.isAdminOrManager()) void this.loadLiveEntries();
   }
 
   ngOnDestroy(): void {
@@ -685,6 +794,25 @@ export class ClockComponent implements OnInit, OnDestroy {
     const { from, to } = todayRange();
     await this.store.loadEntries({ from, to });
     this.loadingEntries.set(false);
+  }
+
+  private async loadLiveEntries(): Promise<void> {
+    this.liveEntriesLoading.set(true);
+    try {
+      const [entries, employees] = await Promise.all([
+        firstValueFrom(this.api.listEntries({ status: 'OPEN' })),
+        firstValueFrom(this.apiService.get<LiveEmployee[]>('/employees', { activeOnly: 'true' })),
+      ]);
+      this.liveEntries.set(entries);
+      this.liveEmployees.set(employees);
+    } finally {
+      this.liveEntriesLoading.set(false);
+    }
+  }
+
+  employeeName(employeeId: string): string {
+    const emp = this.liveEmployees().find(e => e.id === employeeId);
+    return emp ? `${emp.firstName} ${emp.lastName}` : employeeId.slice(0, 8) + '…';
   }
 
   private startTimer(clockInTime: string): void {

@@ -21,6 +21,7 @@ interface NavItem {
   label: string;
   route: string;
   icon: string;
+  comingSoon?: boolean;
 }
 
 @Component({
@@ -158,6 +159,25 @@ interface NavItem {
       color: var(--p-primary-color);
     }
 
+    .nav-link--soon {
+      opacity: 0.45;
+      cursor: default;
+      pointer-events: none;
+    }
+
+    .nav-soon-badge {
+      margin-left: auto;
+      font-size: 0.6rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--p-text-color-muted, var(--p-text-color-secondary));
+      background: var(--p-surface-section);
+      border: 1px solid var(--p-surface-border);
+      border-radius: 4px;
+      padding: 1px 5px;
+    }
+
     .nav-notif-badge {
       margin-left: auto;
       background: var(--p-red-500, #ef4444);
@@ -257,21 +277,29 @@ interface NavItem {
 
       <nav class="sidebar-nav">
         <ul class="nav-list">
-          @for (item of mainNavItems; track item.route) {
+          @for (item of navItems(); track item.route) {
             <li>
-              <a
-                class="nav-link"
-                [routerLink]="item.route"
-                routerLinkActive="active"
-                [routerLinkActiveOptions]="{ exact: item.route === '/dashboard' }"
-                [pTooltip]="item.label"
-                tooltipPosition="right"
-                [showDelay]="600"
-                [attr.aria-label]="item.label"
-              >
-                <i class="pi {{ item.icon }}"></i>
-                <span>{{ item.label }}</span>
-              </a>
+              @if (item.comingSoon) {
+                <span class="nav-link nav-link--soon" aria-disabled="true" role="link">
+                  <i class="pi {{ item.icon }}"></i>
+                  <span>{{ item.label }}</span>
+                  <span class="nav-soon-badge">Soon</span>
+                </span>
+              } @else {
+                <a
+                  class="nav-link"
+                  [routerLink]="item.route"
+                  routerLinkActive="active"
+                  [routerLinkActiveOptions]="{ exact: item.route === '/dashboard' }"
+                  [pTooltip]="item.label"
+                  tooltipPosition="right"
+                  [showDelay]="600"
+                  [attr.aria-label]="item.label"
+                >
+                  <i class="pi {{ item.icon }}"></i>
+                  <span>{{ item.label }}</span>
+                </a>
+              }
             </li>
           }
 
@@ -297,28 +325,6 @@ interface NavItem {
             </button>
           </li>
         </ul>
-
-        @if (isAdminOrManager()) {
-          <div class="nav-section-label">Management</div>
-          <ul class="nav-list">
-            @for (item of mgmtNavItems(); track item.route) {
-              <li>
-                <a
-                  class="nav-link"
-                  [routerLink]="item.route"
-                  routerLinkActive="active"
-                  [pTooltip]="item.label"
-                  tooltipPosition="right"
-                  [showDelay]="600"
-                  [attr.aria-label]="item.label"
-                >
-                  <i class="pi {{ item.icon }}"></i>
-                  <span>{{ item.label }}</span>
-                </a>
-              </li>
-            }
-          </ul>
-        }
       </nav>
 
       <div class="sidebar-footer">
@@ -383,7 +389,6 @@ export class ShellComponent implements OnInit {
   protected readonly notificationsStore = inject(NotificationsStore) as unknown as NotificationsStore;
   protected readonly theme = inject(ThemeService);
 
-  readonly isAdmin = computed(() => this.auth.role() === 'ADMIN');
   readonly isAdminOrManager = computed(() =>
     ['ADMIN', 'MANAGER'].includes(this.auth.role() ?? ''),
   );
@@ -398,23 +403,35 @@ export class ShellComponent implements OnInit {
     return email.substring(0, 2).toUpperCase();
   });
 
-  readonly mainNavItems: NavItem[] = [
-    { label: 'Dashboard',     route: '/dashboard',      icon: 'pi-home' },
-    { label: 'Shifts',        route: '/shifts',          icon: 'pi-calendar' },
-    { label: 'Time Tracking', route: '/time-tracking',   icon: 'pi-clock' },
-    { label: 'Absences',      route: '/absences',        icon: 'pi-calendar-times' },
-  ];
-
-  readonly mgmtNavItems = computed((): NavItem[] => {
-    const items: NavItem[] = [];
-    if (this.isAdminOrManager()) {
-      items.push({ label: 'Reports', route: '/reports', icon: 'pi-chart-bar' });
+  readonly navItems = computed((): NavItem[] => {
+    const role = this.auth.role();
+    if (role === 'EMPLOYEE') {
+      return [
+        { label: 'My Schedule',  route: '/shifts',        icon: 'pi-calendar' },
+        { label: 'My Time',      route: '/time-tracking', icon: 'pi-clock' },
+        { label: 'My Absences',  route: '/absences',      icon: 'pi-calendar-times' },
+        { label: 'My Documents', route: '/documents',     icon: 'pi-file',          comingSoon: true },
+      ];
     }
-    if (this.isAdmin()) {
-      items.push({ label: 'Employees', route: '/employees', icon: 'pi-users' });
-      items.push({ label: 'Admin',     route: '/admin',     icon: 'pi-cog' });
+    if (role === 'MANAGER') {
+      return [
+        { label: 'Dashboard',     route: '/dashboard',     icon: 'pi-home' },
+        { label: 'Shifts',        route: '/shifts',        icon: 'pi-calendar' },
+        { label: 'Time Tracking', route: '/time-tracking', icon: 'pi-clock' },
+        { label: 'Absences',      route: '/absences',      icon: 'pi-calendar-times' },
+      ];
     }
-    return items;
+    // ADMIN
+    return [
+      { label: 'Dashboard',     route: '/dashboard',     icon: 'pi-home' },
+      { label: 'Shifts',        route: '/shifts',        icon: 'pi-calendar' },
+      { label: 'Time Tracking', route: '/time-tracking', icon: 'pi-clock' },
+      { label: 'Absences',      route: '/absences',      icon: 'pi-calendar-times' },
+      { label: 'Employees',     route: '/employees',     icon: 'pi-users' },
+      { label: 'Documents',     route: '/documents',     icon: 'pi-file',          comingSoon: true },
+      { label: 'Reports',       route: '/reports',       icon: 'pi-chart-bar' },
+      { label: 'Settings',      route: '/admin',         icon: 'pi-cog' },
+    ];
   });
 
   ngOnInit(): void {

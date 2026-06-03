@@ -306,8 +306,8 @@ const SHIFT_COLORS: Record<string, { bg: string; text: string; border: string }>
     <!-- ── Page header ────────────────────────────────────────── -->
     <div class="page-header">
       <div>
-        <div class="page-title">Shifts — Cuadrante</div>
-        <div class="page-sub">Monthly schedule management</div>
+        <div class="page-title">{{ pageTitle() }}</div>
+        <div class="page-sub">{{ pageSub() }}</div>
       </div>
       <div style="display:flex; gap:0.5rem; align-items:center;">
         @if (isAdminOrManager()) {
@@ -639,6 +639,11 @@ export class CuadranteComponent implements OnInit {
     ['ADMIN', 'MANAGER'].includes(this.auth.role() ?? ''),
   );
 
+  readonly currentEmployeeId = computed(() => this.auth.user()?.employeeId ?? null);
+
+  readonly pageTitle = computed(() => this.isAdminOrManager() ? 'Shifts — Cuadrante' : 'My Schedule');
+  readonly pageSub   = computed(() => this.isAdminOrManager() ? 'Monthly schedule management' : 'Your upcoming shift assignments');
+
   readonly activeSchedule = computed((): ShiftSchedule | null =>
     this.schedulesStore.schedules().find(
       s => s.year === this.selectedYear() && s.month === this.selectedMonth(),
@@ -647,11 +652,14 @@ export class CuadranteComponent implements OnInit {
 
   readonly isDraft = computed(() => this.activeSchedule()?.status === 'DRAFT');
 
-  readonly employeeRows = computed((): EmployeeRow[] =>
-    this.employees().map(e => ({
+  readonly employeeRows = computed((): EmployeeRow[] => {
+    const allRows = this.employees().map(e => ({
       id: e.id, firstName: e.firstName, lastName: e.lastName, category: e.category,
-    })),
-  );
+    }));
+    if (this.isAdminOrManager()) return allRows;
+    const myId = this.currentEmployeeId();
+    return myId ? allRows.filter(r => r.id === myId) : allRows;
+  });
 
   // ── Options ───────────────────────────────────────────────────────────────
   readonly yearOptions = (() => {

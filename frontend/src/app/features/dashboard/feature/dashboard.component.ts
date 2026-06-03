@@ -15,7 +15,7 @@ import { DividerModule } from 'primeng/divider';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 import { TooltipModule } from 'primeng/tooltip';
-import { firstValueFrom } from 'rxjs';
+import { forkJoin, firstValueFrom } from 'rxjs';
 import {
   DashboardApi,
   DashboardData,
@@ -23,10 +23,13 @@ import {
   deriveFeed,
   deriveIncidents,
   deriveWeeklyHours,
+  formatDuration,
   type Incident,
   type IncidentSeverity,
 } from '../data-access/dashboard.api';
 import { TimeApi } from '../../time-tracking/data-access/time.api';
+import { AuthStore } from '../../core/auth/auth.store';
+import { ShiftsApi, type ShiftAssignment, type ShiftTemplate } from '../../shifts/data-access/shifts.api';
 
 @Component({
   selector: 'app-dashboard',
@@ -293,6 +296,42 @@ import { TimeApi } from '../../time-tracking/data-access/time.api';
       gap: 0.75rem;
     }
 
+    /* ── Employee upcoming shifts ───────────────────────────────────── */
+    .shift-row {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.625rem 1.25rem;
+      border-bottom: 1px solid var(--p-surface-border);
+      transition: background 0.15s;
+    }
+    .shift-row:last-child { border-bottom: none; }
+    .shift-row:hover { background: color-mix(in srgb, var(--p-primary-color) 5%, transparent); }
+
+    .shift-date-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      background: color-mix(in srgb, var(--p-primary-color) 12%, transparent);
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+    .shift-day   { font-size: 1rem;   font-weight: 800; color: var(--p-primary-color); line-height: 1; }
+    .shift-month { font-size: 0.5625rem; font-weight: 600; text-transform: uppercase; color: var(--p-primary-color); letter-spacing: 0.04em; }
+
+    .shift-name   { font-size: 0.875rem; font-weight: 600; color: var(--p-text-color); }
+    .shift-times  { font-size: 0.75rem; color: var(--p-text-color-muted, var(--p-text-color-secondary)); margin-top: 1px; }
+
+    .my-status-dot {
+      width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0;
+    }
+    .my-status-dot.active { background: #22c55e; box-shadow: 0 0 0 3px color-mix(in srgb, #22c55e 25%, transparent); animation: pulse 2s infinite; }
+    .my-status-dot.idle   { background: var(--p-surface-400, #666); }
+
     /* ── Responsive ─────────────────────────────────────────────────── */
     @media (max-width: 1100px) {
       .stats-row { grid-template-columns: repeat(2, 1fr); }
@@ -346,8 +385,123 @@ import { TimeApi } from '../../time-tracking/data-access/time.api';
       </div>
     }
 
-    <!-- ── DATA ──────────────────────────────────────────────────── -->
-    @if (!loading() && !error() && data()) {
+    <!-- ── EMPLOYEE VIEW ─────────────────────────────────────────── -->
+    @if (!loading() && !error() && data() && isEmployee()) {
+      <!-- Employee stats -->
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-icon-row">
+            <div class="stat-icon" [class.stat-icon--green]="myOpenEntry()" [class.stat-icon--primary]="!myOpenEntry()">
+              <i class="pi pi-clock"></i>
+            </div>
+            <span class="my-status-dot" [class.active]="myOpenEntry()" [class.idle]="!myOpenEntry()"></span>
+          </div>
+          <div class="stat-number" style="font-size:1.125rem; font-weight:700; line-height:1.3;">
+            {{ myOpenEntry() ? 'Clocked In' : 'Clocked Out' }}
+          </div>
+          <div class="stat-label">My Status</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon-row">
+            <div class="stat-icon stat-icon--green"><i class="pi pi-stopwatch"></i></div>
+          </div>
+          <div class="stat-number">{{ myTodayHours() }}</div>
+          <div class="stat-label">Today</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon-row">
+            <div class="stat-icon stat-icon--blue"><i class="pi pi-chart-bar"></i></div>
+          </div>
+          <div class="stat-number">{{ myWeekHours() }}</div>
+          <div class="stat-label">This Week</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon-row">
+            <div class="stat-icon stat-icon--orange"><i class="pi pi-calendar"></i></div>
+          </div>
+          <div class="stat-number">{{ myUpcomingShifts().length }}</div>
+          <div class="stat-label">Upcoming Shifts</div>
+        </div>
+      </div>
+
+      <!-- Employee mid row: today's activity + upcoming shifts -->
+      <div class="mid-row">
+
+        <!-- Today's time activity -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title"><i class="pi pi-list"></i>Today's Activity</div>
+          </div>
+          <div class="panel-body">
+            @if (myTodayEntries().length === 0) {
+              <div class="empty-state">
+                <i class="pi pi-clock"></i>
+                <span>No entries today — clock in to start your session</span>
+              </div>
+            } @else {
+              @for (entry of myTodayEntries(); track entry.id) {
+                <div class="feed-row">
+                  <div>
+                    <div class="feed-time">{{ entry.clockIn | date:'HH:mm' }}</div>
+                    <div class="feed-duration">
+                      @if (entry.clockOut) { → {{ entry.clockOut | date:'HH:mm' }} }
+                      @else { running… }
+                    </div>
+                  </div>
+                  <div style="text-align:right;">
+                    <div class="feed-duration">{{ entryDuration(entry) }}</div>
+                  </div>
+                  <p-tag
+                    [value]="entry.status === 'OPEN' ? 'Active' : 'Closed'"
+                    [severity]="entry.status === 'OPEN' ? 'success' : 'secondary'"
+                    [rounded]="true" [style]="{ fontSize: '0.7rem' }"
+                  />
+                </div>
+              }
+            }
+          </div>
+        </div>
+
+        <!-- Upcoming shifts -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title"><i class="pi pi-calendar"></i>Upcoming Shifts</div>
+            @if (upcomingLoading()) {
+              <i class="pi pi-spin pi-spinner" style="font-size:0.875rem; color:var(--p-primary-color);"></i>
+            }
+          </div>
+          <div class="panel-body">
+            @if (myUpcomingShifts().length === 0 && !upcomingLoading()) {
+              <div class="empty-state">
+                <i class="pi pi-calendar"></i>
+                <span>No upcoming shifts scheduled</span>
+              </div>
+            } @else {
+              @for (shift of myUpcomingShifts(); track shift.id) {
+                <div class="shift-row">
+                  <div class="shift-date-block">
+                    <span class="shift-day">{{ shift.date | date:'d' }}</span>
+                    <span class="shift-month">{{ shift.date | date:'MMM' }}</span>
+                  </div>
+                  <div>
+                    <div class="shift-name">{{ shift.templateName }}</div>
+                    <div class="shift-times">{{ shift.times }}</div>
+                  </div>
+                  <p-tag [value]="shift.date | date:'EEE'" severity="secondary" [rounded]="true" [style]="{ fontSize: '0.7rem' }" />
+                </div>
+              }
+            }
+          </div>
+        </div>
+
+      </div>
+    }
+
+    <!-- ── ADMIN / MANAGER DATA ───────────────────────────────────── -->
+    @if (!loading() && !error() && data() && !isEmployee()) {
 
       <!-- Stats row -->
       <div class="stats-row">
@@ -516,8 +670,10 @@ import { TimeApi } from '../../time-tracking/data-access/time.api';
   `,
 })
 export class DashboardComponent implements OnInit {
-  private readonly dashApi = inject(DashboardApi);
-  private readonly timeApi = inject(TimeApi);
+  private readonly dashApi  = inject(DashboardApi);
+  private readonly timeApi  = inject(TimeApi);
+  private readonly auth     = inject(AuthStore) as unknown as AuthStore;
+  private readonly shiftsApi = inject(ShiftsApi);
 
   readonly today = new Date();
 
@@ -539,6 +695,68 @@ export class DashboardComponent implements OnInit {
 
   readonly closingIncidentId  = signal<string | null>(null);
   readonly incidentCloseError = signal<string | null>(null);
+
+  // ── Employee-specific ────────────────────────────────────────────────────
+  readonly isEmployee = computed(() => this.auth.role() === 'EMPLOYEE');
+
+  readonly upcomingAssignments = signal<ShiftAssignment[]>([]);
+  readonly shiftTemplates      = signal<ShiftTemplate[]>([]);
+  readonly upcomingLoading     = signal(false);
+
+  readonly myOpenEntry = computed(() => this.data()?.openEntries[0] ?? null);
+
+  readonly myTodayEntries = computed(() => {
+    const d = this.data();
+    if (!d) return [];
+    const today = new Date().toISOString().slice(0, 10);
+    return [...d.weekEntries, ...(this.myOpenEntry() && d.weekEntries.every(e => e.id !== this.myOpenEntry()!.id) ? d.openEntries : [])]
+      .filter(e => e.clockIn.slice(0, 10) === today)
+      .sort((a, b) => b.clockIn.localeCompare(a.clockIn));
+  });
+
+  readonly myTodayHours = computed(() => {
+    let ms = 0;
+    for (const e of this.myTodayEntries()) {
+      const end = e.clockOut ? new Date(e.clockOut) : new Date();
+      ms += end.getTime() - new Date(e.clockIn).getTime();
+    }
+    return formatDuration(ms);
+  });
+
+  readonly myWeekHours = computed(() => {
+    const d = this.data();
+    if (!d) return '0m';
+    let ms = 0;
+    for (const e of d.weekEntries) {
+      if (e.status === 'CLOSED' && e.clockOut) {
+        ms += new Date(e.clockOut).getTime() - new Date(e.clockIn).getTime();
+      }
+    }
+    return formatDuration(ms);
+  });
+
+  readonly myUpcomingShifts = computed(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    const tMap  = new Map(this.shiftTemplates().map(t => [t.id, t]));
+    return this.upcomingAssignments()
+      .filter(a => a.date >= today)
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .slice(0, 7)
+      .map(a => {
+        const t = tMap.get(a.shiftTemplateId);
+        return {
+          ...a,
+          templateName: t?.name ?? 'Shift',
+          times: t && t.shiftType !== 'LIBRANZA' ? `${t.startTime}–${t.endTime}` : 'Day off',
+        };
+      });
+  });
+
+  entryDuration(entry: { clockIn: string; clockOut: string | null }): string {
+    const ms = (entry.clockOut ? new Date(entry.clockOut) : new Date()).getTime() - new Date(entry.clockIn).getTime();
+    if (ms < 0) return '—';
+    return formatDuration(ms);
+  }
 
   // ── Derived signals ─────────────────────────────────────────────────────
   readonly stats = computed(() => {
@@ -646,11 +864,30 @@ export class DashboardComponent implements OnInit {
     this.error.set(null);
 
     this.dashApi.load().subscribe({
-      next:  d => { this.data.set(d); this.loading.set(false); },
+      next: d => {
+        this.data.set(d);
+        this.loading.set(false);
+        if (this.isEmployee()) this.loadEmployeeExtras();
+      },
       error: e => {
         this.error.set(e?.message ?? 'Failed to load dashboard data');
         this.loading.set(false);
       },
+    });
+  }
+
+  private loadEmployeeExtras(): void {
+    this.upcomingLoading.set(true);
+    forkJoin({
+      assignments: this.shiftsApi.listAssignments(),
+      templates:   this.shiftsApi.listTemplates(),
+    }).subscribe({
+      next: ({ assignments, templates }) => {
+        this.upcomingAssignments.set(assignments);
+        this.shiftTemplates.set(templates);
+        this.upcomingLoading.set(false);
+      },
+      error: () => this.upcomingLoading.set(false),
     });
   }
 }
