@@ -246,13 +246,19 @@ interface NavItem {
       color: var(--p-text-color);
     }
 
-    .user-role {
-      font-size: 0.6875rem;
-      font-weight: 500;
-      color: var(--p-text-color-muted, var(--p-text-color-secondary));
+    .role-badge {
+      font-size: 0.6rem;
+      font-weight: 800;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.08em;
+      padding: 2px 7px;
+      border-radius: 4px;
+      border: 1px solid transparent;
     }
+    .role-badge--admin    { background: color-mix(in srgb, #ef4444 18%, transparent); color: #ef4444; border-color: color-mix(in srgb, #ef4444 35%, transparent); }
+    .role-badge--manager  { background: color-mix(in srgb, #f97316 18%, transparent); color: #f97316; border-color: color-mix(in srgb, #f97316 35%, transparent); }
+    .role-badge--employee { background: color-mix(in srgb, #38bdf8 18%, transparent); color: #38bdf8; border-color: color-mix(in srgb, #38bdf8 35%, transparent); }
+    .role-badge--unknown  { background: color-mix(in srgb, #94a3b8 18%, transparent); color: #94a3b8; border-color: color-mix(in srgb, #94a3b8 35%, transparent); }
 
     /* ── Page content ────────────────────────────────────────────────── */
     .page-content {
@@ -362,7 +368,13 @@ interface NavItem {
           />
           <div class="user-block">
             <span class="user-email">{{ userEmail() }}</span>
-            <span class="user-role">{{ userRole() }}</span>
+            <span
+              class="role-badge"
+              [class.role-badge--admin]="userRole() === 'ADMIN'"
+              [class.role-badge--manager]="userRole() === 'MANAGER'"
+              [class.role-badge--employee]="userRole() === 'EMPLOYEE'"
+              [class.role-badge--unknown]="!userRole()"
+            >{{ userRole() || '…' }}</span>
           </div>
           <p-avatar
             [label]="userInitials()"
@@ -406,6 +418,7 @@ export class ShellComponent implements OnInit {
 
   readonly navItems = computed((): NavItem[] => {
     const role = this.auth.role();
+    console.log('[Shell] navItems recomputed — role:', role);
     if (role === 'EMPLOYEE') {
       return [
         { label: 'My Schedule',  route: '/shifts',        icon: 'pi-calendar' },

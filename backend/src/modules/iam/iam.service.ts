@@ -23,10 +23,20 @@ const ACCESS_TTL_MS = 15 * 60 * 1000;
  *
  * @returns Access + refresh token pair.
  */
+export interface UserPublic {
+  id: string;
+  email: string;
+  role: string;
+  organizationId: string;
+  employeeId: string | null;
+  isActive: boolean;
+  lastLoginAt: string | null;
+}
+
 export async function login(
   email: string,
   password: string,
-): Promise<{ accessToken: string; refreshToken: string }> {
+): Promise<{ accessToken: string; refreshToken: string; user: UserPublic }> {
   // Find user by email (globally — no org scope at login time).
   const user = await prisma.user.findFirst({
     where: { email, isActive: true },
@@ -70,7 +80,37 @@ export async function login(
     },
   });
 
-  return { accessToken, refreshToken };
+  return {
+    accessToken,
+    refreshToken,
+    user: {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      organizationId: user.organizationId,
+      employeeId: user.employee?.id ?? null,
+      isActive: user.isActive,
+      lastLoginAt: user.lastLoginAt?.toISOString() ?? null,
+    },
+  };
+}
+
+/**
+ * Returns public user profile for /auth/me.
+ * Uses the global prisma client — no tenant transaction required.
+ */
+export async function me(userId: string): Promise<UserPublic> {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw new ApiError(404, 'USER_NOT_FOUND', 'User not found');
+  return {
+    id: user.id,
+    email: user.email,
+    role: user.role,
+    organizationId: user.organizationId,
+    employeeId: user.employeeId ?? null,
+    isActive: user.isActive,
+    lastLoginAt: user.lastLoginAt?.toISOString() ?? null,
+  };
 }
 
 /**

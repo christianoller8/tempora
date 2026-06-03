@@ -29,7 +29,11 @@ export const appConfig: ApplicationConfig = {
     provideAppInitializer(async () => {
       try {
         const auth = inject(AuthStore) as unknown as AuthStore;
-        await firstValueFrom(auth.refresh().pipe(catchError(() => of(null))));
+        const token = await firstValueFrom(auth.refresh().pipe(catchError(() => of(null))));
+        // If we got a valid token, load user details so role-based UI works immediately.
+        if (token) {
+          await firstValueFrom(auth.loadMe().pipe(catchError(() => of(null))));
+        }
       } catch {
         // Swallow — user is treated as unauthenticated.
       }

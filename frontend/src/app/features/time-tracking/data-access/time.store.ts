@@ -54,8 +54,7 @@ export const TimeStore = signalStore(
           if (is409) {
             patchState(store, { isClocking: false, clockInConflict: true, error: null });
           } else {
-            const message = err instanceof Error ? err.message : 'Clock-in failed';
-            patchState(store, { isClocking: false, error: message });
+            patchState(store, { isClocking: false, error: extractBackendMessage(err, 'Clock-in failed') });
           }
         }
       },
@@ -66,8 +65,14 @@ export const TimeStore = signalStore(
           const entry = await firstValueFrom(api.clockOut());
           patchState(store, { currentEntry: entry, isClocking: false });
         } catch (err: unknown) {
-          const message = err instanceof Error ? err.message : 'Clock-out failed';
-          patchState(store, { isClocking: false, error: message });
+          const message = extractBackendMessage(err, 'Clock-out failed');
+          // 404 NOT_CLOCKED_IN means the session is already closed — snap UI to match.
+          const alreadyOut = err instanceof HttpErrorResponse && err.status === 404;
+          patchState(store, {
+            isClocking: false,
+            error: message,
+            currentEntry: alreadyOut ? null : store.currentEntry(),
+          });
         }
       },
 
@@ -95,6 +100,13 @@ export const TimeStore = signalStore(
     };
   }),
 );
+
+function extractBackendMessage(err: unknown, fallback: string): string {
+  if (err instanceof HttpErrorResponse) {
+    return (err.error as { message?: string } | null)?.message ?? fallback;
+  }
+  return err instanceof Error ? err.message : fallback;
+}
 
 // TypeScript 5.9 workaround: export explicit interface for injection sites.
 export type TimeStore = {

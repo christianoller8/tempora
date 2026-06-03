@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
-import { login, refresh, logout } from './iam.service';
+import { login, me, refresh, logout } from './iam.service';
 import { env } from '../../config/env';
 import { ApiError } from '../../middleware/error';
 import type { AuthUser } from '../../types/auth';
@@ -35,9 +35,9 @@ function clearAuthCookies(res: Response) {
 export async function loginHandler(req: Request, res: Response, next: NextFunction) {
   try {
     const { email, password } = req.body as { email: string; password: string };
-    const tokens = await login(email, password);
-    setAuthCookies(res, tokens);
-    res.json({ accessToken: tokens.accessToken });
+    const result = await login(email, password);
+    setAuthCookies(res, result);
+    res.json({ accessToken: result.accessToken, user: result.user });
   } catch (err) {
     next(err);
   }
@@ -80,9 +80,15 @@ export async function logoutHandler(req: Request, res: Response, next: NextFunct
 
 /**
  * GET /auth/me
- * Returns the authenticated user's claims from req.user.
- * No DB query — information is already in the verified JWT.
+ * Returns the full user profile from the DB (not just JWT claims),
+ * so the response includes email, isActive and lastLoginAt.
  */
-export function meHandler(req: Request, res: Response) {
-  res.json((req as RequestWithUser).user);
+export async function meHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { userId } = (req as RequestWithUser).user;
+    const user = await me(userId);
+    res.json(user);
+  } catch (err) {
+    next(err);
+  }
 }

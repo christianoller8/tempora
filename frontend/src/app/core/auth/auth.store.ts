@@ -95,6 +95,13 @@ export const AuthStore = signalStore(
         patchState(store, initialState);
       },
 
+      loadMe(): Observable<void> {
+        return authService.me().pipe(
+          tap((user) => patchState(store, { user })),
+          map(() => undefined as void),
+        );
+      },
+
       logout(): Observable<void> {
         return authService.logout().pipe(
           tap({
@@ -119,6 +126,7 @@ export type AuthStore = {
   role(): string | null;
   login(dto: LoginRequest): Observable<void>;
   refresh(): Observable<string>;
+  loadMe(): Observable<void>;
   logoutLocal(): void;
   logout(): Observable<void>;
 };

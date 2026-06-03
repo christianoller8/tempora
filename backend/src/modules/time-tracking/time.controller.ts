@@ -33,7 +33,13 @@ export async function handleClockOut(req: Request, res: Response): Promise<void>
   const user = getUser();
   const db = getDb();
 
-  const employeeId = (req.body as { employeeId?: string }).employeeId ?? user.employeeId ?? user.userId;
+  // ADMIN/MANAGER may pass a target employeeId in the body (force clock-out).
+  // For all other roles, always use the authenticated user's own employee record.
+  const bodyEmployeeId = (req.body as { employeeId?: string }).employeeId;
+  const canTargetOthers = user.role === 'ADMIN' || user.role === 'MANAGER';
+  const employeeId = (canTargetOthers && bodyEmployeeId)
+    ? bodyEmployeeId
+    : (user.employeeId ?? user.userId);
 
   const { entry, warnings } = await clockOut(employeeId, user.organizationId, db);
   res.status(200).json({ data: entry, warnings });
