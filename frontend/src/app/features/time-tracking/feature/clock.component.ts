@@ -463,6 +463,26 @@ type GeoStatus = 'idle' | 'requesting' | 'granted' | 'denied' | 'unavailable';
         </div>
       }
 
+      <!-- 409 open-session conflict -->
+      @if (store.clockInConflict()) {
+        <div class="api-error">
+          <p-message
+            severity="warn"
+            text="You have an open session from a previous day that was never closed."
+          />
+          <div style="margin-top: 0.75rem; display:flex; justify-content:center;">
+            <p-button
+              label="Force Clock Out"
+              icon="pi pi-sign-out"
+              severity="warn"
+              size="small"
+              [loading]="forceClockingOut()"
+              (onClick)="onForceClockOut()"
+            />
+          </div>
+        </div>
+      }
+
       <!-- API error -->
       @if (store.error()) {
         <div class="api-error">
@@ -596,6 +616,7 @@ export class ClockComponent implements OnInit, OnDestroy {
   });
 
   readonly loadingEntries = signal(true);
+  readonly forceClockingOut = signal(false);
   readonly showCorrection  = signal(false);
   readonly justification   = signal('');
   readonly correctionError = signal<string | null>(null);
@@ -714,6 +735,15 @@ export class ClockComponent implements OnInit, OnDestroy {
     if (!this.store.error()) {
       await this.loadTodayEntries();
     }
+  }
+
+  async onForceClockOut(): Promise<void> {
+    this.forceClockingOut.set(true);
+    await this.store.clockOut();
+    if (!this.store.error()) {
+      await this.onClockIn();
+    }
+    this.forceClockingOut.set(false);
   }
 
   private requestGeolocation(): Promise<{ lat: number; lng: number } | null> {

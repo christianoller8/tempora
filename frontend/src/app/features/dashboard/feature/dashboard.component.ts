@@ -13,6 +13,9 @@ import { TagModule } from 'primeng/tag';
 import { SkeletonModule } from 'primeng/skeleton';
 import { DividerModule } from 'primeng/divider';
 import { ButtonModule } from 'primeng/button';
+import { MessageModule } from 'primeng/message';
+import { TooltipModule } from 'primeng/tooltip';
+import { firstValueFrom } from 'rxjs';
 import {
   DashboardApi,
   DashboardData,
@@ -20,13 +23,15 @@ import {
   deriveFeed,
   deriveIncidents,
   deriveWeeklyHours,
+  type Incident,
   type IncidentSeverity,
 } from '../data-access/dashboard.api';
+import { TimeApi } from '../../time-tracking/data-access/time.api';
 
 @Component({
   selector: 'app-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, LowerCasePipe, TitleCasePipe, CardModule, ChartModule, TagModule, SkeletonModule, DividerModule, ButtonModule],
+  imports: [DatePipe, LowerCasePipe, TitleCasePipe, CardModule, ChartModule, TagModule, SkeletonModule, DividerModule, ButtonModule, MessageModule, TooltipModule],
   styles: [`
     :host { display: block; }
 
@@ -443,13 +448,32 @@ import {
                 <span>No incidents today — all clear!</span>
               </div>
             } @else {
+              @if (incidentCloseError()) {
+                <div style="padding: 0.75rem 1.25rem;">
+                  <p-message severity="error" [text]="incidentCloseError()!" styleClass="w-full" />
+                </div>
+              }
               @for (inc of incidents(); track inc.id) {
                 <div class="incident-row">
                   <span class="incident-dot incident-dot--{{ inc.severity }}"></span>
-                  <div>
+                  <div style="flex:1; min-width:0;">
                     <div class="incident-label">{{ inc.label }}</div>
                     <div class="incident-detail">{{ inc.detail }}</div>
                   </div>
+                  @if (inc.employeeId) {
+                    <p-button
+                      label="Close session"
+                      icon="pi pi-sign-out"
+                      size="small"
+                      severity="danger"
+                      [text]="true"
+                      [loading]="closingIncidentId() === inc.id"
+                      [disabled]="closingIncidentId() !== null"
+                      pTooltip="Force clock out this employee"
+                      tooltipPosition="left"
+                      (onClick)="closeIncident(inc)"
+                    />
+                  }
                 </div>
               }
             }
@@ -493,6 +517,7 @@ import {
 })
 export class DashboardComponent implements OnInit {
   private readonly dashApi = inject(DashboardApi);
+  private readonly timeApi = inject(TimeApi);
 
   readonly today = new Date();
 
@@ -511,6 +536,9 @@ export class DashboardComponent implements OnInit {
   readonly loading = signal(true);
   readonly error   = signal<string | null>(null);
   readonly data    = signal<DashboardData | null>(null);
+
+  readonly closingIncidentId  = signal<string | null>(null);
+  readonly incidentCloseError = signal<string | null>(null);
 
   // ── Derived signals ─────────────────────────────────────────────────────
   readonly stats = computed(() => {
@@ -597,6 +625,20 @@ export class DashboardComponent implements OnInit {
   // ── Lifecycle ─────────────────────────────────────────────────────────────
   ngOnInit(): void {
     this.load();
+  }
+
+  async closeIncident(inc: Incident): Promise<void> {
+    if (!inc.employeeId) return;
+    this.closingIncidentId.set(inc.id);
+    this.incidentCloseError.set(null);
+    try {
+      await firstValueFrom(this.timeApi.clockOut({ employeeId: inc.employeeId }));
+      this.load();
+    } catch {
+      this.incidentCloseError.set('Failed to close the session. Please try again.');
+    } finally {
+      this.closingIncidentId.set(null);
+    }
   }
 
   load(): void {

@@ -42,8 +42,8 @@ export class TimeApi {
     );
   }
 
-  clockOut(): Observable<TimeEntryDto> {
-    return this.api.post<ClockOutResponse>('/time-entries/clock-out', {}).pipe(
+  clockOut(opts?: { employeeId?: string }): Observable<TimeEntryDto> {
+    return this.api.post<ClockOutResponse>('/time-entries/clock-out', opts ?? {}).pipe(
       map((res) => res.data),
     );
   }

@@ -1,4 +1,5 @@
 import { computed, inject } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import {
   signalStore,
   withState,
@@ -18,6 +19,7 @@ type TimeState = {
   entries: TimeEntryDto[];
   isClocking: boolean;
   error: string | null;
+  clockInConflict: boolean;
 };
 
 const initialState: TimeState = {
@@ -25,6 +27,7 @@ const initialState: TimeState = {
   entries: [],
   isClocking: false,
   error: null,
+  clockInConflict: false,
 };
 
 export const TimeStore = signalStore(
@@ -38,7 +41,7 @@ export const TimeStore = signalStore(
     const api = inject(TimeApi);
     return {
       async clockIn(coords?: { lat: number; lng: number }): Promise<void> {
-        patchState(store, { isClocking: true, error: null });
+        patchState(store, { isClocking: true, error: null, clockInConflict: false });
         try {
           const source = coords
             ? `web-gps:${coords.lat.toFixed(5)},${coords.lng.toFixed(5)}`
@@ -46,13 +49,19 @@ export const TimeStore = signalStore(
           const entry = await firstValueFrom(api.clockIn({ source }));
           patchState(store, { currentEntry: entry, isClocking: false });
         } catch (err: unknown) {
-          const message = err instanceof Error ? err.message : 'Clock-in failed';
-          patchState(store, { isClocking: false, error: message });
+          const is409 = (err instanceof HttpErrorResponse && err.status === 409)
+                     || (err != null && (err as { status?: number }).status === 409);
+          if (is409) {
+            patchState(store, { isClocking: false, clockInConflict: true, error: null });
+          } else {
+            const message = err instanceof Error ? err.message : 'Clock-in failed';
+            patchState(store, { isClocking: false, error: message });
+          }
         }
       },
 
       async clockOut(): Promise<void> {
-        patchState(store, { isClocking: true, error: null });
+        patchState(store, { isClocking: true, error: null, clockInConflict: false });
         try {
           const entry = await firstValueFrom(api.clockOut());
           patchState(store, { currentEntry: entry, isClocking: false });
@@ -93,6 +102,7 @@ export type TimeStore = {
   entries(): TimeEntryDto[];
   isClocking(): boolean;
   error(): string | null;
+  clockInConflict(): boolean;
   isClockedIn(): boolean;
   clockInTime(): string | null;
   clockIn(coords?: { lat: number; lng: number }): Promise<void>;

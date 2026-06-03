@@ -43,6 +43,7 @@ export interface Incident {
   severity: IncidentSeverity;
   label: string;
   detail: string;
+  employeeId?: string;
 }
 
 export interface WeeklyHoursEntry {
@@ -131,10 +132,11 @@ export function deriveIncidents(d: DashboardData): Incident[] {
       const emp  = empMap.get(entry.employeeId);
       const name = emp ? `${emp.firstName} ${emp.lastName}` : 'Unknown';
       incidents.push({
-        id:       `missed-${entry.id}`,
-        severity: 'danger',
-        label:    'Missed clock-out',
-        detail:   `${name} — clocked in ${entry.clockIn.slice(0, 10)}, never clocked out`,
+        id:         `missed-${entry.id}`,
+        severity:   'danger',
+        label:      'Missed clock-out',
+        detail:     `${name} — clocked in ${entry.clockIn.slice(0, 10)}, never clocked out`,
+        employeeId: entry.employeeId,
       });
     }
   }
