@@ -76,9 +76,8 @@ export class DashboardApi {
     const sun  = endOfWeek(now);
 
     return forkJoin({
-      employees: this.api.get<{ data: EmployeeDto[] }>('/employees', { activeOnly: 'true' }).pipe(
-        map(r => r.data),
-      ),
+      // /employees returns an array directly (no {data:[]} wrapper)
+      employees: this.api.get<EmployeeDto[]>('/employees', { activeOnly: 'true' }),
       openEntries: this.time.listEntries({ status: 'OPEN' }),
       approvedAbsences: this.absences.listAbsences({ status: 'APPROVED' }),
       pendingSwaps: this.shifts.listSwaps({ status: 'REQUESTED' }),

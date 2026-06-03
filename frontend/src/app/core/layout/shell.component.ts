@@ -15,6 +15,7 @@ import { DividerModule } from 'primeng/divider';
 import { AuthStore } from '../auth/auth.store';
 import { NotificationsStore } from '../../features/notifications/data-access/notifications.store';
 import { NotificationListComponent } from '../../features/notifications/feature/notification-list.component';
+import { ThemeService } from '../theme/theme.service';
 
 interface NavItem {
   label: string;
@@ -237,6 +238,7 @@ interface NavItem {
     .page-content {
       flex: 1;
       overflow-y: auto;
+      overflow-x: hidden;
       padding: 1.5rem;
     }
   `],
@@ -341,6 +343,17 @@ interface NavItem {
       <header class="topbar">
         <span class="topbar-org">{{ orgName() }}</span>
         <div class="topbar-end">
+          <!-- Theme toggle -->
+          <p-button
+            [icon]="theme.isDark() ? 'pi pi-sun' : 'pi pi-moon'"
+            [text]="true"
+            [rounded]="true"
+            severity="secondary"
+            [pTooltip]="theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
+            tooltipPosition="bottom"
+            (onClick)="theme.toggle()"
+            [attr.aria-label]="theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
+          />
           <div class="user-block">
             <span class="user-email">{{ userEmail() }}</span>
             <span class="user-role">{{ userRole() }}</span>
@@ -368,6 +381,7 @@ interface NavItem {
 export class ShellComponent implements OnInit {
   private readonly auth = inject(AuthStore) as unknown as AuthStore;
   protected readonly notificationsStore = inject(NotificationsStore) as unknown as NotificationsStore;
+  protected readonly theme = inject(ThemeService);
 
   readonly isAdmin = computed(() => this.auth.role() === 'ADMIN');
   readonly isAdminOrManager = computed(() =>

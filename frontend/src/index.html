@@ -11,6 +11,14 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
+  <!-- Apply stored theme before Angular renders to prevent flash of wrong theme -->
+  <script>
+    (function(){
+      var t = localStorage.getItem('tempora-theme');
+      if (t === 'light') { document.documentElement.classList.remove('app-dark'); }
+      else { document.documentElement.classList.add('app-dark'); }
+    })();
+  </script>
   <app-root></app-root>
 </body>
 </html>

@@ -627,7 +627,9 @@ export class ClockComponent implements OnInit, OnDestroy {
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
   constructor() {
-    // React to timer: start/stop when isClockedIn changes
+    // React to timer: start/stop when clock-in time changes.
+    // allowSignalWrites is required because startTimer/stopTimer write
+    // to elapsedSeconds synchronously during the effect body.
     effect(() => {
       const clockInTime = this.store.clockInTime();
       if (clockInTime && this.isClockedIn()) {
@@ -635,7 +637,7 @@ export class ClockComponent implements OnInit, OnDestroy {
       } else {
         this.stopTimer();
       }
-    });
+    }, { allowSignalWrites: true });
 
     // React to SSE events: refresh entries on clock-in/out events
     effect(() => {

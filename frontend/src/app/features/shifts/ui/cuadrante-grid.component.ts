@@ -44,9 +44,11 @@ const SHIFT_CONFIG: Record<string, { label: string; bg: string; text: string; bo
 
     table {
       border-collapse: collapse;
-      min-width: max-content;
-      width: 100%;
-      table-layout: fixed;
+      /* Use auto layout so column widths come from cell content/CSS, not the
+         first-row heuristic. min-content keeps each day column at exactly its
+         CSS width and lets the scroll container handle overflow. */
+      width: max-content;
+      min-width: 100%;
     }
 
     /* ── Header row ─────────────────────────────────────────────── */
@@ -110,7 +112,10 @@ const SHIFT_CONFIG: Record<string, { label: string; bg: string; text: string; bo
       position: sticky;
       left: 0;
       z-index: 2;
-      background: inherit;
+      /* Explicit backgrounds so the sticky column hides scrolled content.
+         Odd rows default to surface-card; even rows get a slightly different shade.
+         These must match the tr backgrounds exactly. */
+      background: var(--p-surface-card);
       padding: 0 0.75rem;
       border-right: 1px solid var(--p-surface-border);
       white-space: nowrap;
