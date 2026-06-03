@@ -35,7 +35,7 @@ export const routes: Routes = [
       },
       {
         path: 'employees',
-        canActivate: [roleGuard(['ADMIN', 'MANAGER'])],
+        canActivate: [roleGuard(['ADMIN'])],
         loadComponent: () =>
           import('./features/employees/feature/employees.component').then(
             (m) => m.EmployeesComponent,
