@@ -35,6 +35,14 @@ function daysAgo(d: number): Date {
 // ── main ─────────────────────────────────────────────────────────────────────
 
 async function main() {
+  const thisMonday = (() => {
+    const d = new Date();
+    const day = d.getDay();
+    d.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
+    d.setHours(0, 0, 0, 0);
+    return d;
+  })();
+
   // ── Organization ──────────────────────────────────────────────────────────
   let org = await prisma.organization.findFirst({ where: { name: 'Tempora Demo' } });
   if (!org) {
@@ -91,6 +99,105 @@ async function main() {
     },
   });
   console.log(`  ✓ Admin user    email=admin@tempora.com  password=Admin1234!  employeeId=${adminUser.employeeId}`);
+
+  // ── Manager employee + user ────────────────────────────────────────────────
+  let managerEmployee = await prisma.employee.findFirst({
+    where: { organizationId: org.id, firstName: 'Marina', lastName: 'Manager' },
+  });
+  if (!managerEmployee) {
+    managerEmployee = await prisma.employee.create({
+      data: {
+        organizationId:         org.id,
+        firstName:              'Marina',
+        lastName:               'Manager',
+        category:               'ENFERMERO',
+        contractType:           'INDEFINIDO',
+        contractedHoursPerWeek: 40,
+        primaryCenterId:        center.id,
+        hireDate:               new Date('2022-01-01'),
+        isActive:               true,
+      },
+    });
+    console.log(`  ✓ Manager employee id=${managerEmployee.id}`);
+  }
+
+  const managerHash = await argon2.hash('Manager1234!', { type: argon2.argon2id });
+  await prisma.user.upsert({
+    where: { organizationId_email: { organizationId: org.id, email: 'manager@tempora.com' } },
+    update: { passwordHash: managerHash, role: 'MANAGER', isActive: true, employeeId: managerEmployee.id },
+    create: {
+      organizationId: org.id,
+      email:          'manager@tempora.com',
+      passwordHash:   managerHash,
+      role:           'MANAGER',
+      isActive:       true,
+      employeeId:     managerEmployee.id,
+    },
+  });
+  console.log('  ✓ Manager user  email=manager@tempora.com  password=Manager1234!');
+
+  // ── Demo employee + user ───────────────────────────────────────────────────
+  let demoEmployee = await prisma.employee.findFirst({
+    where: { organizationId: org.id, firstName: 'Emma', lastName: 'Employee' },
+  });
+  if (!demoEmployee) {
+    demoEmployee = await prisma.employee.create({
+      data: {
+        organizationId:         org.id,
+        firstName:              'Emma',
+        lastName:               'Employee',
+        category:               'ENFERMERO',
+        contractType:           'INDEFINIDO',
+        contractedHoursPerWeek: 40,
+        primaryCenterId:        center.id,
+        hireDate:               new Date('2024-01-01'),
+        isActive:               true,
+      },
+    });
+    console.log(`  ✓ Demo employee  id=${demoEmployee.id}`);
+  }
+
+  const employeeHash = await argon2.hash('Employee1234!', { type: argon2.argon2id });
+  await prisma.user.upsert({
+    where: { organizationId_email: { organizationId: org.id, email: 'employee@tempora.com' } },
+    update: { passwordHash: employeeHash, role: 'EMPLOYEE', isActive: true, employeeId: demoEmployee.id },
+    create: {
+      organizationId: org.id,
+      email:          'employee@tempora.com',
+      passwordHash:   employeeHash,
+      role:           'EMPLOYEE',
+      isActive:       true,
+      employeeId:     demoEmployee.id,
+    },
+  });
+  console.log('  ✓ Employee user email=employee@tempora.com  password=Employee1234!');
+
+  // ── Time entries for Emma: week history + open session today ──────────────
+  for (let dayOffset = 1; dayOffset <= 4; dayOffset++) {
+    const clockIn = new Date(thisMonday);
+    clockIn.setDate(clockIn.getDate() + dayOffset - 1);
+    clockIn.setHours(8, 0, 0, 0);
+    if (clockIn >= new Date()) continue;
+    const clockOut = new Date(clockIn);
+    clockOut.setHours(16, 0, 0, 0);
+    const exists = await prisma.timeEntry.findFirst({
+      where: { employeeId: demoEmployee.id, clockIn: { gte: clockIn, lte: new Date(clockIn.getTime() + 3_600_000) } },
+    });
+    if (!exists) {
+      await prisma.timeEntry.create({
+        data: { organizationId: org.id, employeeId: demoEmployee.id, clockIn, clockOut, status: 'CLOSED', source: 'web' },
+      });
+    }
+  }
+
+  // Open session for Emma today (clocked in 2 h ago) — only create if not already open
+  const emmaOpen = await prisma.timeEntry.findFirst({ where: { employeeId: demoEmployee.id, status: 'OPEN' } });
+  if (!emmaOpen) {
+    await prisma.timeEntry.create({
+      data: { organizationId: org.id, employeeId: demoEmployee.id, clockIn: hoursAgo(2), status: 'OPEN', source: 'web' },
+    });
+    console.log('  ✓ Time entries  Emma: week history + open session today');
+  }
 
   // ── Employees ──────────────────────────────────────────────────────────────
   const employeeData = [
@@ -150,14 +257,6 @@ async function main() {
   }
 
   // Closed entries this week for the weekly chart
-  const thisMonday = (() => {
-    const d = new Date();
-    const day = d.getDay();
-    d.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
-    d.setHours(0, 0, 0, 0);
-    return d;
-  })();
-
   for (const emp of employees) {
     for (let dayOffset = 0; dayOffset < 4; dayOffset++) {
       const clockIn = new Date(thisMonday);
@@ -254,6 +353,28 @@ async function main() {
   }
   if (assignCount > 0) console.log(`  ✓ Assignments   ${assignCount} sample cells filled`);
 
+  // ── Upcoming shift assignments for Emma (next 7 days) ────────────────────
+  const upcomingShiftTypes: Array<keyof typeof templateMap> = ['MANANA', 'TARDE', 'MANANA', 'NOCHE', 'LIBRANZA', 'MANANA', 'TARDE'];
+  let emmaAssignCount = 0;
+  for (let i = 0; i < 7; i++) {
+    const date = new Date();
+    date.setDate(date.getDate() + i + 1);
+    date.setHours(0, 0, 0, 0);
+    const shiftType = upcomingShiftTypes[i % upcomingShiftTypes.length] as keyof typeof templateMap;
+    const templateId = templateMap[shiftType];
+    if (!templateId) continue;
+    const existing = await prisma.shiftAssignment.findFirst({
+      where: { scheduleId: schedule.id, employeeId: demoEmployee.id, date: { gte: date, lte: date } },
+    });
+    if (!existing) {
+      await prisma.shiftAssignment.create({
+        data: { organizationId: org.id, scheduleId: schedule.id, employeeId: demoEmployee.id, shiftTemplateId: templateId, date },
+      });
+      emmaAssignCount++;
+    }
+  }
+  if (emmaAssignCount > 0) console.log(`  ✓ Shifts        Emma: ${emmaAssignCount} upcoming assignments`);
+
   // ── One approved absence today ─────────────────────────────────────────────
   const absentEmp = employees[3]; // Miguel
   const today     = new Date().toISOString().slice(0, 10);
@@ -277,7 +398,9 @@ async function main() {
   }
 
   console.log('');
-  console.log('  Admin credentials:  admin@tempora.com  /  Admin1234!');
+  console.log('  Admin    admin@tempora.com     /  Admin1234!');
+  console.log('  Manager  manager@tempora.com   /  Manager1234!');
+  console.log('  Employee employee@tempora.com  /  Employee1234!');
 }
 
 main()

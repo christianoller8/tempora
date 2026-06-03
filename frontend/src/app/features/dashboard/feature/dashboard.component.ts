@@ -28,7 +28,7 @@ import {
   type IncidentSeverity,
 } from '../data-access/dashboard.api';
 import { TimeApi } from '../../time-tracking/data-access/time.api';
-import { AuthStore } from '../../core/auth/auth.store';
+import { AuthStore } from '../../../core/auth/auth.store';
 import { ShiftsApi, type ShiftAssignment, type ShiftTemplate } from '../../shifts/data-access/shifts.api';
 
 @Component({
@@ -490,7 +490,7 @@ import { ShiftsApi, type ShiftAssignment, type ShiftTemplate } from '../../shift
                     <div class="shift-name">{{ shift.templateName }}</div>
                     <div class="shift-times">{{ shift.times }}</div>
                   </div>
-                  <p-tag [value]="shift.date | date:'EEE'" severity="secondary" [rounded]="true" [style]="{ fontSize: '0.7rem' }" />
+                  <p-tag [value]="(shift.date | date:'EEE') ?? ''" severity="secondary" [rounded]="true" [style]="{ fontSize: '0.7rem' }" />
                 </div>
               }
             }

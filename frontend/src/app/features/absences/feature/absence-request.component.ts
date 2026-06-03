@@ -28,7 +28,9 @@ const ABSENCE_TYPES = Object.keys(ABSENCE_TYPE_LABELS) as AbsenceType[];
  * - Calls AbsencesStore.createAbsence() on submit.
  * - Shows validation errors (overlap, balance exhausted) from API response.
  */
-const STATUS_SEVERITY: Record<AbsenceDto['status'], string> = {
+type TagSeverity = 'success' | 'info' | 'warn' | 'secondary' | 'contrast' | 'danger';
+
+const STATUS_SEVERITY: Record<AbsenceDto['status'], TagSeverity> = {
   PENDING:   'warn',
   APPROVED:  'success',
   REJECTED:  'danger',
@@ -160,7 +162,7 @@ const STATUS_SEVERITY: Record<AbsenceDto['status'], string> = {
           </div>
           @for (abs of pendingAbsences(); track abs.id) {
             <div class="abs-row">
-              <span class="abs-type">{{ typeLabels[abs.type] ?? abs.type }}</span>
+              <span class="abs-type">{{ typeLabels[abs.type] }}</span>
               <span class="abs-dates">{{ abs.startDate | date:'d MMM y' }}</span>
               <span class="abs-dates">{{ abs.endDate | date:'d MMM y' }}</span>
               <p-tag [value]="abs.status" [severity]="statusSeverity(abs.status)" [rounded]="true" [style]="{ fontSize: '0.7rem' }" />
@@ -199,7 +201,7 @@ const STATUS_SEVERITY: Record<AbsenceDto['status'], string> = {
           </div>
           @for (abs of nonPendingAbsences(); track abs.id) {
             <div class="abs-row">
-              <span class="abs-type">{{ typeLabels[abs.type] ?? abs.type }}</span>
+              <span class="abs-type">{{ typeLabels[abs.type] }}</span>
               <span class="abs-dates">{{ abs.startDate | date:'d MMM y' }}</span>
               <span class="abs-dates">{{ abs.endDate | date:'d MMM y' }}</span>
               <p-tag [value]="abs.status" [severity]="statusSeverity(abs.status)" [rounded]="true" [style]="{ fontSize: '0.7rem' }" />
@@ -233,7 +235,7 @@ const STATUS_SEVERITY: Record<AbsenceDto['status'], string> = {
           </div>
           @for (abs of store.absences(); track abs.id) {
             <div class="abs-row">
-              <span class="abs-type">{{ typeLabels[abs.type] ?? abs.type }}</span>
+              <span class="abs-type">{{ typeLabels[abs.type] }}</span>
               <span class="abs-dates">{{ abs.startDate | date:'d MMM y' }}</span>
               <span class="abs-dates">{{ abs.endDate | date:'d MMM y' }}</span>
               <p-tag [value]="abs.status" [severity]="statusSeverity(abs.status)" [rounded]="true" [style]="{ fontSize: '0.7rem' }" />
@@ -353,7 +355,7 @@ export class AbsenceRequestComponent implements OnInit {
     return this.form.getRawValue().type === 'IT';
   }
 
-  protected statusSeverity(status: AbsenceDto['status']): string {
+  protected statusSeverity(status: AbsenceDto['status']): TagSeverity {
     return STATUS_SEVERITY[status] ?? 'secondary';
   }
 

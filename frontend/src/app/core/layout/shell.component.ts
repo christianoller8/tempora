@@ -6,7 +6,7 @@ import {
   signal,
   OnInit,
 } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { AvatarModule } from 'primeng/avatar';
 import { BadgeModule } from 'primeng/badge';
@@ -385,7 +385,8 @@ interface NavItem {
   `,
 })
 export class ShellComponent implements OnInit {
-  private readonly auth = inject(AuthStore) as unknown as AuthStore;
+  private readonly auth   = inject(AuthStore) as unknown as AuthStore;
+  private readonly router = inject(Router);
   protected readonly notificationsStore = inject(NotificationsStore) as unknown as NotificationsStore;
   protected readonly theme = inject(ThemeService);
 
@@ -443,6 +444,9 @@ export class ShellComponent implements OnInit {
   }
 
   logout(): void {
-    this.auth.logout().subscribe();
+    this.auth.logout().subscribe({
+      complete: () => void this.router.navigate(['/auth/login']),
+      error:    () => void this.router.navigate(['/auth/login']),
+    });
   }
 }
