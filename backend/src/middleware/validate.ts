@@ -16,6 +16,8 @@ export function validate(schema: ZodSchema, target: ValidationTarget = 'body'): 
   return (req, _res, next) => {
     const result = schema.safeParse(req[target]);
     if (!result.success) {
+      console.error('[validate] 422 body:', JSON.stringify(req[target]));
+      console.error('[validate] issues:', JSON.stringify(result.error.issues));
       return next(
         new ApiError(422, 'VALIDATION_ERROR', 'Validation failed', result.error.issues),
       );

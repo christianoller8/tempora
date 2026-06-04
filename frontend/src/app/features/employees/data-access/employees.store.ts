@@ -34,7 +34,7 @@ const initialState: EmployeesState = {
   error: null,
   search: '',
   categoryFilter: null,
-  statusFilter: 'ALL',
+  statusFilter: 'ACTIVE',
 };
 
 // ---------------------------------------------------------------------------
@@ -108,6 +108,7 @@ export const EmployeesStore = signalStore(
        * update() — PATCHes an employee; replaces matching entry in-memory.
        */
       async update(id: string, dto: UpdateEmployeeDto): Promise<void> {
+        console.log('[Store.update] id:', id, 'dto:', JSON.stringify(dto));
         patchState(store, { saving: true, error: null });
         try {
           const updated = await firstValueFrom(api.update(id, dto));
@@ -160,6 +161,20 @@ export const EmployeesStore = signalStore(
       setStatus(s: 'ALL' | 'ACTIVE' | 'INACTIVE'): void {
         patchState(store, { statusFilter: s });
       },
+
+      /** reactivate() — PATCHes isActive:true; updates entry in-memory. */
+      async reactivate(id: string): Promise<void> {
+        try {
+          const updated = await firstValueFrom(api.reactivate(id));
+          patchState(store, {
+            employees: store.employees().map((e) => (e.id === id ? updated : e)),
+          });
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : 'Failed to reactivate employee';
+          patchState(store, { error: message });
+          throw err;
+        }
+      },
     };
   }),
 );
@@ -186,4 +201,5 @@ export type EmployeesStore = {
   setSearch(s: string): void;
   setCategory(c: EmployeeCategory | null): void;
   setStatus(s: 'ALL' | 'ACTIVE' | 'INACTIVE'): void;
+  reactivate(id: string): Promise<void>;
 };

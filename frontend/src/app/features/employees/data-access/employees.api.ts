@@ -84,6 +84,10 @@ export class EmployeesApi {
   terminate(id: string): Observable<void> {
     return this.api.post<void>(`/employees/${id}/terminate`, {});
   }
+
+  reactivate(id: string): Observable<EmployeeDto> {
+    return this.api.patch<EmployeeDto>(`/employees/${id}`, { isActive: true });
+  }
 }
 
 // ---------------------------------------------------------------------------

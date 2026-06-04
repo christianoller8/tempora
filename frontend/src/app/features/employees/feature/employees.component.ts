@@ -186,6 +186,7 @@ const STATUS_FILTER_OPTIONS = [
       (close)="showDetail.set(false); store.select(null)"
       (edit)="onEditFromDetail($event)"
       (deactivate)="onDeactivate($event)"
+      (reactivate)="onReactivate($event)"
     />
   `,
 })
@@ -211,8 +212,10 @@ export class EmployeesComponent implements OnInit {
   }
 
   onSelectEmployee(emp: EmployeeDto): void {
+    console.log('[Container] onSelectEmployee — emp.id:', emp.id, 'isActive:', emp.isActive);
     this.store.select(emp);
     this.showDetail.set(true);
+    console.log('[Container] showDetail after set:', this.showDetail());
   }
 
   onAddClick(): void {
@@ -260,6 +263,21 @@ export class EmployeesComponent implements OnInit {
     this.showForm.set(false);
     this.formError.set(null);
     this.store.select(null);
+  }
+
+  async onReactivate(id: string): Promise<void> {
+    try {
+      await this.store.reactivate(id);
+      this.showDetail.set(false);
+      this.store.select(null);
+      this.messageService.add({ severity: 'success', summary: 'Reactivated', detail: 'Employee reactivated successfully.' });
+    } catch (err: unknown) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: err instanceof Error ? err.message : 'Failed to reactivate employee.',
+      });
+    }
   }
 
   async onDeactivate(id: string): Promise<void> {

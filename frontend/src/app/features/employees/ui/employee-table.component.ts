@@ -92,6 +92,14 @@ const SKELETON_ROWS: unknown[] = [1, 2, 3, 4, 5];
     :host ::ng-deep .p-datatable .p-datatable-tbody > tr:hover {
       background: color-mix(in srgb, var(--p-primary-color) 5%, transparent);
     }
+
+    :host ::ng-deep .p-datatable .p-datatable-tbody > tr.row-inactive {
+      opacity: 0.45;
+    }
+
+    :host ::ng-deep .p-datatable .p-datatable-tbody > tr.row-inactive:hover {
+      opacity: 0.65;
+    }
   `],
   template: `
     <p-table
@@ -143,7 +151,7 @@ const SKELETON_ROWS: unknown[] = [1, 2, 3, 4, 5];
             <td><p-skeleton height="1.25rem" width="50px" /></td>
           </tr>
         } @else {
-          <tr (click)="employeeSelect.emit(row)">
+          <tr (click)="employeeSelect.emit(row)" [class.row-inactive]="!row.isActive">
             <td>{{ row.firstName }} {{ row.lastName }}</td>
             <td>{{ row.nif ?? '—' }}</td>
             <td>

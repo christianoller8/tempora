@@ -63,7 +63,9 @@ export const CreateEmployeeSchema = CreateEmployeeBaseSchema.superRefine(
   },
 );
 
-export const UpdateEmployeeSchema = CreateEmployeeBaseSchema.partial();
+export const UpdateEmployeeSchema = CreateEmployeeBaseSchema.partial().extend({
+  isActive: z.boolean().optional(),
+});
 
 export const EmployeeResponseSchema = z.object({
   id: z.string().uuid(),

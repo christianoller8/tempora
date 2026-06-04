@@ -304,6 +304,9 @@ export class EmployeeFormComponent implements OnInit {
       '| contractTypes:', this.contractTypeOptions.length,
       '| centers:', this.centers().length);
     if (emp) {
+      console.log('[Form] hireDate raw value:', emp.hireDate);
+      const hireDateFormatted = emp.hireDate ? emp.hireDate.split('T')[0] : '';
+      console.log('[Form] hireDate patched value:', hireDateFormatted);
       this.form.patchValue({
         firstName:              emp.firstName,
         lastName:               emp.lastName,
@@ -313,7 +316,7 @@ export class EmployeeFormComponent implements OnInit {
         contractedHoursPerWeek: emp.contractedHoursPerWeek,
         primaryCenterId:        emp.primaryCenterId,
         workingCalendarId:      emp.workingCalendarId ?? '',
-        hireDate:               emp.hireDate,
+        hireDate:               hireDateFormatted,
       });
     } else {
       this.form.reset();
@@ -347,7 +350,10 @@ export class EmployeeFormComponent implements OnInit {
       primaryCenterId: raw.primaryCenterId,
       hireDate:    raw.hireDate,
       ...(raw.nif ? { nif: raw.nif } : {}),
-      ...(raw.contractedHoursPerWeek !== null ? { contractedHoursPerWeek: raw.contractedHoursPerWeek } : {}),
+      ...(() => {
+        const h = raw.contractedHoursPerWeek != null ? Number(raw.contractedHoursPerWeek) : null;
+        return h !== null && !isNaN(h) && h > 0 ? { contractedHoursPerWeek: h } : {};
+      })(),
       ...(raw.workingCalendarId ? { workingCalendarId: raw.workingCalendarId } : {}),
     };
     this.save.emit(dto);

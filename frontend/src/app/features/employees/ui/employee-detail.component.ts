@@ -209,6 +209,16 @@ function entryDuration(entry: TimeEntryDto): string {
               (onClick)="showConfirm.set(true)"
               aria-label="Deactivate employee"
             />
+          } @else {
+            <p-button
+              label="Reactivate"
+              icon="pi pi-check-circle"
+              severity="success"
+              size="small"
+              [text]="true"
+              (onClick)="reactivate.emit(employee()!.id)"
+              aria-label="Reactivate employee"
+            />
           }
         </div>
 
@@ -282,6 +292,7 @@ export class EmployeeDetailComponent {
   readonly close = output<void>();
   readonly edit = output<EmployeeDto>();
   readonly deactivate = output<string>();
+  readonly reactivate = output<string>();
 
   private readonly timeApi = inject(TimeApi);
 
@@ -293,6 +304,7 @@ export class EmployeeDetailComponent {
     effect(() => {
       const emp = this.employee();
       const vis = this.visible();
+      console.log('[Detail] employee isActive:', emp?.isActive, '| id:', emp?.id, '| visible:', vis);
       if (vis && emp) {
         void this.loadEntries(emp.id);
       }

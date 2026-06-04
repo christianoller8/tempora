@@ -79,6 +79,7 @@ export async function updateEmployee(
       primaryCenterId: dto.primaryCenterId ?? undefined,
       workingCalendarId: dto.workingCalendarId ?? undefined,
       hireDate: dto.hireDate ? new Date(dto.hireDate) : undefined,
+      isActive: dto.isActive ?? undefined,
     },
   });
 
