@@ -1,7 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  effect,
+  computed,
   inject,
   input,
   OnInit,
@@ -93,6 +93,7 @@ import { EMPLOYEE_CATEGORY_VALUES, CONTRACT_TYPE_VALUES } from '../data-access/e
       [style]="{ width: '600px' }"
       [draggable]="false"
       [resizable]="false"
+      (onShow)="onDialogShow()"
     >
       <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
 
@@ -154,6 +155,8 @@ import { EMPLOYEE_CATEGORY_VALUES, CONTRACT_TYPE_VALUES } from '../data-access/e
               inputId="emp-category"
               formControlName="category"
               [options]="categoryOptions"
+              optionLabel="label"
+              optionValue="value"
               placeholder="Select category"
               aria-required="true"
             />
@@ -168,6 +171,8 @@ import { EMPLOYEE_CATEGORY_VALUES, CONTRACT_TYPE_VALUES } from '../data-access/e
               inputId="emp-contractType"
               formControlName="contractType"
               [options]="contractTypeOptions"
+              optionLabel="label"
+              optionValue="value"
               placeholder="Select contract type"
               aria-required="true"
             />
@@ -282,46 +287,37 @@ export class EmployeeFormComponent implements OnInit {
     hireDate:                ['', Validators.required],
   });
 
-  readonly categoryOptions = EMPLOYEE_CATEGORY_VALUES.map(v => ({ label: v, value: v }));
+  readonly categoryOptions    = EMPLOYEE_CATEGORY_VALUES.map(v => ({ label: v, value: v }));
   readonly contractTypeOptions = CONTRACT_TYPE_VALUES.map(v => ({ label: v, value: v }));
-
-  centerOptions = () => this.centers().map(c => ({ label: c.name, value: c.id }));
+  readonly centerOptions = computed(() => {
+    const list = this.centers().map(c => ({ label: c.name, value: c.id }));
+    console.log('[EmployeeForm] centerOptions:', list.length, 'centers');
+    return list;
+  });
 
   get f() { return this.form.controls; }
 
-  constructor() {
-    effect(() => {
-      const contractType = this.form.get('contractType')?.value;
-      const hoursCtrl = this.form.get('contractedHoursPerWeek')!;
-      if (contractType === 'TIEMPO_PARCIAL') {
-        hoursCtrl.setValidators([Validators.required, Validators.min(1), Validators.max(40)]);
-      } else {
-        hoursCtrl.clearValidators();
-        hoursCtrl.setValue(null);
-      }
-      hoursCtrl.updateValueAndValidity({ emitEvent: false });
-    });
-
-    effect(() => {
-      const emp = this.employee();
-      if (this.visible()) {
-        if (emp) {
-          this.form.patchValue({
-            firstName:              emp.firstName,
-            lastName:               emp.lastName,
-            nif:                    emp.nif ?? '',
-            category:               emp.category,
-            contractType:           emp.contractType,
-            contractedHoursPerWeek: emp.contractedHoursPerWeek,
-            primaryCenterId:        emp.primaryCenterId,
-            workingCalendarId:      emp.workingCalendarId ?? '',
-            hireDate:               emp.hireDate,
-          });
-        } else {
-          this.form.reset();
-        }
-      }
-    });
+  onDialogShow(): void {
+    const emp = this.employee();
+    console.log('[EmployeeForm] onShow —', emp ? 'edit: ' + emp.id : 'add mode',
+      '| categories:', this.categoryOptions.length,
+      '| contractTypes:', this.contractTypeOptions.length,
+      '| centers:', this.centers().length);
+    if (emp) {
+      this.form.patchValue({
+        firstName:              emp.firstName,
+        lastName:               emp.lastName,
+        nif:                    emp.nif ?? '',
+        category:               emp.category,
+        contractType:           emp.contractType,
+        contractedHoursPerWeek: emp.contractedHoursPerWeek,
+        primaryCenterId:        emp.primaryCenterId,
+        workingCalendarId:      emp.workingCalendarId ?? '',
+        hireDate:               emp.hireDate,
+      });
+    } else {
+      this.form.reset();
+    }
   }
 
   ngOnInit(): void {
