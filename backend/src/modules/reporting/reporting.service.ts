@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import type { TenantClient } from '../../db/tenant';
 import { auditWriter } from '../../audit/audit-writer';
+import { ApiError } from '../../middleware/error';
 
 // ---------------------------------------------------------------------------
 // Reporting service — satisfies FR-REP-1..9 [GDPR] [COMPLIANCE]
@@ -45,6 +46,57 @@ export interface CoverageGapRow {
 export interface ComplianceExportResult {
   timeEntries: Record<string, unknown>[];
   auditLogs: Record<string, unknown>[];
+}
+
+// ---------------------------------------------------------------------------
+// Compliance export DTOs (FR-EXP-04..10) — used by builders in builders/
+// ---------------------------------------------------------------------------
+
+export interface ComplianceEntryRow {
+  employeeName: string;        // "Last, First"
+  category: string;            // EmployeeCategory enum value
+  date: string;                // YYYY-MM-DD from clockIn UTC
+  clockIn: string;             // HH:mm UTC
+  clockOut: string | null;     // HH:mm UTC, or null when OPEN
+  durationHours: number | null; // 2-dp decimal hours; null when OPEN
+  source: string;
+}
+
+export interface ComplianceAuditRow {
+  timestamp: string;  // ISO 8601 UTC
+  actor: string;      // actorUserId ?? "system"
+  entityId: string;   // entityId ?? "—"
+  action: string;
+  before: string;     // JSON.stringify
+  after: string;      // JSON.stringify
+}
+
+export interface ComplianceExportData {
+  organization: { name: string; cif: string | null };
+  dateRange: { from: string; to: string };
+  generatedAt: string;          // ISO 8601 UTC
+  rows: ComplianceEntryRow[];   // sorted by employeeName, then clockIn
+  auditLog: ComplianceAuditRow[]; // sorted by timestamp asc
+}
+
+// ---------------------------------------------------------------------------
+// Schedule export DTOs (FR-EXP-12..13)
+// ---------------------------------------------------------------------------
+
+export interface ScheduleAssignmentRow {
+  date: string;       // YYYY-MM-DD
+  shiftName: string;  // ShiftTemplate.name
+  startTime: string;  // HH:mm
+  endTime: string;    // HH:mm
+}
+
+export interface ScheduleExportData {
+  employeeName: string;  // "First Last"
+  monthLabel: string;    // e.g. "June 2025"
+  year: number;
+  month: number;
+  generatedAt: string;
+  rows: ScheduleAssignmentRow[]; // sorted by date asc
 }
 
 // ---------------------------------------------------------------------------
@@ -458,5 +510,213 @@ export async function complianceExport(
   return {
     timeEntries: timeEntries as unknown as Record<string, unknown>[],
     auditLogs: auditLogs as unknown as Record<string, unknown>[],
+  };
+}
+
+// ---------------------------------------------------------------------------
+// collectComplianceExport — FR-EXP-01..10
+// ---------------------------------------------------------------------------
+
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+function endOfDay(dateStr: string): Date {
+  const d = new Date(dateStr);
+  d.setUTCHours(23, 59, 59, 999);
+  return d;
+}
+
+/**
+ * Collects time entries + audit log for a date range and shapes them into
+ * the ComplianceExportData DTO consumed by the PDF/XLSX builders.
+ *
+ * R3: includes OPEN entries (no status filter).
+ * R5: MANAGER center scoping via managerCenterId derived from employee record.
+ * Satisfies FR-EXP-01..10.
+ */
+export async function collectComplianceExport(
+  orgId: string,
+  from: string,
+  to: string,
+  employeeId: string | undefined,
+  managerCenterId: string | undefined,
+  db: TenantClient,
+): Promise<ComplianceExportData> {
+  const fromDate = new Date(from);
+  const toDate = endOfDay(to);
+
+  // 1. Org details (RLS scopes to current org automatically)
+  const org = await db.organization.findFirst({
+    select: { name: true, cif: true },
+  });
+
+  // 2. Time entries — no status filter (R3: OPEN + CLOSED)
+  const entries = await db.timeEntry.findMany({
+    where: {
+      organizationId: orgId,
+      clockIn: { gte: fromDate, lte: toDate },
+      ...(employeeId ? { employeeId } : {}),
+      ...(managerCenterId
+        ? { employee: { primaryCenterId: managerCenterId } }
+        : {}),
+    },
+    select: {
+      clockIn: true,
+      clockOut: true,
+      source: true,
+      employee: {
+        select: {
+          firstName: true,
+          lastName: true,
+          category: true,
+        },
+      },
+    },
+    orderBy: { clockIn: 'asc' },
+  });
+
+  // 3. Audit log — TimeEntry entity type, within range
+  const auditEntries = await db.auditLog.findMany({
+    where: {
+      organizationId: orgId,
+      entityType: 'TimeEntry',
+      createdAt: { gte: fromDate, lte: toDate },
+    },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  // 4. Shape time entry rows
+  const rows: ComplianceEntryRow[] = entries.map((e) => {
+    const emp = e.employee as { firstName: string; lastName: string; category: string };
+    const employeeName = `${emp.lastName}, ${emp.firstName}`;
+    const clockInDate = e.clockIn as Date;
+    const clockOutDate = e.clockOut as Date | null;
+
+    const date = clockInDate.toISOString().slice(0, 10);
+    const clockInStr = clockInDate.toISOString().slice(11, 16);
+    const clockOutStr = clockOutDate ? clockOutDate.toISOString().slice(11, 16) : null;
+    const durationHours = clockOutDate
+      ? round2((clockOutDate.getTime() - clockInDate.getTime()) / 3_600_000)
+      : null;
+
+    return {
+      employeeName,
+      category: String(emp.category),
+      date,
+      clockIn: clockInStr,
+      clockOut: clockOutStr,
+      durationHours,
+      source: String(e.source),
+    };
+  });
+
+  // Sort: employeeName asc, then clockIn asc
+  rows.sort((a, b) => {
+    if (a.employeeName < b.employeeName) return -1;
+    if (a.employeeName > b.employeeName) return 1;
+    if (a.clockIn < b.clockIn) return -1;
+    if (a.clockIn > b.clockIn) return 1;
+    return 0;
+  });
+
+  // 5. Shape audit rows (R4: actorUserId??"system", entityId??"—")
+  const auditLog: ComplianceAuditRow[] = auditEntries.map((a) => ({
+    timestamp: (a.createdAt as Date).toISOString(),
+    actor: (a.actorUserId as string | null) ?? 'system',
+    entityId: (a.entityId as string | null) ?? '—',
+    action: String(a.action),
+    before: JSON.stringify((a.before as unknown) ?? null),
+    after: JSON.stringify((a.after as unknown) ?? null),
+  }));
+
+  return {
+    organization: {
+      name: org?.name ?? '—',
+      cif: (org?.cif as string | null) ?? null,
+    },
+    dateRange: { from, to },
+    generatedAt: new Date().toISOString(),
+    rows,
+    auditLog,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// collectScheduleExport — FR-EXP-12..14
+// ---------------------------------------------------------------------------
+
+/**
+ * Collects shift assignments for an employee/month and shapes them into
+ * the ScheduleExportData DTO consumed by the schedule PDF builder.
+ *
+ * Throws ApiError(404) when the employee record is not found.
+ * Satisfies FR-EXP-12..14.
+ */
+export async function collectScheduleExport(
+  orgId: string,
+  year: number,
+  month: number,
+  employeeId: string,
+  db: TenantClient,
+): Promise<ScheduleExportData> {
+  // 1. Employee lookup (404 if missing)
+  const employee = await db.employee.findUnique({
+    where: { id: employeeId },
+    select: { firstName: true, lastName: true, organizationId: true },
+  });
+
+  if (!employee || (employee.organizationId as string) !== orgId) {
+    throw new ApiError(404, 'NOT_FOUND', 'Employee not found');
+  }
+
+  // 2. Month boundaries (UTC)
+  const monthStart = new Date(Date.UTC(year, month - 1, 1));
+  const monthEnd = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
+
+  const assignments = await db.shiftAssignment.findMany({
+    where: {
+      organizationId: orgId,
+      employeeId,
+      date: { gte: monthStart, lte: monthEnd },
+    },
+    select: {
+      date: true,
+      shiftTemplate: {
+        select: {
+          name: true,
+          startTime: true,
+          endTime: true,
+        },
+      },
+    },
+    orderBy: { date: 'asc' },
+  });
+
+  // 3. Shape rows
+  const rows: ScheduleAssignmentRow[] = assignments.map((a) => {
+    const tmpl = a.shiftTemplate as { name: string; startTime: string; endTime: string };
+    return {
+      date: (a.date as Date).toISOString().slice(0, 10),
+      shiftName: tmpl.name,
+      startTime: tmpl.startTime,
+      endTime: tmpl.endTime,
+    };
+  });
+
+  const monthLabel = `${MONTH_NAMES[month - 1]} ${year}`;
+
+  return {
+    employeeName: `${(employee.firstName as string)} ${(employee.lastName as string)}`,
+    monthLabel,
+    year,
+    month,
+    generatedAt: new Date().toISOString(),
+    rows,
   };
 }

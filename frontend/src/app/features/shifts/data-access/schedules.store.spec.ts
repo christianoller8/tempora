@@ -53,8 +53,8 @@ describe('SchedulesStore', () => {
 
   it('loads schedules and populates entities', async () => {
     await store.loadSchedules();
-    expect(store.entities()).toHaveSize(1);
-    expect(store.entities()[0]?.id).toBe('sched-1');
+    expect(store.schedules()).toHaveLength(1);
+    expect(store.schedules()[0]?.id).toBe('sched-1');
   });
 
   it('loading flag is false after successful load', async () => {
@@ -76,7 +76,7 @@ describe('SchedulesStore', () => {
 
   it('creates schedule and adds to entity collection', async () => {
     await store.createSchedule({ centerId: 'c-1', year: 2026, month: 6 });
-    expect(store.entities()).toHaveSize(1);
+    expect(store.schedules()).toHaveLength(1);
   });
 
   it('publishSchedule transitions schedule to PUBLISHED and returns warnings', async () => {
@@ -88,9 +88,9 @@ describe('SchedulesStore', () => {
     store = TestBed.inject(SchedulesStore);
     await store.loadSchedules();
     const warnings = await store.publishSchedule('sched-1');
-    expect(warnings).toHaveSize(1);
+    expect(warnings).toHaveLength(1);
     expect(warnings[0]?.code).toBe('MAX_DAILY_9H');
-    expect(store.entities()[0]?.status).toBe('PUBLISHED');
+    expect(store.schedules()[0]?.status).toBe('PUBLISHED');
   });
 
   it('publishSchedule stores warnings in lastWarnings state', async () => {
@@ -101,7 +101,7 @@ describe('SchedulesStore', () => {
     });
     store = TestBed.inject(SchedulesStore);
     await store.publishSchedule('sched-1');
-    expect(store.lastWarnings()).toHaveSize(1);
+    expect(store.lastWarnings()).toHaveLength(1);
   });
 
   it('draftSchedules computed filters only DRAFT schedules', async () => {

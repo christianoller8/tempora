@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express';
+import { z } from 'zod';
 import { getDb, getUser } from '../../db-context';
 import {
   monthlyHoursReport,
@@ -6,9 +7,38 @@ import {
   absenteeismReport,
   coverageGapsReport,
   complianceExport,
+  collectComplianceExport,
+  collectScheduleExport,
 } from './reporting.service';
 import { toXlsx } from './exporters/xlsx';
 import { toPdf } from './exporters/pdf';
+import { buildCompliancePdf } from './builders/compliance-pdf.builder';
+import { buildComplianceXlsx } from './builders/compliance-xlsx.builder';
+import { buildSchedulePdf } from './builders/schedule-pdf.builder';
+import { ApiError } from '../../middleware/error';
+
+// ---------------------------------------------------------------------------
+// T07 — Zod schemas for export endpoints (FR-EXP-01, NFR-EXP-04)
+// ---------------------------------------------------------------------------
+
+function daysBetween(from: string, to: string): number {
+  return (new Date(to).getTime() - new Date(from).getTime()) / 86_400_000;
+}
+
+const timeEntriesBody = z
+  .object({
+    from: z.string().date(),
+    to: z.string().date(),
+    employeeId: z.string().uuid().optional(),
+  })
+  .refine((b) => b.from <= b.to, { message: 'from must be <= to' })
+  .refine((b) => daysBetween(b.from, b.to) <= 366, { message: 'range exceeds 366 days' });
+
+const scheduleBody = z.object({
+  year: z.number().int(),
+  month: z.number().int().min(1).max(12),
+  employeeId: z.string().uuid().optional(),
+});
 
 // ---------------------------------------------------------------------------
 // Reporting controller — satisfies FR-REP-1..9 [GDPR] [COMPLIANCE]
@@ -191,4 +221,173 @@ export async function handleCompliance(req: Request, res: Response): Promise<voi
     { key: 'entityType', header: 'Entity Type' },
     { key: 'createdAt', header: 'Created At' },
   ], `Compliance Export — ${year}`);
+}
+
+// ---------------------------------------------------------------------------
+// T05 — Export handlers (FR-EXP-01..03, ADR-3, ADR-4)
+// ---------------------------------------------------------------------------
+
+/**
+ * POST /reports/time-entries/pdf
+ * Role gate: ADMIN | MANAGER (enforced in router).
+ * MANAGER center derived from employee.primaryCenterId (ADR-3, R5).
+ */
+export async function handleTimeEntriesPdf(req: Request, res: Response): Promise<void> {
+  const user = getUser();
+  const db = getDb();
+
+  // Validate body (T07)
+  const parseResult = timeEntriesBody.safeParse(req.body);
+  if (!parseResult.success) {
+    throw new ApiError(400, 'VALIDATION_ERROR', parseResult.error.issues[0]?.message ?? 'Invalid request body');
+  }
+  const body = parseResult.data;
+
+  // MANAGER center scoping (ADR-3 / R5 — fail-closed)
+  let managerCenterId: string | undefined;
+  if (user.role === 'MANAGER') {
+    if (!user.employeeId) {
+      managerCenterId = '__none__'; // fail-closed: no employee record → empty result
+    } else {
+      const mgr = await db.employee.findUnique({
+        where: { id: user.employeeId },
+        select: { primaryCenterId: true },
+      });
+      managerCenterId = (mgr?.primaryCenterId as string | null) ?? '__none__';
+    }
+  }
+
+  // employeeId existence check (404)
+  if (body.employeeId) {
+    const emp = await db.employee.findUnique({
+      where: { id: body.employeeId },
+      select: { id: true, organizationId: true },
+    });
+    if (!emp || (emp.organizationId as string) !== user.organizationId) {
+      throw new ApiError(404, 'NOT_FOUND', 'Employee not found');
+    }
+  }
+
+  const data = await collectComplianceExport(
+    user.organizationId,
+    body.from,
+    body.to,
+    body.employeeId,
+    managerCenterId,
+    db,
+  );
+
+  const buf = await buildCompliancePdf(data);
+  const filename = `time-entries-${body.from}-${body.to}.pdf`;
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.send(buf);
+}
+
+/**
+ * POST /reports/time-entries/excel
+ * Same flow as handleTimeEntriesPdf but uses the XLSX builder.
+ * Role gate: ADMIN | MANAGER (enforced in router).
+ */
+export async function handleTimeEntriesExcel(req: Request, res: Response): Promise<void> {
+  const user = getUser();
+  const db = getDb();
+
+  const parseResult = timeEntriesBody.safeParse(req.body);
+  if (!parseResult.success) {
+    throw new ApiError(400, 'VALIDATION_ERROR', parseResult.error.issues[0]?.message ?? 'Invalid request body');
+  }
+  const body = parseResult.data;
+
+  let managerCenterId: string | undefined;
+  if (user.role === 'MANAGER') {
+    if (!user.employeeId) {
+      managerCenterId = '__none__';
+    } else {
+      const mgr = await db.employee.findUnique({
+        where: { id: user.employeeId },
+        select: { primaryCenterId: true },
+      });
+      managerCenterId = (mgr?.primaryCenterId as string | null) ?? '__none__';
+    }
+  }
+
+  if (body.employeeId) {
+    const emp = await db.employee.findUnique({
+      where: { id: body.employeeId },
+      select: { id: true, organizationId: true },
+    });
+    if (!emp || (emp.organizationId as string) !== user.organizationId) {
+      throw new ApiError(404, 'NOT_FOUND', 'Employee not found');
+    }
+  }
+
+  const data = await collectComplianceExport(
+    user.organizationId,
+    body.from,
+    body.to,
+    body.employeeId,
+    managerCenterId,
+    db,
+  );
+
+  const buf = await buildComplianceXlsx(data);
+  const filename = `time-entries-${body.from}-${body.to}.xlsx`;
+
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.send(buf);
+}
+
+/**
+ * POST /reports/schedule/pdf
+ * Role gate: ADMIN | MANAGER | EMPLOYEE (enforced in router).
+ * EMPLOYEE role is restricted to their own schedule (FR-EXP-14).
+ */
+export async function handleSchedulePdf(req: Request, res: Response): Promise<void> {
+  const user = getUser();
+  const db = getDb();
+
+  const parseResult = scheduleBody.safeParse(req.body);
+  if (!parseResult.success) {
+    throw new ApiError(400, 'VALIDATION_ERROR', parseResult.error.issues[0]?.message ?? 'Invalid request body');
+  }
+  const body = parseResult.data;
+
+  // Resolve target employee (FR-EXP-14)
+  let targetEmployeeId: string;
+
+  if (user.role === 'EMPLOYEE') {
+    if (body.employeeId && body.employeeId !== user.employeeId) {
+      // EMPLOYEE trying to access another employee's schedule → 403
+      throw new ApiError(403, 'FORBIDDEN', 'EMPLOYEE may only export their own schedule');
+    }
+    // Default to own employeeId; if user has no employeeId, fail-closed
+    if (!user.employeeId) {
+      throw new ApiError(403, 'FORBIDDEN', 'No employee record associated with this user');
+    }
+    targetEmployeeId = user.employeeId;
+  } else {
+    // ADMIN or MANAGER: use provided employeeId or own
+    targetEmployeeId = body.employeeId ?? user.employeeId ?? '';
+    if (!targetEmployeeId) {
+      throw new ApiError(400, 'BAD_REQUEST', 'employeeId is required');
+    }
+  }
+
+  const data = await collectScheduleExport(
+    user.organizationId,
+    body.year,
+    body.month,
+    targetEmployeeId,
+    db,
+  );
+
+  const buf = await buildSchedulePdf(data);
+  const filename = `schedule-${body.year}-${String(body.month).padStart(2, '0')}.pdf`;
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.send(buf);
 }

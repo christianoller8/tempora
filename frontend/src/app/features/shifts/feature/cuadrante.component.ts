@@ -21,6 +21,7 @@ import { ApiService } from '../../../core/http/api.service';
 import { CuadranteGridComponent, type EmployeeRow, type AssignmentClickEvent } from '../ui/cuadrante-grid.component';
 import type { ShiftTemplate, ShiftAssignment, SwapRequest, RuleCheckResult, ShiftSchedule } from '../data-access/shifts.api';
 import { AuthStore } from '../../../core/auth/auth.store';
+import { ReportsApi } from '../../reports/data-access/reports.api';
 
 interface CenterDto { id: string; name: string; }
 interface EmployeeDto { id: string; firstName: string; lastName: string; category: string; }
@@ -310,6 +311,16 @@ const SHIFT_COLORS: Record<string, { bg: string; text: string; border: string }>
         <div class="page-sub">{{ pageSub() }}</div>
       </div>
       <div style="display:flex; gap:0.5rem; align-items:center;">
+        <p-button
+          label="Schedule PDF"
+          icon="pi pi-file-pdf"
+          [text]="true"
+          [rounded]="true"
+          severity="secondary"
+          size="small"
+          [loading]="downloadingSchedule()"
+          (onClick)="onDownloadSchedule()"
+        />
         @if (isAdminOrManager()) {
           <p-button
             label="Refresh"
@@ -601,10 +612,12 @@ export class CuadranteComponent implements OnInit {
   private readonly api            = inject(ShiftsApi);
   private readonly httpApi        = inject(ApiService);
   private readonly auth           = inject(AuthStore) as unknown as AuthStore;
+  private readonly reportsApi     = inject(ReportsApi);
 
   // ── State ──────────────────────────────────────────────────────────────────
-  readonly loading      = signal(false);
-  readonly publishing   = signal(false);
+  readonly loading             = signal(false);
+  readonly downloadingSchedule = signal(false);
+  readonly publishing          = signal(false);
   readonly assigning    = signal(false);
   readonly swapsLoading = signal(false);
   readonly warnings     = signal<RuleCheckResult[]>([]);
@@ -821,6 +834,21 @@ export class CuadranteComponent implements OnInit {
       },
       error: () => { this.processingSwap.set(null); },
     });
+  }
+
+  async onDownloadSchedule(): Promise<void> {
+    this.downloadingSchedule.set(true);
+    try {
+      await firstValueFrom(
+        this.reportsApi.downloadSchedule({
+          year:  this.selectedYear(),
+          month: this.selectedMonth(),
+          employeeId: this.auth.user()?.employeeId ?? undefined,
+        }),
+      );
+    } finally {
+      this.downloadingSchedule.set(false);
+    }
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────

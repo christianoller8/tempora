@@ -60,6 +60,35 @@ export class ReportsApi {
     return this.fetchReport('/reports/compliance', { year, format: 'xlsx' }) as Observable<Blob>;
   }
 
+  downloadTimeEntries(params: {
+    from: string;
+    to: string;
+    employeeId?: string;
+    format: 'pdf' | 'excel';
+  }): Observable<void> {
+    const path = params.format === 'excel'
+      ? '/reports/time-entries/excel'
+      : '/reports/time-entries/pdf';
+    const ext = params.format === 'excel' ? 'xlsx' : 'pdf';
+    const body: Record<string, unknown> = { from: params.from, to: params.to };
+    if (params.employeeId) body['employeeId'] = params.employeeId;
+    return this.http
+      .post(`${this.baseUrl}${path}`, body, { responseType: 'blob', withCredentials: true })
+      .pipe(map(blob => { this.downloadReport(blob, `time-entries-${params.from}-${params.to}.${ext}`); }));
+  }
+
+  downloadSchedule(params: {
+    year: number;
+    month: number;
+    employeeId?: string;
+  }): Observable<void> {
+    const body: Record<string, unknown> = { year: params.year, month: params.month };
+    if (params.employeeId) body['employeeId'] = params.employeeId;
+    return this.http
+      .post(`${this.baseUrl}/reports/schedule/pdf`, body, { responseType: 'blob', withCredentials: true })
+      .pipe(map(blob => { this.downloadReport(blob, `schedule-${params.year}-${params.month}.pdf`); }));
+  }
+
   /**
    * Triggers a browser download of a Blob with the given filename.
    */

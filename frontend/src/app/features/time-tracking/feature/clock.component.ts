@@ -22,6 +22,7 @@ import { TimeApi } from '../data-access/time.api';
 import { SseService } from '../../../core/sse/sse.service';
 import { ApiService } from '../../../core/http/api.service';
 import { AuthStore } from '../../../core/auth/auth.store';
+import { ExportDialogComponent } from '../../reports/ui/export-dialog.component';
 import { firstValueFrom } from 'rxjs';
 import type { TimeEntryDto } from '../data-access/time.api';
 
@@ -35,6 +36,7 @@ type GeoStatus = 'idle' | 'requesting' | 'granted' | 'denied' | 'unavailable';
   imports: [
     DatePipe, ButtonModule, TagModule, DividerModule,
     TooltipModule, SkeletonModule, TextareaModule, MessageModule,
+    ExportDialogComponent,
   ],
   styles: [`
     :host { display: block; max-width: 760px; margin: 0 auto; }
@@ -588,6 +590,19 @@ type GeoStatus = 'idle' | 'requesting' | 'granted' | 'denied' | 'unavailable';
       </div>
     }
 
+    <!-- ── Export for Inspection ─────────────────────────────────────── -->
+    @if (isAdminOrManager()) {
+      <div style="display:flex; justify-content:flex-end; margin-bottom:1rem;">
+        <p-button
+          label="Export for Inspection"
+          icon="pi pi-file-export"
+          severity="secondary"
+          size="small"
+          (onClick)="showExport.set(true)"
+        />
+      </div>
+    }
+
     <!-- ── Today's entries ─────────────────────────────────────────── -->
     <div class="section-header">
       <div class="section-title">
@@ -694,6 +709,11 @@ type GeoStatus = 'idle' | 'requesting' | 'granted' | 'denied' | 'unavailable';
         </div>
       }
     </div>
+
+    <app-export-dialog
+      [visible]="showExport()"
+      (closed)="showExport.set(false)"
+    />
   `,
 })
 export class ClockComponent implements OnInit, OnDestroy {
@@ -717,6 +737,8 @@ export class ClockComponent implements OnInit, OnDestroy {
   readonly isAdminOrManager = computed(() =>
     ['ADMIN', 'MANAGER'].includes(this.auth.role() ?? ''),
   );
+
+  readonly showExport = signal(false);
 
   readonly liveEntries        = signal<TimeEntryDto[]>([]);
   readonly liveEntriesLoading = signal(false);

@@ -7,6 +7,9 @@ import {
   handleAbsenteeism,
   handleCoverage,
   handleCompliance,
+  handleTimeEntriesPdf,
+  handleTimeEntriesExcel,
+  handleSchedulePdf,
 } from './reporting.controller';
 
 /**
@@ -53,4 +56,25 @@ reportingRouter.get(
   '/compliance',
   requireRole(['ADMIN']),
   asyncHandler(handleCompliance),
+);
+
+// POST /reports/time-entries/pdf — ADMIN | MANAGER (FR-EXP-01)
+reportingRouter.post(
+  '/time-entries/pdf',
+  requireRole(['ADMIN', 'MANAGER']),
+  asyncHandler(handleTimeEntriesPdf),
+);
+
+// POST /reports/time-entries/excel — ADMIN | MANAGER (FR-EXP-02)
+reportingRouter.post(
+  '/time-entries/excel',
+  requireRole(['ADMIN', 'MANAGER']),
+  asyncHandler(handleTimeEntriesExcel),
+);
+
+// POST /reports/schedule/pdf — all authenticated roles (FR-EXP-03)
+reportingRouter.post(
+  '/schedule/pdf',
+  requireRole(['ADMIN', 'MANAGER', 'EMPLOYEE']),
+  asyncHandler(handleSchedulePdf),
 );
