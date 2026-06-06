@@ -6,6 +6,7 @@ import { sseHub } from './sse/sse-hub';
 import { setEventBus as setSchedulesEventBus } from './modules/shifts/schedules.service';
 import { setEventBus as setSwapsEventBus } from './modules/shifts/swaps.service';
 import { setEventBus as setTimeEventBus } from './modules/time-tracking/time.service';
+import { setEventBus as setAbsencesEventBus } from './modules/absences/absences.service';
 
 // Wire the real OrgEventBus into P2 services that were using no-op stubs,
 // and into the new time service.
@@ -23,6 +24,7 @@ const publishFn = (orgId: string, event: Record<string, unknown>) => {
 
 setSchedulesEventBus(publishFn);
 setSwapsEventBus(publishFn);
+setAbsencesEventBus(publishFn);
 
 // The time service accepts the OrgEventBus directly (typed interface).
 setTimeEventBus(eventBus);

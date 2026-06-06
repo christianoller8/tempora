@@ -115,12 +115,12 @@ describe('ClockComponent', () => {
     const fixture = TestBed.createComponent(ClockComponent);
     fixture.detectChanges();
 
-    expect(fixture.componentInstance['showCorrectionForm']()).toBe(false);
+    expect(fixture.componentInstance['showCorrection']()).toBe(false);
     const toggleBtn = fixture.nativeElement.querySelector('.btn-link');
     expect(toggleBtn).toBeTruthy();
     toggleBtn.click();
     fixture.detectChanges();
-    expect(fixture.componentInstance['showCorrectionForm']()).toBe(true);
+    expect(fixture.componentInstance['showCorrection']()).toBe(true);
   });
 });
 
@@ -164,7 +164,7 @@ describe('ClockComponent — Export for Inspection button (T10)', () => {
     fixture.detectChanges();
 
     const buttons = fixture.nativeElement.querySelectorAll('p-button');
-    const exportBtn = Array.from(buttons).find((el: Element) =>
+    const exportBtn = Array.from(buttons as NodeListOf<Element>).find((el) =>
       el.getAttribute('label') === 'Export for Inspection',
     );
     expect(exportBtn).toBeUndefined();
@@ -176,7 +176,7 @@ describe('ClockComponent — Export for Inspection button (T10)', () => {
     fixture.detectChanges();
 
     const buttons = fixture.nativeElement.querySelectorAll('p-button');
-    const exportBtn = Array.from(buttons).find((el: Element) =>
+    const exportBtn = Array.from(buttons as NodeListOf<Element>).find((el) =>
       el.getAttribute('label') === 'Export for Inspection',
     );
     expect(exportBtn).toBeTruthy();
@@ -188,7 +188,7 @@ describe('ClockComponent — Export for Inspection button (T10)', () => {
     fixture.detectChanges();
 
     const buttons = fixture.nativeElement.querySelectorAll('p-button');
-    const exportBtn = Array.from(buttons).find((el: Element) =>
+    const exportBtn = Array.from(buttons as NodeListOf<Element>).find((el) =>
       el.getAttribute('label') === 'Export for Inspection',
     );
     expect(exportBtn).toBeTruthy();

@@ -10,7 +10,7 @@ import {
   SCHEDULE_STATUS_VALUES,
   SHIFT_TYPE_VALUES,
   SWAP_STATUS_VALUES
-} from "./chunk-EJUHZAQG.js";
+} from "./chunk-CLOZTEOX.js";
 
 // src/schemas/common.schema.ts
 import { z } from "zod";
@@ -158,7 +158,9 @@ var CreateEmployeeSchema = CreateEmployeeBaseSchema.superRefine(
     }
   }
 );
-var UpdateEmployeeSchema = CreateEmployeeBaseSchema.partial();
+var UpdateEmployeeSchema = CreateEmployeeBaseSchema.partial().extend({
+  isActive: z4.boolean().optional()
+});
 var EmployeeResponseSchema = z4.object({
   id: z4.string().uuid(),
   organizationId: z4.string().uuid(),
@@ -330,9 +332,10 @@ var CreateAbsenceSchema = z7.object({
   // Transmitted in plaintext; encrypted at the application layer before storage.
   cause: z7.string().max(2e3).optional()
 });
-var ApproveAbsenceSchema = z7.object({
-  absenceId: z7.string().uuid()
+var DecisionAbsenceSchema = z7.object({
+  comment: z7.string().max(500).optional()
 });
+var ApproveAbsenceSchema = DecisionAbsenceSchema;
 var AbsenceBalanceQuerySchema = z7.object({
   employeeId: z7.string().uuid().optional(),
   year: z7.coerce.number().int().min(2020).max(2100)
@@ -350,6 +353,7 @@ var AbsenceResponseSchema = z7.object({
   cause: z7.string().nullable().optional(),
   approverId: z7.string().uuid().nullable(),
   decidedAt: z7.string().datetime({ offset: true }).nullable(),
+  decisionComment: z7.string().nullable(),
   createdAt: z7.string().datetime({ offset: true }),
   updatedAt: z7.string().datetime({ offset: true })
 });
@@ -412,6 +416,62 @@ var SseEventSchema = z9.object({
   emittedAt: z9.string()
 });
 
+// src/schemas/timesheet-signature.schema.ts
+import { z as z10 } from "zod";
+var ConfirmTimesheetSchema = z10.object({
+  year: z10.number().int().min(2020).max(2100),
+  month: z10.number().int().min(1).max(12)
+});
+var TimesheetSummaryQuerySchema = z10.object({
+  employeeId: z10.string().uuid().optional(),
+  year: z10.coerce.number().int().min(2020).max(2100),
+  month: z10.coerce.number().int().min(1).max(12)
+});
+var ConfirmationStatusQuerySchema = z10.object({
+  year: z10.coerce.number().int().min(2020).max(2100),
+  month: z10.coerce.number().int().min(1).max(12),
+  centerId: z10.string().uuid().optional()
+});
+var TimesheetSignatureResponseSchema = z10.object({
+  id: z10.string().uuid(),
+  organizationId: z10.string().uuid(),
+  employeeId: z10.string().uuid(),
+  year: z10.number().int(),
+  month: z10.number().int(),
+  confirmedAt: z10.string().datetime({ offset: true }),
+  createdAt: z10.string().datetime({ offset: true }),
+  alreadyConfirmed: z10.boolean()
+});
+var TimesheetEntrySchema = z10.object({
+  id: z10.string().uuid(),
+  clockIn: z10.string().datetime({ offset: true }),
+  clockOut: z10.string().datetime({ offset: true }).nullable(),
+  status: z10.enum(["OPEN", "CLOSED"]),
+  durationMinutes: z10.number().int().nullable()
+});
+var TimesheetSummaryResponseSchema = z10.object({
+  year: z10.number().int(),
+  month: z10.number().int(),
+  employeeId: z10.string().uuid(),
+  hours: z10.object({
+    regularHours: z10.number(),
+    overtimeHours: z10.number(),
+    partTimeDeviation: z10.number()
+  }).nullable(),
+  confirmed: z10.boolean(),
+  confirmedAt: z10.string().datetime({ offset: true }).nullable(),
+  hasOpenEntry: z10.boolean(),
+  totalAbsenceDays: z10.number().int().nonnegative(),
+  entries: z10.array(TimesheetEntrySchema)
+});
+var ConfirmationStatusRowSchema = z10.object({
+  employeeId: z10.string().uuid(),
+  firstName: z10.string(),
+  lastName: z10.string(),
+  confirmed: z10.boolean(),
+  confirmedAt: z10.string().datetime({ offset: true }).nullable()
+});
+
 export {
   UuidSchema,
   IsoDateSchema,
@@ -457,6 +517,7 @@ export {
   CorrectionResponseSchema,
   OvertimeQuerySchema,
   CreateAbsenceSchema,
+  DecisionAbsenceSchema,
   ApproveAbsenceSchema,
   AbsenceBalanceQuerySchema,
   AbsenceResponseSchema,
@@ -465,5 +526,12 @@ export {
   RuleCheckResultSchema,
   OperationWithWarningsSchema,
   SSE_EVENT_TYPES,
-  SseEventSchema
+  SseEventSchema,
+  ConfirmTimesheetSchema,
+  TimesheetSummaryQuerySchema,
+  ConfirmationStatusQuerySchema,
+  TimesheetSignatureResponseSchema,
+  TimesheetEntrySchema,
+  TimesheetSummaryResponseSchema,
+  ConfirmationStatusRowSchema
 };

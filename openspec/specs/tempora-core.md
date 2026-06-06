@@ -648,6 +648,52 @@ Provides HR-grade reports covering hours worked, overtime, absenteeism, and shif
 
 ---
 
+## Capability: timesheet-signature
+
+### Purpose
+
+Enables employees to review and digitally confirm their monthly timesheet, producing an immutable timestamped acknowledgment that satisfies RD-ley 8/2019 and the 2026 digital-only/unalterable records reform. A "signature" is a database record — not a cryptographic construct. Once confirmed, the month is locked read-only for that employee, preventing further clock-in/out or self-corrections. Managers and admins gain a confirmation-status overview per month.
+
+### Key Functional Requirements
+
+- **FR-TSS-001**: `TimesheetSignature` entity stores `id, organizationId, employeeId, year, month, confirmedAt, createdAt` with unique constraint on `(organizationId, employeeId, year, month)`.
+- **FR-TSS-003**: Employee retrieves monthly summary including hours breakdown, absence days, and confirmation state.
+- **FR-TSS-004**: Confirm endpoint creates signature with server-assigned `confirmedAt` (UTC); HTTP 201 on first confirm, HTTP 200 on idempotent re-confirm.
+- **FR-TSS-006**: Confirmation rejected with HTTP 422 if any `TimeEntry` in that month is OPEN (clock-in without clock-out).
+- **FR-TSS-007**: Lock guard rejects clock-in, clock-out, and self-submitted corrections on confirmed months with HTTP 409 `MONTH_LOCKED`.
+- **FR-TSS-009**: Confirmation writes one `AuditLog` row (action=APPROVE, entityType=TimesheetSignature) atomically with the signature insert.
+- **FR-TSS-010**: Manager/admin endpoint lists confirmation-status for all employees in a given month, scoped to their organization.
+- **FR-TSS-012**: Endpoints: `GET /timesheet-signatures/summary?year=&month=`, `POST /timesheet-signatures/confirm`, `GET /timesheet-signatures/status?year=&month=` (manager/admin only).
+
+### Key Design Decisions (ADRs)
+
+- **ADR-1 (Append-only DB record)**: Signature is an INSERT-only table with RLS, mirroring `AuditLog` pattern. No cryptographic signature; compliance value derives from immutability + audit trail + server timestamp.
+- **ADR-2 (Centralized lock helper)**: Single `assertMonthNotConfirmed` service function (exported from `timesheet-signature.service.ts`) is called by `time-tracking.service` at the top of every mutating path (clockIn, clockOut, createCorrection). Prevents "lock guard misses a path" risk.
+- **ADR-4 (Idempotent re-confirm)**: Via unique constraint + pre-transaction `findUnique`. Re-confirm returns HTTP 200 with existing row; no second audit log. Safe under race conditions (P2002 fallback).
+- **ADR-5 (Open-entry guard)**: Confirmation rejected if any OPEN entry exists in the month, preventing deadlock where employee cannot clock out of a confirmed month.
+
+### API Surface
+
+| Endpoint | Method | Auth | Request | Response |
+|----------|--------|------|---------|----------|
+| `/timesheet-signatures/summary` | GET | All; EMPLOYEE forced to own employeeId | `year, month` | `{ hours, confirmed, confirmedAt, hasOpenEntry }` |
+| `/timesheet-signatures/confirm` | POST | All; EMPLOYEE confirms own month only | `{ year, month }` | 201/200 `{ id, employeeId, year, month, confirmedAt, alreadyConfirmed }` |
+| `/timesheet-signatures/status` | GET | ADMIN/MANAGER only | `year, month` | `{ items: [{ employeeId, firstName, lastName, confirmed, confirmedAt }], summary: { total, confirmed, pending } }` |
+
+### Acceptance Criteria (Selection)
+
+- **AC-TSS-002**: Employee confirms pending month → creates signature + AuditLog atomically, HTTP 201.
+- **AC-TSS-003**: Re-confirm same month → HTTP 200, existing record, no new AuditLog.
+- **AC-TSS-005**: Lock blocks clock-in on confirmed month → HTTP 409 MONTH_LOCKED.
+- **AC-TSS-009**: Manager lists confirmation-status for a month, scoped to their org.
+
+### Test Coverage
+
+- **Backend**: 30 new tests (15 service unit + 6 controller unit + 9 lock-guard integration), 275 total passing (245 pre-existing + 30 new).
+- **Frontend**: 14 new store unit tests verifying state transitions, computed `canConfirm`, and error handling.
+
+---
+
 ## Cross-Cutting Constraints
 
 | Constraint | Applies To | Basis |

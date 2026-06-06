@@ -6,6 +6,7 @@ import {
   output,
 } from '@angular/core';
 import type { ShiftAssignment, ShiftTemplate } from '../data-access/shifts.api';
+import type { AbsenceDto } from '../../absences/data-access/absences.api';
 
 export interface EmployeeRow {
   id: string;
@@ -29,6 +30,26 @@ const SHIFT_CONFIG: Record<string, { label: string; bg: string; text: string; bo
   REFUERZO: { label: 'RF', bg: 'rgba(20,184,166,0.22)',  text: '#5eead4', border: 'rgba(20,184,166,0.5)'  },
   LIBRANZA: { label: 'L',  bg: 'rgba(34,197,94,0.14)',   text: '#86efac', border: 'rgba(34,197,94,0.4)'   },
 };
+
+interface AbsenceCfg { label: string; bg: string; text: string; border: string; typeLabel: string; }
+
+const AMBER_BG     = 'rgba(245,158,11,0.20)';
+const AMBER_TEXT   = '#fcd34d';
+const AMBER_BORDER = 'rgba(245,158,11,0.5)';
+
+const ABSENCE_CONFIG: Record<string, AbsenceCfg> = {
+  VACACIONES:             { label: 'VAC',  bg: AMBER_BG, text: AMBER_TEXT, border: AMBER_BORDER, typeLabel: 'Vacaciones' },
+  IT:                     { label: 'BAJA', bg: AMBER_BG, text: AMBER_TEXT, border: AMBER_BORDER, typeLabel: 'Incapacidad Temporal' },
+  PERMISO_RETRIBUIDO:     { label: 'PR',   bg: AMBER_BG, text: AMBER_TEXT, border: AMBER_BORDER, typeLabel: 'Permiso Retribuido' },
+  AUSENCIA_INJUSTIFICADA: { label: 'AI',   bg: AMBER_BG, text: AMBER_TEXT, border: AMBER_BORDER, typeLabel: 'Ausencia Injustificada' },
+  LACTANCIA:              { label: 'LAC',  bg: AMBER_BG, text: AMBER_TEXT, border: AMBER_BORDER, typeLabel: 'Lactancia' },
+  REDUCCION_JORNADA:      { label: 'RJ',   bg: AMBER_BG, text: AMBER_TEXT, border: AMBER_BORDER, typeLabel: 'Reducción de Jornada' },
+  ASUNTOS_PROPIOS:        { label: 'AP',   bg: AMBER_BG, text: AMBER_TEXT, border: AMBER_BORDER, typeLabel: 'Asuntos Propios' },
+  PERMISO_NO_RETRIBUIDO:  { label: 'PNR',  bg: AMBER_BG, text: AMBER_TEXT, border: AMBER_BORDER, typeLabel: 'Permiso No Retribuido' },
+  MATERNIDAD_PATERNIDAD:  { label: 'MP',   bg: AMBER_BG, text: AMBER_TEXT, border: AMBER_BORDER, typeLabel: 'Maternidad / Paternidad' },
+};
+
+const ABSENCE_FALLBACK: AbsenceCfg = { label: 'AUS', bg: AMBER_BG, text: AMBER_TEXT, border: AMBER_BORDER, typeLabel: 'Ausencia' };
 
 @Component({
   selector: 'app-cuadrante-grid',
@@ -184,6 +205,20 @@ const SHIFT_CONFIG: Record<string, { label: string; bg: string; text: string; bo
       color: transparent;
       transition: all 0.15s;
     }
+
+    .absence-chip {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 30px;
+      border-radius: 5px;
+      font-size: 0.6rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      border: 1px solid transparent;
+      cursor: default;
+    }
   `],
   template: `
     <div class="grid-scroll" role="region" aria-label="Cuadrante de turnos">
@@ -213,20 +248,29 @@ const SHIFT_CONFIG: Record<string, { label: string; bg: string; text: string; bo
                 <span class="emp-cat">{{ formatCategory(emp.category) }}</span>
               </td>
               @for (d of days(); track d.num) {
+                @let abs  = getAbsence(emp.id, d.dateStr);
                 @let cell = getCell(emp.id, d.dateStr);
                 <td
                   class="td-day"
                   [class.is-weekend]="d.isWeekend"
                   [class.is-today]="d.isToday"
-                  [class.editable]="editable()"
-                  (click)="editable() && onCellClick(emp.id, d.dateStr, cell?.assignment ?? null)"
-                  (keydown.enter)="editable() && onCellClick(emp.id, d.dateStr, cell?.assignment ?? null)"
-                  (keydown.space)="editable() && onCellClick(emp.id, d.dateStr, cell?.assignment ?? null)"
-                  [attr.tabindex]="editable() ? 0 : -1"
-                  [attr.role]="editable() ? 'gridcell' : null"
-                  [title]="cell ? cell.shiftName + ' ' + cell.times : ''"
+                  [class.editable]="editable() && !abs"
+                  (click)="editable() && !abs && onCellClick(emp.id, d.dateStr, cell?.assignment ?? null)"
+                  (keydown.enter)="editable() && !abs && onCellClick(emp.id, d.dateStr, cell?.assignment ?? null)"
+                  (keydown.space)="editable() && !abs && onCellClick(emp.id, d.dateStr, cell?.assignment ?? null)"
+                  [attr.tabindex]="editable() && !abs ? 0 : -1"
+                  [attr.role]="editable() && !abs ? 'gridcell' : null"
+                  [title]="abs ? abs.typeLabel : (cell ? cell.shiftName + ' ' + cell.times : '')"
                 >
-                  @if (cell) {
+                  @if (abs) {
+                    <div
+                      class="absence-chip"
+                      [style.background]="abs.bg"
+                      [style.color]="abs.text"
+                      [style.border-color]="abs.border"
+                      [attr.aria-label]="abs.typeLabel"
+                    >{{ abs.label }}</div>
+                  } @else if (cell) {
                     <div
                       class="shift-chip"
                       [style.background]="cell.bg"
@@ -246,12 +290,13 @@ const SHIFT_CONFIG: Record<string, { label: string; bg: string; text: string; bo
   `,
 })
 export class CuadranteGridComponent {
-  readonly employees  = input.required<EmployeeRow[]>();
+  readonly employees   = input.required<EmployeeRow[]>();
   readonly assignments = input.required<ShiftAssignment[]>();
-  readonly templates  = input.required<ShiftTemplate[]>();
-  readonly year       = input.required<number>();
-  readonly month      = input.required<number>();
-  readonly editable   = input<boolean>(false);
+  readonly templates   = input.required<ShiftTemplate[]>();
+  readonly year        = input.required<number>();
+  readonly month       = input.required<number>();
+  readonly editable    = input<boolean>(false);
+  readonly absences    = input<AbsenceDto[]>([]);
 
   readonly assignmentClick = output<AssignmentClickEvent>();
 
@@ -294,6 +339,30 @@ export class CuadranteGridComponent {
 
   getCell(employeeId: string, dateStr: string) {
     return this.cellMap().get(`${employeeId}:${dateStr}`) ?? null;
+  }
+
+  readonly absenceMap = computed(() => {
+    const map = new Map<string, AbsenceCfg>();
+    const y = this.year(), m = this.month();
+    for (const a of this.absences()) {
+      if (a.status !== 'APPROVED') continue;
+      const cfg = ABSENCE_CONFIG[a.type] ?? ABSENCE_FALLBACK;
+      const cur = new Date(a.startDate);
+      const end = new Date(a.endDate);
+      // Iterate each day in the absence range, clamping to displayed month
+      while (cur <= end) {
+        if (cur.getFullYear() === y && cur.getMonth() + 1 === m) {
+          const dateStr = `${y}-${String(m).padStart(2, '0')}-${String(cur.getDate()).padStart(2, '0')}`;
+          map.set(`${a.employeeId}:${dateStr}`, cfg);
+        }
+        cur.setDate(cur.getDate() + 1);
+      }
+    }
+    return map;
+  });
+
+  getAbsence(employeeId: string, dateStr: string): AbsenceCfg | null {
+    return this.absenceMap().get(`${employeeId}:${dateStr}`) ?? null;
   }
 
   onCellClick(employeeId: string, date: string, assignment: ShiftAssignment | null): void {

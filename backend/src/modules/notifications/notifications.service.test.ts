@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { persist, listNotifications, markRead } from './notifications.service';
+import { persist, listNotifications, markRead, markAllRead } from './notifications.service';
 import type { TenantClient } from '../../db/tenant';
 import type { PrismaClient } from '@prisma/client';
 
@@ -148,5 +148,62 @@ describe('markRead', () => {
         data: { read: true },
       }),
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// markAllRead()
+// ---------------------------------------------------------------------------
+
+describe('markAllRead', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('returns { updated: N } where N is the count of rows flipped', async () => {
+    const db = makeTenantDb({
+      notification: {
+        ...({} as object),
+        updateMany: vi.fn().mockResolvedValue({ count: 3 }),
+        findMany: vi.fn().mockResolvedValue([baseNotification]),
+        findUnique: vi.fn().mockResolvedValue(baseNotification),
+        update: vi.fn().mockResolvedValue({ ...baseNotification, read: true }),
+        create: vi.fn().mockResolvedValue(baseNotification),
+      },
+    });
+    const result = await markAllRead(USER, ORG, db);
+    expect(result).toEqual({ updated: 3 });
+  });
+
+  it('returns { updated: 0 } when no unread rows exist (idempotent)', async () => {
+    const db = makeTenantDb({
+      notification: {
+        ...({} as object),
+        updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+        findMany: vi.fn().mockResolvedValue([]),
+        findUnique: vi.fn().mockResolvedValue(null),
+        update: vi.fn(),
+        create: vi.fn(),
+      },
+    });
+    const result = await markAllRead(USER, ORG, db);
+    expect(result).toEqual({ updated: 0 });
+  });
+
+  it('calls updateMany with correct where clause scoped to userId + organizationId', async () => {
+    const updateManySpy = vi.fn().mockResolvedValue({ count: 2 });
+    const db = makeTenantDb({
+      notification: {
+        ...({} as object),
+        updateMany: updateManySpy,
+        findMany: vi.fn().mockResolvedValue([]),
+        findUnique: vi.fn(),
+        update: vi.fn(),
+        create: vi.fn(),
+      },
+    });
+    await markAllRead(USER, ORG, db);
+    expect(updateManySpy).toHaveBeenCalledWith({
+      where: { userId: USER, organizationId: ORG, read: false },
+      data: { read: true },
+    });
   });
 });

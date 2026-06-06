@@ -48,7 +48,7 @@ describe('SwapApprovalComponent', () => {
   it('loads pending swaps on init', () => {
     const fixture = TestBed.createComponent(SwapApprovalComponent);
     fixture.detectChanges();
-    expect(fixture.componentInstance['pendingSwaps']()).toHaveSize(1);
+    expect(fixture.componentInstance['pendingSwaps']()).toHaveLength(1);
   });
 
   it('approve() removes swap from list on success', () => {
@@ -58,7 +58,7 @@ describe('SwapApprovalComponent', () => {
     fixture.componentInstance['approve']('swap-1');
     fixture.detectChanges();
 
-    expect(fixture.componentInstance['pendingSwaps']()).toHaveSize(0);
+    expect(fixture.componentInstance['pendingSwaps']()).toHaveLength(0);
   });
 
   it('approve() shows warnings when rule engine returns warn violations', () => {
@@ -73,7 +73,7 @@ describe('SwapApprovalComponent', () => {
     fixture.componentInstance['approve']('swap-1');
     fixture.detectChanges();
 
-    expect(fixture.componentInstance['violations']()).toHaveSize(1);
+    expect(fixture.componentInstance['violations']()).toHaveLength(1);
   });
 
   it('approve() sets error on HTTP error', () => {
@@ -98,7 +98,7 @@ describe('SwapApprovalComponent', () => {
     fixture.componentInstance['reject']('swap-1');
     fixture.detectChanges();
 
-    expect(fixture.componentInstance['pendingSwaps']()).toHaveSize(0);
+    expect(fixture.componentInstance['pendingSwaps']()).toHaveLength(0);
   });
 
   it('clearViolations() resets violations signal', () => {
@@ -108,6 +108,6 @@ describe('SwapApprovalComponent', () => {
     fixture.componentInstance['violations'].set(mockWarnings);
     fixture.componentInstance['clearViolations']();
 
-    expect(fixture.componentInstance['violations']()).toHaveSize(0);
+    expect(fixture.componentInstance['violations']()).toHaveLength(0);
   });
 });

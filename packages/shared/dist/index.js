@@ -13,6 +13,9 @@ import {
   CenterResponseSchema,
   ClockInSchema,
   ClockOutSchema,
+  ConfirmTimesheetSchema,
+  ConfirmationStatusQuerySchema,
+  ConfirmationStatusRowSchema,
   CorrectionResponseSchema,
   CreateAbsenceSchema,
   CreateCenterSchema,
@@ -23,6 +26,7 @@ import {
   CreateScheduleSchema,
   CreateSwapSchema,
   CreateWorkingCalendarSchema,
+  DecisionAbsenceSchema,
   DepartmentResponseSchema,
   EmployeeResponseSchema,
   ErrorEnvelopeSchema,
@@ -51,13 +55,17 @@ import {
   SseEventSchema,
   SwapResponseSchema,
   TimeEntryResponseSchema,
+  TimesheetEntrySchema,
+  TimesheetSignatureResponseSchema,
+  TimesheetSummaryQuerySchema,
+  TimesheetSummaryResponseSchema,
   UpdateCenterSchema,
   UpdateDepartmentSchema,
   UpdateEmployeeSchema,
   UpdateOrganizationSchema,
   UuidSchema,
   WorkingCalendarSchema
-} from "./chunk-3KCW6S7F.js";
+} from "./chunk-JLEMD6KE.js";
 import {
   ABSENCE_STATUS_VALUES,
   ABSENCE_TYPE_VALUES,
@@ -71,7 +79,7 @@ import {
   SCHEDULE_STATUS_VALUES,
   SHIFT_TYPE_VALUES,
   SWAP_STATUS_VALUES
-} from "./chunk-EJUHZAQG.js";
+} from "./chunk-CLOZTEOX.js";
 export {
   ABSENCE_STATUS_VALUES,
   ABSENCE_TYPE_VALUES,
@@ -87,6 +95,9 @@ export {
   CenterResponseSchema,
   ClockInSchema,
   ClockOutSchema,
+  ConfirmTimesheetSchema,
+  ConfirmationStatusQuerySchema,
+  ConfirmationStatusRowSchema,
   CorrectionResponseSchema,
   CreateAbsenceSchema,
   CreateCenterSchema,
@@ -97,6 +108,7 @@ export {
   CreateScheduleSchema,
   CreateSwapSchema,
   CreateWorkingCalendarSchema,
+  DecisionAbsenceSchema,
   DepartmentResponseSchema,
   EMPLOYEE_CATEGORY_VALUES,
   ENTRY_STATUS_VALUES,
@@ -135,6 +147,10 @@ export {
   SseEventSchema,
   SwapResponseSchema,
   TimeEntryResponseSchema,
+  TimesheetEntrySchema,
+  TimesheetSignatureResponseSchema,
+  TimesheetSummaryQuerySchema,
+  TimesheetSummaryResponseSchema,
   UpdateCenterSchema,
   UpdateDepartmentSchema,
   UpdateEmployeeSchema,

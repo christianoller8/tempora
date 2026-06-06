@@ -34,6 +34,9 @@ __export(index_exports, {
   CenterResponseSchema: () => CenterResponseSchema,
   ClockInSchema: () => ClockInSchema,
   ClockOutSchema: () => ClockOutSchema,
+  ConfirmTimesheetSchema: () => ConfirmTimesheetSchema,
+  ConfirmationStatusQuerySchema: () => ConfirmationStatusQuerySchema,
+  ConfirmationStatusRowSchema: () => ConfirmationStatusRowSchema,
   CorrectionResponseSchema: () => CorrectionResponseSchema,
   CreateAbsenceSchema: () => CreateAbsenceSchema,
   CreateCenterSchema: () => CreateCenterSchema,
@@ -44,6 +47,7 @@ __export(index_exports, {
   CreateScheduleSchema: () => CreateScheduleSchema,
   CreateSwapSchema: () => CreateSwapSchema,
   CreateWorkingCalendarSchema: () => CreateWorkingCalendarSchema,
+  DecisionAbsenceSchema: () => DecisionAbsenceSchema,
   DepartmentResponseSchema: () => DepartmentResponseSchema,
   EMPLOYEE_CATEGORY_VALUES: () => EMPLOYEE_CATEGORY_VALUES,
   ENTRY_STATUS_VALUES: () => ENTRY_STATUS_VALUES,
@@ -82,6 +86,10 @@ __export(index_exports, {
   SseEventSchema: () => SseEventSchema,
   SwapResponseSchema: () => SwapResponseSchema,
   TimeEntryResponseSchema: () => TimeEntryResponseSchema,
+  TimesheetEntrySchema: () => TimesheetEntrySchema,
+  TimesheetSignatureResponseSchema: () => TimesheetSignatureResponseSchema,
+  TimesheetSummaryQuerySchema: () => TimesheetSummaryQuerySchema,
+  TimesheetSummaryResponseSchema: () => TimesheetSummaryResponseSchema,
   UpdateCenterSchema: () => UpdateCenterSchema,
   UpdateDepartmentSchema: () => UpdateDepartmentSchema,
   UpdateEmployeeSchema: () => UpdateEmployeeSchema,
@@ -156,7 +164,10 @@ var ABSENCE_TYPE_VALUES = [
   "PERMISO_RETRIBUIDO",
   "AUSENCIA_INJUSTIFICADA",
   "LACTANCIA",
-  "REDUCCION_JORNADA"
+  "REDUCCION_JORNADA",
+  "ASUNTOS_PROPIOS",
+  "PERMISO_NO_RETRIBUIDO",
+  "MATERNIDAD_PATERNIDAD"
 ];
 var ABSENCE_STATUS_VALUES = ["PENDING", "APPROVED", "REJECTED", "CANCELLED"];
 var ENTRY_STATUS_VALUES = ["OPEN", "CLOSED"];
@@ -303,7 +314,9 @@ var CreateEmployeeSchema = CreateEmployeeBaseSchema.superRefine(
     }
   }
 );
-var UpdateEmployeeSchema = CreateEmployeeBaseSchema.partial();
+var UpdateEmployeeSchema = CreateEmployeeBaseSchema.partial().extend({
+  isActive: import_zod4.z.boolean().optional()
+});
 var EmployeeResponseSchema = import_zod4.z.object({
   id: import_zod4.z.string().uuid(),
   organizationId: import_zod4.z.string().uuid(),
@@ -475,9 +488,10 @@ var CreateAbsenceSchema = import_zod7.z.object({
   // Transmitted in plaintext; encrypted at the application layer before storage.
   cause: import_zod7.z.string().max(2e3).optional()
 });
-var ApproveAbsenceSchema = import_zod7.z.object({
-  absenceId: import_zod7.z.string().uuid()
+var DecisionAbsenceSchema = import_zod7.z.object({
+  comment: import_zod7.z.string().max(500).optional()
 });
+var ApproveAbsenceSchema = DecisionAbsenceSchema;
 var AbsenceBalanceQuerySchema = import_zod7.z.object({
   employeeId: import_zod7.z.string().uuid().optional(),
   year: import_zod7.z.coerce.number().int().min(2020).max(2100)
@@ -495,6 +509,7 @@ var AbsenceResponseSchema = import_zod7.z.object({
   cause: import_zod7.z.string().nullable().optional(),
   approverId: import_zod7.z.string().uuid().nullable(),
   decidedAt: import_zod7.z.string().datetime({ offset: true }).nullable(),
+  decisionComment: import_zod7.z.string().nullable(),
   createdAt: import_zod7.z.string().datetime({ offset: true }),
   updatedAt: import_zod7.z.string().datetime({ offset: true })
 });
@@ -557,6 +572,62 @@ var SseEventSchema = import_zod9.z.object({
   emittedAt: import_zod9.z.string()
 });
 
+// src/schemas/timesheet-signature.schema.ts
+var import_zod10 = require("zod");
+var ConfirmTimesheetSchema = import_zod10.z.object({
+  year: import_zod10.z.number().int().min(2020).max(2100),
+  month: import_zod10.z.number().int().min(1).max(12)
+});
+var TimesheetSummaryQuerySchema = import_zod10.z.object({
+  employeeId: import_zod10.z.string().uuid().optional(),
+  year: import_zod10.z.coerce.number().int().min(2020).max(2100),
+  month: import_zod10.z.coerce.number().int().min(1).max(12)
+});
+var ConfirmationStatusQuerySchema = import_zod10.z.object({
+  year: import_zod10.z.coerce.number().int().min(2020).max(2100),
+  month: import_zod10.z.coerce.number().int().min(1).max(12),
+  centerId: import_zod10.z.string().uuid().optional()
+});
+var TimesheetSignatureResponseSchema = import_zod10.z.object({
+  id: import_zod10.z.string().uuid(),
+  organizationId: import_zod10.z.string().uuid(),
+  employeeId: import_zod10.z.string().uuid(),
+  year: import_zod10.z.number().int(),
+  month: import_zod10.z.number().int(),
+  confirmedAt: import_zod10.z.string().datetime({ offset: true }),
+  createdAt: import_zod10.z.string().datetime({ offset: true }),
+  alreadyConfirmed: import_zod10.z.boolean()
+});
+var TimesheetEntrySchema = import_zod10.z.object({
+  id: import_zod10.z.string().uuid(),
+  clockIn: import_zod10.z.string().datetime({ offset: true }),
+  clockOut: import_zod10.z.string().datetime({ offset: true }).nullable(),
+  status: import_zod10.z.enum(["OPEN", "CLOSED"]),
+  durationMinutes: import_zod10.z.number().int().nullable()
+});
+var TimesheetSummaryResponseSchema = import_zod10.z.object({
+  year: import_zod10.z.number().int(),
+  month: import_zod10.z.number().int(),
+  employeeId: import_zod10.z.string().uuid(),
+  hours: import_zod10.z.object({
+    regularHours: import_zod10.z.number(),
+    overtimeHours: import_zod10.z.number(),
+    partTimeDeviation: import_zod10.z.number()
+  }).nullable(),
+  confirmed: import_zod10.z.boolean(),
+  confirmedAt: import_zod10.z.string().datetime({ offset: true }).nullable(),
+  hasOpenEntry: import_zod10.z.boolean(),
+  totalAbsenceDays: import_zod10.z.number().int().nonnegative(),
+  entries: import_zod10.z.array(TimesheetEntrySchema)
+});
+var ConfirmationStatusRowSchema = import_zod10.z.object({
+  employeeId: import_zod10.z.string().uuid(),
+  firstName: import_zod10.z.string(),
+  lastName: import_zod10.z.string(),
+  confirmed: import_zod10.z.boolean(),
+  confirmedAt: import_zod10.z.string().datetime({ offset: true }).nullable()
+});
+
 // src/constants/roles.ts
 var ROLES = ["ADMIN", "MANAGER", "EMPLOYEE"];
 
@@ -617,6 +688,9 @@ var ERROR_CODES = {
   CenterResponseSchema,
   ClockInSchema,
   ClockOutSchema,
+  ConfirmTimesheetSchema,
+  ConfirmationStatusQuerySchema,
+  ConfirmationStatusRowSchema,
   CorrectionResponseSchema,
   CreateAbsenceSchema,
   CreateCenterSchema,
@@ -627,6 +701,7 @@ var ERROR_CODES = {
   CreateScheduleSchema,
   CreateSwapSchema,
   CreateWorkingCalendarSchema,
+  DecisionAbsenceSchema,
   DepartmentResponseSchema,
   EMPLOYEE_CATEGORY_VALUES,
   ENTRY_STATUS_VALUES,
@@ -665,6 +740,10 @@ var ERROR_CODES = {
   SseEventSchema,
   SwapResponseSchema,
   TimeEntryResponseSchema,
+  TimesheetEntrySchema,
+  TimesheetSignatureResponseSchema,
+  TimesheetSummaryQuerySchema,
+  TimesheetSummaryResponseSchema,
   UpdateCenterSchema,
   UpdateDepartmentSchema,
   UpdateEmployeeSchema,

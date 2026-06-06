@@ -64,10 +64,10 @@ export const AbsencesStore = signalStore(
       }
     },
 
-    async approveAbsence(id: string): Promise<void> {
+    async approveAbsence(id: string, comment?: string): Promise<void> {
       patchState(store, { loading: true, error: null });
       try {
-        const updated = await firstValueFrom(api.approveAbsence(id));
+        const updated = await firstValueFrom(api.approveAbsence(id, comment));
         patchState(store, {
           absences: store.absences().map((a: AbsenceDto) => (a.id === id ? updated : a)),
           loading: false,
@@ -78,10 +78,10 @@ export const AbsencesStore = signalStore(
       }
     },
 
-    async rejectAbsence(id: string): Promise<void> {
+    async rejectAbsence(id: string, comment?: string): Promise<void> {
       patchState(store, { loading: true, error: null });
       try {
-        const updated = await firstValueFrom(api.rejectAbsence(id));
+        const updated = await firstValueFrom(api.rejectAbsence(id, comment));
         patchState(store, {
           absences: store.absences().map((a: AbsenceDto) => (a.id === id ? updated : a)),
           loading: false,
@@ -116,7 +116,7 @@ export type AbsencesStore = {
   isBalanceLoaded(): boolean;
   loadAbsences(filter?: { employeeId?: string; status?: string; type?: string }): Promise<void>;
   createAbsence(dto: CreateAbsenceDto): Promise<void>;
-  approveAbsence(id: string): Promise<void>;
-  rejectAbsence(id: string): Promise<void>;
+  approveAbsence(id: string, comment?: string): Promise<void>;
+  rejectAbsence(id: string, comment?: string): Promise<void>;
   loadBalance(employeeId?: string, year?: number): Promise<void>;
 };

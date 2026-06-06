@@ -5,6 +5,7 @@ import { auditWriter } from '../../audit/audit-writer';
 import { ruleEngine } from '../rules/index';
 import type { RuleContext, RuleSetConfig, RuleCheckResult } from '../rules/types';
 import type { OrgEventBus } from '../../sse/event-bus';
+import { assertMonthNotConfirmed } from '../timesheet-signature/timesheet-signature.service';
 
 // ---------------------------------------------------------------------------
 // Event bus injection — replaced at startup with real OrgEventBus instance.
@@ -102,6 +103,9 @@ export async function clockIn(
     throw new ApiError(409, 'ALREADY_CLOCKED_IN', 'Employee already has an open time entry');
   }
 
+  // FR-TSS-007: lock guard — reject clock-in on a confirmed month (ADR-2).
+  await assertMonthNotConfirmed(employeeId, new Date(), orgId, db);
+
   // FR-TIME-1: server-authoritative timestamp.
   const entry = await db.timeEntry.create({
     data: {
@@ -156,6 +160,10 @@ export async function clockOut(
   if (!openEntry) {
     throw new ApiError(404, 'NOT_CLOCKED_IN', 'Employee has no open time entry to close');
   }
+
+  // FR-TSS-007: lock guard — reject clock-out when the open entry's month is confirmed (ADR-2).
+  // Month derived from openEntry.clockIn (the entry being closed).
+  await assertMonthNotConfirmed(employeeId, openEntry.clockIn, orgId, db);
 
   const clockOutTime = new Date();
   const effectiveHours =
@@ -309,6 +317,10 @@ export async function createCorrection(
   if (!entry) {
     throw new ApiError(404, 'NOT_FOUND', `TimeEntry ${dto.timeEntryId} not found`);
   }
+
+  // FR-TSS-007: lock guard — reject self-corrections on a confirmed month (ADR-2, ADR-3).
+  // Month derived from the target entry's clockIn.
+  await assertMonthNotConfirmed(dto.requestedById, entry.clockIn, orgId, db);
 
   const correction = await db.timeCorrection.create({
     data: {

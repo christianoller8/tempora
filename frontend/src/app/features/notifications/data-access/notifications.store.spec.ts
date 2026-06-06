@@ -29,8 +29,8 @@ function createMockSse(): Partial<InstanceType<typeof SseService>> {
   return {
     connect: vi.fn(),
     disconnect: vi.fn(),
-    connected: () => false,
-    lastEvent: () => null,
+    connected: (() => false) as unknown as InstanceType<typeof SseService>['connected'],
+    lastEvent: (() => null) as unknown as InstanceType<typeof SseService>['lastEvent'],
   };
 }
 

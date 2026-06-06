@@ -11,9 +11,12 @@ export const CreateAbsenceSchema = z.object({
   cause: z.string().max(2000).optional(),
 });
 
-export const ApproveAbsenceSchema = z.object({
-  absenceId: z.string().uuid(),
+export const DecisionAbsenceSchema = z.object({
+  comment: z.string().max(500).optional(),
 });
+
+// Kept for backwards-compatibility — existing importers reference ApproveAbsenceSchema.
+export const ApproveAbsenceSchema = DecisionAbsenceSchema;
 
 export const AbsenceBalanceQuerySchema = z.object({
   employeeId: z.string().uuid().optional(),
@@ -33,6 +36,7 @@ export const AbsenceResponseSchema = z.object({
   cause: z.string().nullable().optional(),
   approverId: z.string().uuid().nullable(),
   decidedAt: z.string().datetime({ offset: true }).nullable(),
+  decisionComment: z.string().nullable(),
   createdAt: z.string().datetime({ offset: true }),
   updatedAt: z.string().datetime({ offset: true }),
 });

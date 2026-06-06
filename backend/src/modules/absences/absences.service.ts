@@ -9,6 +9,56 @@ import { env } from '../../config/env';
 // Absence service — satisfies FR-ABS-1..7, AC-ABS-1..6 [GDPR] [COMPLIANCE]
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Event bus injection — mirrors time.service.ts pattern.
+// Replaced at startup in server.ts with the real OrgEventBus publish function.
+// ---------------------------------------------------------------------------
+type PublishFn = (orgId: string, event: Record<string, unknown>) => void;
+let _eventBus: PublishFn | null = null;
+
+export function setEventBus(fn: PublishFn): void {
+  _eventBus = fn;
+}
+
+// ---------------------------------------------------------------------------
+// Absence notification payload types (spec §2.1)
+// ---------------------------------------------------------------------------
+type AbsenceNotificationPayload =
+  | { type: 'ABSENCE_APPROVED'; absenceId: string; employeeId: string; decidedAt: string }
+  | { type: 'ABSENCE_REJECTED'; absenceId: string; employeeId: string; decidedAt: string }
+  | { type: 'ABSENCE_REQUESTED'; absenceId: string; employeeId: string };
+
+// ---------------------------------------------------------------------------
+// emitNotification — persist DB row first (FR-NOT-04), then emit SSE (ADR-3).
+// ---------------------------------------------------------------------------
+async function emitNotification(
+  orgId: string,
+  targetUserId: string,
+  payload: AbsenceNotificationPayload,
+  db: TenantClient,
+): Promise<void> {
+  // FR-NOT-04: persist BEFORE delivery — commit the row first.
+  await db.notification.create({
+    data: {
+      organizationId: orgId,
+      userId: targetUserId,
+      type: 'NOTIFICATION',
+      payload: payload as object,
+      read: false,
+    },
+  });
+  // Then fan out to connected clients; prePersisted flag tells the SSE
+  // controller to skip its own persist() call (ADR-3).
+  _eventBus?.(orgId, {
+    type: 'NOTIFICATION',
+    organizationId: orgId,
+    targetUserId,
+    payload,
+    emittedAt: new Date().toISOString(),
+    prePersisted: true,
+  });
+}
+
 export interface CreateAbsenceDto {
   employeeId: string;
   type: AbsenceType;
@@ -120,6 +170,20 @@ export async function createAbsence(
     },
   });
 
+  // FR-NOT-03: notify all MANAGER/ADMIN users in the org about the new request.
+  // Non-blocking: failures must not prevent the absence from being returned.
+  const recipients = await db.user.findMany({
+    where: { organizationId: orgId, role: { in: ['ADMIN', 'MANAGER'] }, isActive: true },
+    select: { id: true },
+  });
+  for (const u of recipients) {
+    await emitNotification(orgId, u.id, {
+      type: 'ABSENCE_REQUESTED',
+      absenceId: absence.id,
+      employeeId: dto.employeeId,
+    }, db);
+  }
+
   const { causeEncrypted: _raw, ...rest } = absence;
   return { absence: rest };
 }
@@ -139,8 +203,12 @@ export async function approveAbsence(
   approverId: string,
   orgId: string,
   db: TenantClient,
+  comment?: string,
 ): Promise<AbsenceWithCause> {
-  const existing = await db.absence.findUnique({ where: { id } });
+  const existing = await db.absence.findUnique({
+    where: { id },
+    include: { employee: { include: { user: { select: { id: true } } } } },
+  });
   if (!existing) {
     throw new ApiError(404, 'NOT_FOUND', `Absence ${id} not found`);
   }
@@ -153,7 +221,7 @@ export async function approveAbsence(
 
   const approved = await db.absence.update({
     where: { id },
-    data: { status: 'APPROVED', approverId, decidedAt },
+    data: { status: 'APPROVED', approverId, decidedAt, decisionComment: comment ?? null },
   });
 
   await auditWriter.write(db, approverId, orgId, {
@@ -163,6 +231,18 @@ export async function approveAbsence(
     before,
     after: { status: 'APPROVED', approverId, decidedAt: decidedAt.toISOString() },
   });
+
+  // FR-NOT-01: emit ABSENCE_APPROVED notification to the absence owner.
+  // ADR-2: skip silently if employee has no linked user account.
+  const ownerUserId = existing.employee?.user?.id;
+  if (ownerUserId) {
+    await emitNotification(orgId, ownerUserId, {
+      type: 'ABSENCE_APPROVED',
+      absenceId: id,
+      employeeId: existing.employeeId,
+      decidedAt: decidedAt.toISOString(),
+    }, db);
+  }
 
   const { causeEncrypted: _raw, ...rest } = approved;
   return rest;
@@ -183,8 +263,12 @@ export async function rejectAbsence(
   rejecterId: string,
   orgId: string,
   db: TenantClient,
+  comment?: string,
 ): Promise<AbsenceWithCause> {
-  const existing = await db.absence.findUnique({ where: { id } });
+  const existing = await db.absence.findUnique({
+    where: { id },
+    include: { employee: { include: { user: { select: { id: true } } } } },
+  });
   if (!existing) {
     throw new ApiError(404, 'NOT_FOUND', `Absence ${id} not found`);
   }
@@ -197,7 +281,7 @@ export async function rejectAbsence(
 
   const rejected = await db.absence.update({
     where: { id },
-    data: { status: 'REJECTED', approverId: rejecterId, decidedAt },
+    data: { status: 'REJECTED', approverId: rejecterId, decidedAt, decisionComment: comment ?? null },
   });
 
   await auditWriter.write(db, rejecterId, orgId, {
@@ -207,6 +291,18 @@ export async function rejectAbsence(
     before,
     after: { status: 'REJECTED', decidedAt: decidedAt.toISOString() },
   });
+
+  // FR-NOT-02: emit ABSENCE_REJECTED notification to the absence owner.
+  // ADR-2: skip silently if employee has no linked user account.
+  const ownerUserId = existing.employee?.user?.id;
+  if (ownerUserId) {
+    await emitNotification(orgId, ownerUserId, {
+      type: 'ABSENCE_REJECTED',
+      absenceId: id,
+      employeeId: existing.employeeId,
+      decidedAt: decidedAt.toISOString(),
+    }, db);
+  }
 
   const { causeEncrypted: _raw, ...rest } = rejected;
   return rest;
@@ -231,10 +327,16 @@ export async function getAbsence(
   orgId: string,
   actorId: string,
   db: TenantClient,
+  requesterEmployeeId?: string,
 ): Promise<AbsenceWithCause> {
   const absence = await db.absence.findUnique({ where: { id } });
   if (!absence) {
     throw new ApiError(404, 'NOT_FOUND', `Absence ${id} not found`);
+  }
+
+  // D7: guard ownership BEFORE audit/decrypt to avoid auditing an unauthorized read.
+  if (requesterEmployeeId !== undefined && absence.employeeId !== requesterEmployeeId) {
+    throw new ApiError(404, 'NOT_FOUND', 'Absence not found');
   }
 
   let cause: string | undefined;

@@ -71,6 +71,9 @@ enum AbsenceType {
   AUSENCIA_INJUSTIFICADA
   LACTANCIA
   REDUCCION_JORNADA
+  ASUNTOS_PROPIOS
+  PERMISO_NO_RETRIBUIDO
+  MATERNIDAD_PATERNIDAD
 }
 
 enum EntryStatus {
@@ -141,9 +144,10 @@ model Organization {
   swaps            CambioTurno[]
   timeEntries      TimeEntry[]
   timeCorrections  TimeCorrection[]
-  absences         Absence[]
-  auditLogs        AuditLog[]
-  notifications    Notification[]
+  absences            Absence[]
+  auditLogs           AuditLog[]
+  notifications       Notification[]
+  timesheetSignatures TimesheetSignature[]
 
   @@map("organizations")
 }
@@ -242,10 +246,11 @@ model Employee {
   organization    Organization    @relation(fields: [organizationId], references: [id])
   primaryCenter   Center          @relation("PrimaryCenter", fields: [primaryCenterId], references: [id])
   workingCalendar WorkingCalendar? @relation(fields: [workingCalendarId], references: [id])
-  user            User?
-  assignments     ShiftAssignment[]
-  timeEntries     TimeEntry[]
-  absences        Absence[]
+  user                User?
+  assignments         ShiftAssignment[]
+  timeEntries         TimeEntry[]
+  absences            Absence[]
+  timesheetSignatures TimesheetSignature[]
 
   @@index([organizationId])
   @@index([organizationId, primaryCenterId])
@@ -466,6 +471,7 @@ model Absence {
   causeEncrypted   Bytes?
   approverId       String?       @db.Uuid
   decidedAt        DateTime?     @db.Timestamptz(6)
+  decisionComment  String?
   createdAt        DateTime      @default(now()) @db.Timestamptz(6)
   updatedAt        DateTime      @updatedAt @db.Timestamptz(6)
 
@@ -497,6 +503,28 @@ model Notification {
   @@index([organizationId, userId])
   @@index([organizationId, read])
   @@map("notifications")
+}
+
+// ----------------------------- TIMESHEET SIGNATURE -----------------------------
+
+// APPEND-ONLY. No @updatedAt. No cascade. App role has INSERT + SELECT only
+// (no UPDATE/DELETE) — mirrors AuditLog. confirmedAt is immutable once written.
+model TimesheetSignature {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @db.Uuid
+  employeeId     String   @db.Uuid
+  year           Int
+  month          Int
+  confirmedAt    DateTime @default(now()) @db.Timestamptz(6)
+  createdAt      DateTime @default(now()) @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  employee     Employee     @relation(fields: [employeeId], references: [id])
+
+  @@unique([organizationId, employeeId, year, month])
+  @@index([organizationId])
+  @@index([organizationId, year, month])
+  @@map("timesheet_signatures")
 }
 
 // ----------------------------- AUDIT -----------------------------

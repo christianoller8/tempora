@@ -106,8 +106,8 @@ describe('SchedulesStore', () => {
 
   it('draftSchedules computed filters only DRAFT schedules', async () => {
     await store.loadSchedules();
-    expect(store.draftSchedules()).toHaveSize(1);
-    expect(store.publishedSchedules()).toHaveSize(0);
+    expect(store.draftSchedules()).toHaveLength(1);
+    expect(store.publishedSchedules()).toHaveLength(0);
   });
 
   it('clearWarnings resets lastWarnings to empty array', async () => {
@@ -119,6 +119,6 @@ describe('SchedulesStore', () => {
     store = TestBed.inject(SchedulesStore);
     await store.publishSchedule('sched-1');
     store.clearWarnings();
-    expect(store.lastWarnings()).toHaveSize(0);
+    expect(store.lastWarnings()).toHaveLength(0);
   });
 });

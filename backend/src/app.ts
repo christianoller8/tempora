@@ -14,6 +14,7 @@ import { absencesRouter } from './modules/absences/absences.router';
 import { rulesetRouter } from './modules/rules/ruleset.router';
 import { notificationsRouter } from './modules/notifications/notifications.router';
 import { reportingRouter } from './modules/reporting/reporting.router';
+import { timesheetSignatureRouter } from './modules/timesheet-signature/timesheet-signature.router';
 
 export function createApp() {
   const app = express();
@@ -52,6 +53,9 @@ export function createApp() {
 
   // Reporting — satisfies FR-REP-1..9 [GDPR] [COMPLIANCE].
   app.use('/reports', reportingRouter);
+
+  // Timesheet Signature — satisfies FR-TSS-001..014 [COMPLIANCE].
+  app.use('/timesheet-signatures', timesheetSignatureRouter);
 
   // Central error handler must be last.
   app.use(errorHandler);

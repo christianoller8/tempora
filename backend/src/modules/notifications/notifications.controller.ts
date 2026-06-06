@@ -1,4 +1,4 @@
-import type { Request, Response } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import { eventBus } from '../../sse/event-bus';
 import type { AuthUser } from '../../types/auth';
 
@@ -7,7 +7,7 @@ import { sseHub } from '../../sse/sse-hub';
 import type { SseEvent } from '../../sse/events';
 import { prisma } from '../../db/prisma';
 import { getDb, getUser } from '../../db-context';
-import { persist, listNotifications, markRead } from './notifications.service';
+import { persist, listNotifications, markRead, markAllRead } from './notifications.service';
 
 /**
  * GET /notifications/stream
@@ -45,7 +45,11 @@ export function stream(req: Request, res: Response): void {
     if (sseHub.shouldDeliver(client, event)) {
       res.write(`event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`);
       // FR-NOTIF-7: persist user-targeted events fire-and-forget.
-      persist(event, prisma).catch(() => {});
+      // ADR-3: skip persist() for events already persisted at the service layer
+      // (indicated by prePersisted: true on the event).
+      if (!(event as SseEvent & { prePersisted?: boolean }).prePersisted) {
+        persist(event, prisma).catch(() => {});
+      }
     }
   };
   eventBus.for(organizationId).on('event', onEvent);
@@ -89,4 +93,24 @@ export async function handleMarkRead(req: Request, res: Response): Promise<void>
   const id = req.params['id'] as string;
   const notification = await markRead(id, user.userId, user.organizationId, db);
   res.json({ data: notification });
+}
+
+/**
+ * PATCH /notifications/read-all
+ *
+ * Marks all unread notifications as read for the current user.
+ * Returns { updated: N } where N is the count of rows flipped.
+ * Idempotent: returns { updated: 0 } when no unread rows exist.
+ *
+ * Satisfies FR-NOT-05, AC-NOT-05.
+ */
+export async function handleMarkAllRead(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const user = getUser();
+    const db = getDb();
+    const result = await markAllRead(user.userId, user.organizationId, db);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
 }

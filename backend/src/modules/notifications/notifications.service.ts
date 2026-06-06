@@ -70,6 +70,29 @@ export async function listNotifications(
 }
 
 // ---------------------------------------------------------------------------
+// markAllRead — sets read = true on all unread notifications for a user
+// ---------------------------------------------------------------------------
+
+/**
+ * Marks all unread notifications as read for a given user within an org.
+ * Returns the count of rows updated.
+ * Idempotent: zero unread rows → returns { updated: 0 } with no error.
+ *
+ * Satisfies FR-NOT-05, AC-NOT-05.
+ */
+export async function markAllRead(
+  userId: string,
+  orgId: string,
+  db: TenantClient,
+): Promise<{ updated: number }> {
+  const result = await db.notification.updateMany({
+    where: { userId, organizationId: orgId, read: false },
+    data: { read: true },
+  });
+  return { updated: result.count };
+}
+
+// ---------------------------------------------------------------------------
 // markRead — transitions read: false → true
 // ---------------------------------------------------------------------------
 

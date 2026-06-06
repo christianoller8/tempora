@@ -10,6 +10,8 @@ import { ButtonModule } from 'primeng/button';
 
 /**
  * NotificationBellComponent — topbar bell with unread count badge.
+ * Stays presentational: emits (open) with the MouseEvent so the host
+ * can anchor a popover to the button (ADR-5).
  */
 @Component({
   selector: 'app-notification-bell',
@@ -48,7 +50,7 @@ import { ButtonModule } from 'primeng/button';
         [text]="true"
         [rounded]="true"
         severity="secondary"
-        (onClick)="open.emit()"
+        (onClick)="open.emit($event)"
         [attr.aria-label]="ariaLabel()"
       />
       @if (count() > 0) {
@@ -61,7 +63,8 @@ import { ButtonModule } from 'primeng/button';
 })
 export class NotificationBellComponent {
   readonly count = input<number>(0);
-  readonly open  = output<void>();
+  /** Emits the click MouseEvent so the host can anchor a p-popover to it. */
+  readonly open  = output<MouseEvent>();
 
   readonly ariaLabel = computed(() =>
     this.count() > 0

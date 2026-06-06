@@ -2,8 +2,8 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   inject,
-  signal,
   OnInit,
 } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
@@ -12,10 +12,13 @@ import { AvatarModule } from 'primeng/avatar';
 import { BadgeModule } from 'primeng/badge';
 import { TooltipModule } from 'primeng/tooltip';
 import { DividerModule } from 'primeng/divider';
+import { PopoverModule } from 'primeng/popover';
 import { AuthStore } from '../auth/auth.store';
 import { NotificationsStore } from '../../features/notifications/data-access/notifications.store';
 import { NotificationListComponent } from '../../features/notifications/feature/notification-list.component';
+import { NotificationBellComponent } from '../../features/notifications/ui/notification-bell.component';
 import { ThemeService } from '../theme/theme.service';
+import { SseService } from '../sse/sse.service';
 
 interface NavItem {
   label: string;
@@ -30,7 +33,9 @@ interface NavItem {
   imports: [
     RouterLink, RouterLinkActive, RouterOutlet,
     ButtonModule, AvatarModule, BadgeModule, TooltipModule, DividerModule,
+    PopoverModule,
     NotificationListComponent,
+    NotificationBellComponent,
   ],
   styles: [`
     /* ── Layout ─────────────────────────────────────────────────────── */
@@ -178,22 +183,6 @@ interface NavItem {
       padding: 1px 5px;
     }
 
-    .nav-notif-badge {
-      margin-left: auto;
-      background: var(--p-red-500, #ef4444);
-      color: #fff;
-      font-size: 0.65rem;
-      font-weight: 700;
-      min-width: 18px;
-      height: 18px;
-      border-radius: 9px;
-      padding: 0 5px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      line-height: 1;
-    }
-
     /* ── Sidebar footer ──────────────────────────────────────────────── */
     .sidebar-footer {
       padding: 0.75rem;
@@ -308,28 +297,6 @@ interface NavItem {
               }
             </li>
           }
-
-          <!-- Notifications -->
-          <li>
-            <button
-              class="nav-link"
-              [class.active]="showNotifications()"
-              (click)="toggleNotifications()"
-              [pTooltip]="'Notifications'"
-              tooltipPosition="right"
-              [showDelay]="600"
-              aria-label="Notifications"
-              type="button"
-            >
-              <i class="pi pi-bell"></i>
-              <span>Notifications</span>
-              @if (notificationsStore.unreadCount() > 0) {
-                <span class="nav-notif-badge" aria-live="polite" aria-atomic="true">
-                  {{ notificationsStore.unreadCount() }}
-                </span>
-              }
-            </button>
-          </li>
         </ul>
       </nav>
 
@@ -355,6 +322,15 @@ interface NavItem {
       <header class="topbar">
         <span class="topbar-org">{{ orgName() }}</span>
         <div class="topbar-end">
+          <!-- Notification bell + popover -->
+          <app-notification-bell
+            [count]="notificationsStore.unreadCount()"
+            (open)="notifPanel.toggle($event)"
+          />
+          <p-popover #notifPanel [style]="{ width: 'min(380px, calc(100vw - 2rem))' }" (onShow)="onPopoverOpen()">
+            <app-notification-list (navigated)="notifPanel.hide()" />
+          </p-popover>
+
           <!-- Theme toggle -->
           <p-button
             [icon]="theme.isDark() ? 'pi pi-sun' : 'pi pi-moon'"
@@ -384,11 +360,6 @@ interface NavItem {
         </div>
       </header>
 
-      <!-- Notification panel -->
-      @if (showNotifications()) {
-        <app-notification-list class="notifications-panel" />
-      }
-
       <!-- Page content -->
       <main class="page-content" role="main">
         <router-outlet />
@@ -399,14 +370,13 @@ interface NavItem {
 export class ShellComponent implements OnInit {
   private readonly auth   = inject(AuthStore) as unknown as AuthStore;
   private readonly router = inject(Router);
+  private readonly sse    = inject(SseService);
   protected readonly notificationsStore = inject(NotificationsStore) as unknown as NotificationsStore;
   protected readonly theme = inject(ThemeService);
 
   readonly isAdminOrManager = computed(() =>
     ['ADMIN', 'MANAGER'].includes(this.auth.role() ?? ''),
   );
-
-  readonly showNotifications = signal(false);
 
   readonly orgName = computed(() => 'Tempora Demo');
   readonly userEmail = computed(() => this.auth.user()?.email ?? '');
@@ -421,39 +391,54 @@ export class ShellComponent implements OnInit {
     console.log('[Shell] navItems recomputed — role:', role);
     if (role === 'EMPLOYEE') {
       return [
-        { label: 'My Schedule',  route: '/shifts',        icon: 'pi-calendar' },
-        { label: 'My Time',      route: '/time-tracking', icon: 'pi-clock' },
-        { label: 'My Absences',  route: '/absences',      icon: 'pi-calendar-times' },
-        { label: 'My Documents', route: '/documents',     icon: 'pi-file',          comingSoon: true },
+        { label: 'My Schedule',   route: '/shifts',        icon: 'pi-calendar' },
+        { label: 'My Time',       route: '/time-tracking', icon: 'pi-clock' },
+        { label: 'My Absences',   route: '/absences',      icon: 'pi-calendar-times' },
+        { label: 'My Timesheet',  route: '/timesheet',     icon: 'pi-file-check' },
+        { label: 'My Documents',  route: '/documents',     icon: 'pi-file',          comingSoon: true },
       ];
     }
     if (role === 'MANAGER') {
       return [
-        { label: 'Dashboard',     route: '/dashboard',     icon: 'pi-home' },
-        { label: 'Shifts',        route: '/shifts',        icon: 'pi-calendar' },
-        { label: 'Time Tracking', route: '/time-tracking', icon: 'pi-clock' },
-        { label: 'Absences',      route: '/absences',      icon: 'pi-calendar-times' },
+        { label: 'Dashboard',         route: '/dashboard',        icon: 'pi-home' },
+        { label: 'Shifts',            route: '/shifts',           icon: 'pi-calendar' },
+        { label: 'Time Tracking',     route: '/time-tracking',    icon: 'pi-clock' },
+        { label: 'Absences',          route: '/absences',         icon: 'pi-calendar-times' },
+        { label: 'My Timesheet',      route: '/timesheet',        icon: 'pi-file-check' },
+        { label: 'Timesheet Status',  route: '/timesheet-status', icon: 'pi-list-check' },
       ];
     }
     // ADMIN
     return [
-      { label: 'Dashboard',     route: '/dashboard',     icon: 'pi-home' },
-      { label: 'Shifts',        route: '/shifts',        icon: 'pi-calendar' },
-      { label: 'Time Tracking', route: '/time-tracking', icon: 'pi-clock' },
-      { label: 'Absences',      route: '/absences',      icon: 'pi-calendar-times' },
-      { label: 'Employees',     route: '/employees',     icon: 'pi-users' },
-      { label: 'Documents',     route: '/documents',     icon: 'pi-file',          comingSoon: true },
-      { label: 'Reports',       route: '/reports',       icon: 'pi-chart-bar' },
-      { label: 'Settings',      route: '/admin',         icon: 'pi-cog' },
+      { label: 'Dashboard',         route: '/dashboard',        icon: 'pi-home' },
+      { label: 'Shifts',            route: '/shifts',           icon: 'pi-calendar' },
+      { label: 'Time Tracking',     route: '/time-tracking',    icon: 'pi-clock' },
+      { label: 'Absences',          route: '/absences',         icon: 'pi-calendar-times' },
+      { label: 'My Timesheet',      route: '/timesheet',        icon: 'pi-file-check' },
+      { label: 'Timesheet Status',  route: '/timesheet-status', icon: 'pi-list-check' },
+      { label: 'Employees',         route: '/employees',        icon: 'pi-users' },
+      { label: 'Documents',         route: '/documents',        icon: 'pi-file',          comingSoon: true },
+      { label: 'Reports',           route: '/reports',          icon: 'pi-chart-bar' },
+      { label: 'Settings',          route: '/admin',            icon: 'pi-cog' },
     ];
   });
+
+  constructor() {
+    // ADR-6: bridge SSE events into the store via an effect.
+    // The store stays HTTP-only and unit-testable; the shell is the single integration point.
+    effect(() => {
+      const ev = this.sse.lastEvent();
+      if (ev) this.notificationsStore.applySseEvent(ev);
+    });
+  }
 
   ngOnInit(): void {
     void this.notificationsStore.loadNotifications();
   }
 
-  toggleNotifications(): void {
-    this.showNotifications.update(v => !v);
+  /** Called when the notifications popover opens — refreshes the list (FR-NOT-14). */
+  onPopoverOpen(): void {
+    void this.notificationsStore.loadNotifications();
   }
 
   logout(): void {

@@ -5,10 +5,8 @@ import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import { SkeletonModule } from 'primeng/skeleton';
 import { AbsencesStore } from '../data-access/absences.store';
-import type { AbsenceDto } from '../data-access/absences.api';
+import type { AbsenceDto, AbsenceType } from '../data-access/absences.api';
 import { AuthStore } from '../../../core/auth/auth.store';
-
-type AbsenceType = 'VACACIONES' | 'IT' | 'PERMISO_RETRIBUIDO' | 'AUSENCIA_INJUSTIFICADA' | 'LACTANCIA' | 'REDUCCION_JORNADA';
 
 const ABSENCE_TYPE_LABELS: Record<AbsenceType, string> = {
   VACACIONES: 'Vacaciones',
@@ -17,6 +15,9 @@ const ABSENCE_TYPE_LABELS: Record<AbsenceType, string> = {
   AUSENCIA_INJUSTIFICADA: 'Ausencia Injustificada',
   LACTANCIA: 'Lactancia',
   REDUCCION_JORNADA: 'Reducción de Jornada',
+  ASUNTOS_PROPIOS: 'Asuntos Propios',
+  PERMISO_NO_RETRIBUIDO: 'Permiso No Retribuido',
+  MATERNIDAD_PATERNIDAD: 'Maternidad / Paternidad',
 };
 
 const ABSENCE_TYPES = Object.keys(ABSENCE_TYPE_LABELS) as AbsenceType[];
@@ -129,6 +130,50 @@ const STATUS_SEVERITY: Record<AbsenceDto['status'], TagSeverity> = {
     .submit-feedback { font-size: 0.8125rem; }
     .submit-feedback.success { color: #22c55e; }
     .submit-feedback.error   { color: var(--p-red-400, #f87171); }
+
+    .decision-form {
+      margin-top: 0.625rem;
+      padding-top: 0.625rem;
+      border-top: 1px solid var(--p-surface-border);
+    }
+    .decision-form label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+      color: var(--p-text-color-muted, var(--p-text-color-secondary));
+    }
+    .decision-form textarea {
+      width: 100%;
+      padding: 0.5rem 0.625rem;
+      background: var(--p-surface-section);
+      border: 1px solid var(--p-surface-border);
+      border-radius: 6px;
+      color: var(--p-text-color);
+      font-size: 0.8125rem;
+      outline: none;
+      resize: vertical;
+      margin-bottom: 0.5rem;
+    }
+    .decision-form textarea:focus { border-color: var(--p-primary-color); }
+    .decision-form .decision-actions { display: flex; gap: 0.375rem; }
+
+    .decision-comment {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.375rem;
+      margin-top: 0.375rem;
+      font-size: 0.75rem;
+      color: var(--p-text-color-muted, var(--p-text-color-secondary));
+      font-style: italic;
+    }
+    .decision-comment .pi { margin-top: 2px; flex-shrink: 0; }
+
+    .abs-row-wrap {
+      border-bottom: 1px solid var(--p-surface-border);
+    }
+    .abs-row-wrap:last-child { border-bottom: none; }
+    .abs-row-wrap .abs-row { border-bottom: none; }
   `],
   template: `
     <!-- ── Page header ─────────────────────────────────────────────── -->
@@ -161,19 +206,47 @@ const STATUS_SEVERITY: Record<AbsenceDto['status'], TagSeverity> = {
             <span class="abs-col-label">Actions</span>
           </div>
           @for (abs of pendingAbsences(); track abs.id) {
-            <div class="abs-row">
-              <span class="abs-type">{{ typeLabels[abs.type] }}</span>
-              <span class="abs-dates">{{ abs.startDate | date:'d MMM y' }}</span>
-              <span class="abs-dates">{{ abs.endDate | date:'d MMM y' }}</span>
-              <p-tag [value]="abs.status" [severity]="statusSeverity(abs.status)" [rounded]="true" [style]="{ fontSize: '0.7rem' }" />
-              <div class="abs-actions">
-                <p-button icon="pi pi-check" severity="success" size="small"
-                  pTooltip="Approve" [loading]="processingId() === abs.id" [disabled]="processingId() !== null"
-                  (onClick)="approve(abs.id)" />
-                <p-button icon="pi pi-times" severity="danger" size="small"
-                  pTooltip="Reject" [loading]="processingId() === abs.id" [disabled]="processingId() !== null"
-                  (onClick)="reject(abs.id)" />
+            <div class="abs-row-wrap">
+              <div class="abs-row">
+                <span class="abs-type">{{ typeLabels[abs.type] }}</span>
+                <span class="abs-dates">{{ abs.startDate | date:'d MMM y' }}</span>
+                <span class="abs-dates">{{ abs.endDate | date:'d MMM y' }}</span>
+                <p-tag [value]="abs.status" [severity]="statusSeverity(abs.status)" [rounded]="true" [style]="{ fontSize: '0.7rem' }" />
+                <div class="abs-actions">
+                  <p-button icon="pi pi-check" severity="success" size="small"
+                    pTooltip="Approve" [loading]="processingId() === abs.id" [disabled]="processingId() !== null"
+                    (onClick)="openDecision(abs.id, 'approve')" />
+                  <p-button icon="pi pi-times" severity="danger" size="small"
+                    pTooltip="Reject" [loading]="processingId() === abs.id" [disabled]="processingId() !== null"
+                    (onClick)="openDecision(abs.id, 'reject')" />
+                </div>
               </div>
+              @if (decisionTargetId() === abs.id) {
+                <div class="decision-form" style="padding: 0.625rem 1.25rem 0.75rem;">
+                  <label [for]="'decision-comment-' + abs.id">Comentario (opcional)</label>
+                  <textarea
+                    [id]="'decision-comment-' + abs.id"
+                    [attr.aria-label]="'Comentario para la decisión de ' + typeLabels[abs.type]"
+                    rows="2"
+                    [value]="decisionComment()"
+                    (input)="decisionComment.set($any($event.target).value)"
+                    placeholder="Motivo o nota para el empleado (máx. 500 caracteres)"
+                    maxlength="500"
+                  ></textarea>
+                  <div class="decision-actions">
+                    <p-button
+                      [label]="decisionAction() === 'approve' ? 'Confirmar aprobación' : 'Confirmar rechazo'"
+                      [icon]="decisionAction() === 'approve' ? 'pi pi-check' : 'pi pi-times'"
+                      [severity]="decisionAction() === 'approve' ? 'success' : 'danger'"
+                      size="small"
+                      [loading]="processingId() === abs.id"
+                      (onClick)="confirmDecision(abs.id)"
+                    />
+                    <p-button label="Cancelar" severity="secondary" [text]="true" size="small"
+                      (onClick)="cancelDecision()" />
+                  </div>
+                </div>
+              }
             </div>
           }
         }
@@ -200,12 +273,19 @@ const STATUS_SEVERITY: Record<AbsenceDto['status'], TagSeverity> = {
             <span></span>
           </div>
           @for (abs of nonPendingAbsences(); track abs.id) {
-            <div class="abs-row">
-              <span class="abs-type">{{ typeLabels[abs.type] }}</span>
-              <span class="abs-dates">{{ abs.startDate | date:'d MMM y' }}</span>
-              <span class="abs-dates">{{ abs.endDate | date:'d MMM y' }}</span>
-              <p-tag [value]="abs.status" [severity]="statusSeverity(abs.status)" [rounded]="true" [style]="{ fontSize: '0.7rem' }" />
-              <span></span>
+            <div class="abs-row-wrap">
+              <div class="abs-row">
+                <span class="abs-type">{{ typeLabels[abs.type] }}</span>
+                <span class="abs-dates">{{ abs.startDate | date:'d MMM y' }}</span>
+                <span class="abs-dates">{{ abs.endDate | date:'d MMM y' }}</span>
+                <p-tag [value]="abs.status" [severity]="statusSeverity(abs.status)" [rounded]="true" [style]="{ fontSize: '0.7rem' }" />
+                <span></span>
+              </div>
+              @if (abs.decisionComment) {
+                <div class="decision-comment" style="padding: 0.25rem 1.25rem 0.5rem;">
+                  <i class="pi pi-comment"></i> {{ abs.decisionComment }}
+                </div>
+              }
             </div>
           }
         }
@@ -234,12 +314,19 @@ const STATUS_SEVERITY: Record<AbsenceDto['status'], TagSeverity> = {
             <span></span>
           </div>
           @for (abs of store.absences(); track abs.id) {
-            <div class="abs-row">
-              <span class="abs-type">{{ typeLabels[abs.type] }}</span>
-              <span class="abs-dates">{{ abs.startDate | date:'d MMM y' }}</span>
-              <span class="abs-dates">{{ abs.endDate | date:'d MMM y' }}</span>
-              <p-tag [value]="abs.status" [severity]="statusSeverity(abs.status)" [rounded]="true" [style]="{ fontSize: '0.7rem' }" />
-              <span></span>
+            <div class="abs-row-wrap">
+              <div class="abs-row">
+                <span class="abs-type">{{ typeLabels[abs.type] }}</span>
+                <span class="abs-dates">{{ abs.startDate | date:'d MMM y' }}</span>
+                <span class="abs-dates">{{ abs.endDate | date:'d MMM y' }}</span>
+                <p-tag [value]="abs.status" [severity]="statusSeverity(abs.status)" [rounded]="true" [style]="{ fontSize: '0.7rem' }" />
+                <span></span>
+              </div>
+              @if (abs.decisionComment) {
+                <div class="decision-comment" style="padding: 0.25rem 1.25rem 0.5rem;">
+                  <i class="pi pi-comment"></i> {{ abs.decisionComment }}
+                </div>
+              }
             </div>
           }
         }
@@ -327,6 +414,11 @@ export class AbsenceRequestComponent implements OnInit {
 
   protected readonly processingId = signal<string | null>(null);
 
+  // Decision flow signals
+  protected readonly decisionTargetId = signal<string | null>(null);
+  protected readonly decisionAction   = signal<'approve' | 'reject'>('approve');
+  protected readonly decisionComment  = signal('');
+
   protected readonly absenceTypes = ABSENCE_TYPES;
   protected readonly typeLabels = ABSENCE_TYPE_LABELS;
   protected readonly submitError = signal<string | null>(null);
@@ -359,16 +451,27 @@ export class AbsenceRequestComponent implements OnInit {
     return STATUS_SEVERITY[status] ?? 'secondary';
   }
 
-  protected async approve(id: string): Promise<void> {
-    this.processingId.set(id);
-    await this.store.approveAbsence(id);
-    this.processingId.set(null);
+  protected openDecision(id: string, action: 'approve' | 'reject'): void {
+    this.decisionTargetId.set(id);
+    this.decisionAction.set(action);
+    this.decisionComment.set('');
   }
 
-  protected async reject(id: string): Promise<void> {
+  protected cancelDecision(): void {
+    this.decisionTargetId.set(null);
+    this.decisionComment.set('');
+  }
+
+  protected async confirmDecision(id: string): Promise<void> {
     this.processingId.set(id);
-    await this.store.rejectAbsence(id);
+    const comment = this.decisionComment().trim() || undefined;
+    if (this.decisionAction() === 'approve') {
+      await this.store.approveAbsence(id, comment);
+    } else {
+      await this.store.rejectAbsence(id, comment);
+    }
     this.processingId.set(null);
+    this.cancelDecision();
   }
 
   protected async onSubmit(): Promise<void> {

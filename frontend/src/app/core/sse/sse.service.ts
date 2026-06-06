@@ -60,6 +60,31 @@ export class SseService {
       }
     };
 
+    // ADR-4: the backend emits named SSE events (event: TYPE\ndata: ...).
+    // EventSource.onmessage only fires for unnamed events (no event: field).
+    // Add addEventListener for each known named event type so lastEvent fires
+    // for all backend events.
+    const namedEvents: string[] = [
+      'NOTIFICATION',
+      'NOTIFICATION_READ',
+      'CLOCK_IN',
+      'CLOCK_OUT',
+      'SHIFT_PUBLISHED',
+      'SWAP_REQUESTED',
+      'SWAP_APPROVED',
+    ];
+    for (const eventName of namedEvents) {
+      this.source.addEventListener(eventName, (event: Event) => {
+        const msgEvent = event as MessageEvent;
+        try {
+          const parsed = JSON.parse(msgEvent.data as string) as SseEvent;
+          this.lastEvent.set(parsed);
+        } catch {
+          // ignore malformed events
+        }
+      });
+    }
+
     this.source.onerror = () => {
       this.connected.set(false);
       this.source?.close();

@@ -7,3 +7,4 @@ export * from './time-entry.schema.js';
 export * from './absence.schema.js';
 export * from './rule.schema.js';
 export * from './sse.schema.js';
+export * from './timesheet-signature.schema.js';

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { asyncHandler } from '../../utils/async-handler';
 import { authenticate } from '../../middleware/auth';
 import { tenantContext } from '../../middleware/tenant-context';
-import { stream, handleListNotifications, handleMarkRead } from './notifications.controller';
+import { stream, handleListNotifications, handleMarkRead, handleMarkAllRead } from './notifications.controller';
 
 /**
  * Notifications router — SSE stream + REST notification endpoints.
@@ -25,6 +25,11 @@ notificationsRouter.get('/stream', stream);
 
 // GET /notifications — paginated list for current user (requires tenantContext).
 notificationsRouter.get('/', tenantContext, asyncHandler(handleListNotifications));
+
+// PATCH /notifications/read-all — mark all notifications read (requires tenantContext).
+// IMPORTANT: this route MUST appear BEFORE /:id/read to prevent Express from
+// matching 'read-all' as { id: 'read-all' }.
+notificationsRouter.patch('/read-all', tenantContext, asyncHandler(handleMarkAllRead));
 
 // PATCH /notifications/:id/read — mark notification read (requires tenantContext).
 notificationsRouter.patch('/:id/read', tenantContext, asyncHandler(handleMarkRead));

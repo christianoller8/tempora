@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   createAbsence,
   approveAbsence,
@@ -62,6 +62,14 @@ function makeMockDb(overrides: Partial<Record<string, unknown>> = {}): TenantCli
       update: vi.fn().mockResolvedValue({ ...baseAbsence, status: 'APPROVED' }),
     },
     auditLog: {
+      create: vi.fn().mockResolvedValue({}),
+    },
+    // Required by createAbsence notification path (FR-NOT-03)
+    user: {
+      findMany: vi.fn().mockResolvedValue([]),
+    },
+    // Required by notification emission path (FR-NOT-01, FR-NOT-02, FR-NOT-03)
+    notification: {
       create: vi.fn().mockResolvedValue({}),
     },
     ...overrides,
@@ -509,5 +517,409 @@ describe('getBalance', () => {
     const balance = await getBalance(EMPLOYEE, 2026, ORG, db);
     expect(balance.used).toBe(22);
     expect(balance.remaining).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// FR-ABS-20 / FR-ABS-21 — new absence types accepted by service
+// ---------------------------------------------------------------------------
+
+describe('createAbsence — new absence types (FR-ABS-20, FR-ABS-21)', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it.each([
+    'ASUNTOS_PROPIOS' as const,
+    'PERMISO_NO_RETRIBUIDO' as const,
+    'MATERNIDAD_PATERNIDAD' as const,
+  ])('creates a PENDING absence with type %s', async (type) => {
+    const absence = { ...baseAbsence, type };
+    const db = makeMockDb({
+      absence: {
+        findFirst: vi.fn().mockResolvedValue(null),
+        findMany: vi.fn().mockResolvedValue([]),
+        create: vi.fn().mockResolvedValue(absence),
+        findUnique: vi.fn().mockResolvedValue(null),
+        update: vi.fn().mockResolvedValue(absence),
+      },
+    });
+    const result = await createAbsence(
+      { employeeId: EMPLOYEE, type, startDate: '2026-07-01', endDate: '2026-07-05' },
+      EMPLOYEE,
+      'EMPLOYEE',
+      ORG,
+      db,
+    );
+    expect(result.absence.type).toBe(type);
+    expect(result.absence.status).toBe('PENDING');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// FR-ABS-24 — approve/reject with optional comment persists decisionComment
+// ---------------------------------------------------------------------------
+
+describe('approveAbsence — comment persistence (FR-ABS-24)', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('persists decisionComment when comment is provided', async () => {
+    const updateSpy = vi.fn().mockResolvedValue({ ...baseAbsence, status: 'APPROVED' as const, decisionComment: 'Approved for August' });
+    const db = makeMockDb({
+      absence: {
+        findUnique: vi.fn().mockResolvedValue(baseAbsence),
+        update: updateSpy,
+        findFirst: vi.fn().mockResolvedValue(null),
+        findMany: vi.fn().mockResolvedValue([]),
+        create: vi.fn().mockResolvedValue(baseAbsence),
+      },
+    });
+    await approveAbsence('abs-1', MANAGER_ID, ORG, db, 'Approved for August');
+    expect(updateSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ decisionComment: 'Approved for August' }),
+      }),
+    );
+  });
+
+  it('stores null decisionComment when no comment provided', async () => {
+    const updateSpy = vi.fn().mockResolvedValue({ ...baseAbsence, status: 'APPROVED' as const, decisionComment: null });
+    const db = makeMockDb({
+      absence: {
+        findUnique: vi.fn().mockResolvedValue(baseAbsence),
+        update: updateSpy,
+        findFirst: vi.fn().mockResolvedValue(null),
+        findMany: vi.fn().mockResolvedValue([]),
+        create: vi.fn().mockResolvedValue(baseAbsence),
+      },
+    });
+    await approveAbsence('abs-1', MANAGER_ID, ORG, db);
+    expect(updateSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ decisionComment: null }),
+      }),
+    );
+  });
+});
+
+describe('rejectAbsence — comment persistence (FR-ABS-24)', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('persists decisionComment when comment is provided', async () => {
+    const updateSpy = vi.fn().mockResolvedValue({ ...baseAbsence, status: 'REJECTED' as const, decisionComment: 'Outside policy' });
+    const db = makeMockDb({
+      absence: {
+        findUnique: vi.fn().mockResolvedValue(baseAbsence),
+        update: updateSpy,
+        findFirst: vi.fn().mockResolvedValue(null),
+        findMany: vi.fn().mockResolvedValue([]),
+        create: vi.fn().mockResolvedValue(baseAbsence),
+      },
+    });
+    await rejectAbsence('abs-1', MANAGER_ID, ORG, db, 'Outside policy');
+    expect(updateSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ decisionComment: 'Outside policy' }),
+      }),
+    );
+  });
+
+  it('stores null decisionComment when no comment provided', async () => {
+    const updateSpy = vi.fn().mockResolvedValue({ ...baseAbsence, status: 'REJECTED' as const, decisionComment: null });
+    const db = makeMockDb({
+      absence: {
+        findUnique: vi.fn().mockResolvedValue(baseAbsence),
+        update: updateSpy,
+        findFirst: vi.fn().mockResolvedValue(null),
+        findMany: vi.fn().mockResolvedValue([]),
+        create: vi.fn().mockResolvedValue(baseAbsence),
+      },
+    });
+    await rejectAbsence('abs-1', MANAGER_ID, ORG, db);
+    expect(updateSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ decisionComment: null }),
+      }),
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// D7 / FR-ABS-27 — getAbsence ownership guard (EMPLOYEE cross-employee → 404)
+// ---------------------------------------------------------------------------
+
+describe('getAbsence — ownership guard (D7, FR-ABS-27)', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('returns absence when requesterEmployeeId matches record employeeId', async () => {
+    const db = makeMockDb({
+      absence: {
+        findUnique: vi.fn().mockResolvedValue(baseAbsence), // employeeId = EMPLOYEE = 'emp-1'
+        findFirst: vi.fn().mockResolvedValue(null),
+        findMany: vi.fn().mockResolvedValue([]),
+        create: vi.fn().mockResolvedValue(baseAbsence),
+        update: vi.fn().mockResolvedValue(baseAbsence),
+      },
+    });
+    const result = await getAbsence('abs-1', ORG, EMPLOYEE, db, EMPLOYEE);
+    expect(result.id).toBe('abs-1');
+    // No audit for non-causeEncrypted record.
+    expect(auditWriter.write).not.toHaveBeenCalled();
+  });
+
+  it('throws 404 when requesterEmployeeId does NOT match record employeeId', async () => {
+    const db = makeMockDb({
+      absence: {
+        findUnique: vi.fn().mockResolvedValue(baseAbsence), // employeeId = 'emp-1'
+        findFirst: vi.fn().mockResolvedValue(null),
+        findMany: vi.fn().mockResolvedValue([]),
+        create: vi.fn().mockResolvedValue(baseAbsence),
+        update: vi.fn().mockResolvedValue(baseAbsence),
+      },
+    });
+    // Different employee tries to fetch 'emp-1' absence — must get 404.
+    await expect(getAbsence('abs-1', ORG, 'other-user', db, 'other-emp')).rejects.toThrow(
+      expect.objectContaining({ status: 404, code: 'NOT_FOUND' }),
+    );
+    // GDPR invariant: audit must NOT have been written for this unauthorized read attempt.
+    expect(auditWriter.write).not.toHaveBeenCalled();
+  });
+
+  it('does not apply ownership guard when requesterEmployeeId is undefined (ADMIN/MANAGER)', async () => {
+    const db = makeMockDb({
+      absence: {
+        findUnique: vi.fn().mockResolvedValue(baseAbsence),
+        findFirst: vi.fn().mockResolvedValue(null),
+        findMany: vi.fn().mockResolvedValue([]),
+        create: vi.fn().mockResolvedValue(baseAbsence),
+        update: vi.fn().mockResolvedValue(baseAbsence),
+      },
+    });
+    // Admin passes undefined — no scoping, gets the record.
+    const result = await getAbsence('abs-1', ORG, ADMIN_ID, db, undefined);
+    expect(result.id).toBe('abs-1');
+  });
+
+  it('throws 404 (not 403) for cross-employee access — avoids leaking existence', async () => {
+    const db = makeMockDb({
+      absence: {
+        findUnique: vi.fn().mockResolvedValue(baseAbsence),
+        findFirst: vi.fn().mockResolvedValue(null),
+        findMany: vi.fn().mockResolvedValue([]),
+        create: vi.fn().mockResolvedValue(baseAbsence),
+        update: vi.fn().mockResolvedValue(baseAbsence),
+      },
+    });
+    const err = await getAbsence('abs-1', ORG, 'other-user', db, 'other-emp').catch((e: unknown) => e);
+    expect((err as { status: number }).status).toBe(404);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Notification emission tests (FR-NOT-01, FR-NOT-02, FR-NOT-03, FR-NOT-04)
+// AC-NOT-01, AC-NOT-02, AC-NOT-03, AC-NOT-04
+// ---------------------------------------------------------------------------
+
+import { setEventBus } from './absences.service';
+
+// Absence with employee.user linked (for approve/reject notification tests)
+const absenceWithEmployee = {
+  ...baseAbsence,
+  employee: {
+    id: EMPLOYEE,
+    user: { id: 'user-owner-1' },
+  },
+};
+
+describe('approveAbsence — notification emission (FR-NOT-01, AC-NOT-01)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setEventBus(null as unknown as (orgId: string, event: Record<string, unknown>) => void);
+  });
+
+  afterEach(() => {
+    setEventBus(null as unknown as (orgId: string, event: Record<string, unknown>) => void);
+  });
+
+  it('creates a Notification row with payload.type = ABSENCE_APPROVED and read = false', async () => {
+    const notificationCreateSpy = vi.fn().mockResolvedValue({});
+    const db = makeMockDb({
+      absence: {
+        findUnique: vi.fn().mockResolvedValue(absenceWithEmployee),
+        update: vi.fn().mockResolvedValue({ ...absenceWithEmployee, status: 'APPROVED' }),
+        findFirst: vi.fn().mockResolvedValue(null),
+        findMany: vi.fn().mockResolvedValue([]),
+        create: vi.fn().mockResolvedValue(absenceWithEmployee),
+      },
+      notification: {
+        create: notificationCreateSpy,
+      },
+    });
+
+    await approveAbsence('abs-1', MANAGER_ID, ORG, db);
+
+    expect(notificationCreateSpy).toHaveBeenCalledOnce();
+    const call = notificationCreateSpy.mock.calls[0] as [{ data: Record<string, unknown> }];
+    expect(call[0].data['userId']).toBe('user-owner-1');
+    expect(call[0].data['type']).toBe('NOTIFICATION');
+    expect((call[0].data['payload'] as { type: string }).type).toBe('ABSENCE_APPROVED');
+    expect(call[0].data['read']).toBe(false);
+  });
+
+  it('does not error and completes absence flow when employee has no linked user (ADR-2)', async () => {
+    const absenceNoUser = {
+      ...baseAbsence,
+      employee: { id: EMPLOYEE, user: null },
+    };
+    const notificationCreateSpy = vi.fn();
+    const db = makeMockDb({
+      absence: {
+        findUnique: vi.fn().mockResolvedValue(absenceNoUser),
+        update: vi.fn().mockResolvedValue({ ...absenceNoUser, status: 'APPROVED' }),
+        findFirst: vi.fn().mockResolvedValue(null),
+        findMany: vi.fn().mockResolvedValue([]),
+        create: vi.fn().mockResolvedValue(absenceNoUser),
+      },
+      notification: {
+        create: notificationCreateSpy,
+      },
+    });
+
+    const result = await approveAbsence('abs-1', MANAGER_ID, ORG, db);
+    expect(result.status).toBe('APPROVED');
+    expect(notificationCreateSpy).not.toHaveBeenCalled();
+  });
+
+  it('persist-before-deliver: db.notification.create resolves before eventBus is called (AC-NOT-04)', async () => {
+    const callOrder: string[] = [];
+    const notificationCreateSpy = vi.fn().mockImplementation(async () => {
+      callOrder.push('db.notification.create');
+    });
+    const busSpy = vi.fn().mockImplementation(() => {
+      callOrder.push('eventBus.publish');
+    });
+    setEventBus(busSpy);
+
+    const db = makeMockDb({
+      absence: {
+        findUnique: vi.fn().mockResolvedValue(absenceWithEmployee),
+        update: vi.fn().mockResolvedValue({ ...absenceWithEmployee, status: 'APPROVED' }),
+        findFirst: vi.fn().mockResolvedValue(null),
+        findMany: vi.fn().mockResolvedValue([]),
+        create: vi.fn().mockResolvedValue(absenceWithEmployee),
+      },
+      notification: {
+        create: notificationCreateSpy,
+      },
+    });
+
+    await approveAbsence('abs-1', MANAGER_ID, ORG, db);
+
+    expect(callOrder[0]).toBe('db.notification.create');
+    expect(callOrder[1]).toBe('eventBus.publish');
+  });
+});
+
+describe('rejectAbsence — notification emission (FR-NOT-02, AC-NOT-02)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setEventBus(null as unknown as (orgId: string, event: Record<string, unknown>) => void);
+  });
+
+  afterEach(() => {
+    setEventBus(null as unknown as (orgId: string, event: Record<string, unknown>) => void);
+  });
+
+  it('creates a Notification row with payload.type = ABSENCE_REJECTED and read = false', async () => {
+    const notificationCreateSpy = vi.fn().mockResolvedValue({});
+    const db = makeMockDb({
+      absence: {
+        findUnique: vi.fn().mockResolvedValue(absenceWithEmployee),
+        update: vi.fn().mockResolvedValue({ ...absenceWithEmployee, status: 'REJECTED' }),
+        findFirst: vi.fn().mockResolvedValue(null),
+        findMany: vi.fn().mockResolvedValue([]),
+        create: vi.fn().mockResolvedValue(absenceWithEmployee),
+      },
+      notification: {
+        create: notificationCreateSpy,
+      },
+    });
+
+    await rejectAbsence('abs-1', MANAGER_ID, ORG, db);
+
+    expect(notificationCreateSpy).toHaveBeenCalledOnce();
+    const call = notificationCreateSpy.mock.calls[0] as [{ data: Record<string, unknown> }];
+    expect(call[0].data['userId']).toBe('user-owner-1');
+    expect((call[0].data['payload'] as { type: string }).type).toBe('ABSENCE_REJECTED');
+    expect(call[0].data['read']).toBe(false);
+  });
+});
+
+describe('createAbsence — notification emission to managers (FR-NOT-03, AC-NOT-03)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setEventBus(null as unknown as (orgId: string, event: Record<string, unknown>) => void);
+  });
+
+  afterEach(() => {
+    setEventBus(null as unknown as (orgId: string, event: Record<string, unknown>) => void);
+  });
+
+  it('creates one Notification row per MANAGER/ADMIN and none for EMPLOYEE users', async () => {
+    const notificationCreateSpy = vi.fn().mockResolvedValue({});
+    const managers = [{ id: 'manager-user-1' }, { id: 'admin-user-1' }];
+    const db = makeMockDb({
+      absence: {
+        findFirst: vi.fn().mockResolvedValue(null),
+        findMany: vi.fn().mockResolvedValue([]),
+        create: vi.fn().mockResolvedValue(baseAbsence),
+        findUnique: vi.fn().mockResolvedValue(null),
+        update: vi.fn().mockResolvedValue(baseAbsence),
+      },
+      user: {
+        findMany: vi.fn().mockResolvedValue(managers),
+      },
+      notification: {
+        create: notificationCreateSpy,
+      },
+    });
+
+    await createAbsence(baseCreateDto, EMPLOYEE, 'EMPLOYEE', ORG, db);
+
+    // One notification per manager/admin
+    expect(notificationCreateSpy).toHaveBeenCalledTimes(2);
+
+    // Both have ABSENCE_REQUESTED payload
+    for (const call of notificationCreateSpy.mock.calls as [{ data: Record<string, unknown> }][]) {
+      expect((call[0].data['payload'] as { type: string }).type).toBe('ABSENCE_REQUESTED');
+      expect(call[0].data['read']).toBe(false);
+    }
+
+    // Target user IDs are the manager users
+    const targetUserIds = notificationCreateSpy.mock.calls.map(
+      (c: [{ data: Record<string, unknown> }][]) => (c as unknown as [{ data: Record<string, unknown> }])[0].data['userId'],
+    );
+    expect(targetUserIds).toContain('manager-user-1');
+    expect(targetUserIds).toContain('admin-user-1');
+  });
+
+  it('creates zero notifications when no MANAGER/ADMIN users exist in the org', async () => {
+    const notificationCreateSpy = vi.fn().mockResolvedValue({});
+    const db = makeMockDb({
+      absence: {
+        findFirst: vi.fn().mockResolvedValue(null),
+        findMany: vi.fn().mockResolvedValue([]),
+        create: vi.fn().mockResolvedValue(baseAbsence),
+        findUnique: vi.fn().mockResolvedValue(null),
+        update: vi.fn().mockResolvedValue(baseAbsence),
+      },
+      user: {
+        findMany: vi.fn().mockResolvedValue([]), // no managers
+      },
+      notification: {
+        create: notificationCreateSpy,
+      },
+    });
+
+    await createAbsence(baseCreateDto, EMPLOYEE, 'EMPLOYEE', ORG, db);
+    expect(notificationCreateSpy).not.toHaveBeenCalled();
   });
 });

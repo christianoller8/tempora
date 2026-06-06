@@ -95,6 +95,10 @@ function makeMockDb(overrides: Partial<Record<string, unknown>> = {}): TenantCli
     auditLog: {
       create: vi.fn().mockResolvedValue({}),
     },
+    // FR-TSS-007: lock guard — default: no confirmed signature (guard passes transparently).
+    timesheetSignature: {
+      findUnique: vi.fn().mockResolvedValue(null),
+    },
     ...overrides,
   } as unknown as TenantClient;
 }
@@ -450,5 +454,173 @@ describe('listEntries', () => {
     await listEntries({ status: 'OPEN' }, db);
     const findManyCall = vi.mocked((db as ReturnType<typeof makeMockDb>).timeEntry.findMany).mock.calls[0]![0];
     expect(findManyCall?.where?.status).toBe('OPEN');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Lock guard integration tests — FR-TSS-007, FR-TSS-008
+// AC-TSS-005, AC-TSS-006, AC-TSS-007, AC-TSS-008
+//
+// assertMonthNotConfirmed is called inside clockIn, clockOut, createCorrection.
+// approveCorrection / rejectCorrection MUST NOT be blocked (ADR-3).
+// ---------------------------------------------------------------------------
+
+describe('lock guard — clockIn on confirmed month', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('throws 409 MONTH_LOCKED when current month is confirmed (AC-TSS-005)', async () => {
+    const confirmedSig = {
+      id: 'sig-1',
+      organizationId: ORG,
+      employeeId: EMPLOYEE,
+      year: new Date().getUTCFullYear(),
+      month: new Date().getUTCMonth() + 1,
+      confirmedAt: new Date(),
+      createdAt: new Date(),
+    };
+
+    const db = makeMockDb({
+      timeEntry: {
+        findFirst: vi.fn().mockResolvedValue(null), // no existing OPEN entry
+        create: vi.fn(),
+      },
+      timesheetSignature: {
+        findUnique: vi.fn().mockResolvedValue(confirmedSig),
+      },
+    });
+
+    const err = await clockIn(EMPLOYEE, ORG, db).catch((e) => e);
+    expect(err).toBeInstanceOf(ApiError);
+    expect(err.status).toBe(409);
+    expect(err.code).toBe('MONTH_LOCKED');
+    expect((db as ReturnType<typeof makeMockDb>).timeEntry.create).not.toHaveBeenCalled();
+  });
+
+  it('does NOT throw when current month is NOT confirmed (AC-TSS-008)', async () => {
+    const db = makeMockDb({
+      timeEntry: {
+        findFirst: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue(openEntry),
+      },
+      timesheetSignature: {
+        findUnique: vi.fn().mockResolvedValue(null), // not confirmed
+      },
+    });
+
+    await expect(clockIn(EMPLOYEE, ORG, db)).resolves.toBeDefined();
+  });
+});
+
+describe('lock guard — clockOut on confirmed month', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(ruleEngine.check).mockReturnValue([]);
+  });
+
+  it('throws 409 MONTH_LOCKED when the open entry month is confirmed (AC-TSS-006)', async () => {
+    const marchedEntry = {
+      ...openEntry,
+      clockIn: new Date('2026-03-15T08:00:00Z'), // March entry
+    };
+
+    const confirmedSig = {
+      id: 'sig-march',
+      organizationId: ORG,
+      employeeId: EMPLOYEE,
+      year: 2026,
+      month: 3,
+      confirmedAt: new Date(),
+      createdAt: new Date(),
+    };
+
+    const db = makeMockDb({
+      timeEntry: {
+        findFirst: vi.fn().mockResolvedValue(marchedEntry),
+        update: vi.fn(),
+        findMany: vi.fn().mockResolvedValue([]),
+      },
+      timesheetSignature: {
+        findUnique: vi.fn().mockResolvedValue(confirmedSig),
+      },
+    });
+
+    const err = await clockOut(EMPLOYEE, ORG, db).catch((e) => e);
+    expect(err).toBeInstanceOf(ApiError);
+    expect(err.status).toBe(409);
+    expect(err.code).toBe('MONTH_LOCKED');
+    expect((db as ReturnType<typeof makeMockDb>).timeEntry.update).not.toHaveBeenCalled();
+  });
+});
+
+describe('lock guard — createCorrection on confirmed month', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('throws 409 MONTH_LOCKED when the entry month is confirmed (AC-TSS-007)', async () => {
+    const marchEntry = {
+      ...closedEntry,
+      clockIn: new Date('2026-03-10T08:00:00Z'),
+    };
+
+    const confirmedSig = {
+      id: 'sig-march',
+      organizationId: ORG,
+      employeeId: EMPLOYEE,
+      year: 2026,
+      month: 3,
+      confirmedAt: new Date(),
+      createdAt: new Date(),
+    };
+
+    const db = makeMockDb({
+      timeEntry: {
+        findUnique: vi.fn().mockResolvedValue(marchEntry),
+      },
+      timeCorrection: {
+        create: vi.fn(),
+      },
+      timesheetSignature: {
+        findUnique: vi.fn().mockResolvedValue(confirmedSig),
+      },
+    });
+
+    const err = await createCorrection(
+      { timeEntryId: 'entry-closed', requestedById: EMPLOYEE, justification: 'Wrong time' },
+      ORG,
+      db,
+    ).catch((e) => e);
+
+    expect(err).toBeInstanceOf(ApiError);
+    expect(err.status).toBe(409);
+    expect(err.code).toBe('MONTH_LOCKED');
+    expect((db as ReturnType<typeof makeMockDb>).timeCorrection.create).not.toHaveBeenCalled();
+  });
+});
+
+describe('lock guard — approveCorrection and rejectCorrection NOT blocked (ADR-3)', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('approveCorrection succeeds even when month is confirmed (AC-TSS-008)', async () => {
+    // Even though we have a confirmed sig, approveCorrection must proceed.
+    const db = makeMockDb({
+      timeCorrection: {
+        findUnique: vi.fn().mockResolvedValue(pendingCorrection),
+        update: vi.fn().mockResolvedValue({ ...pendingCorrection, status: 'APPROVED' }),
+      },
+    });
+
+    const result = await approveCorrection('corr-1', APPROVER, ORG, db);
+    expect(result.status).toBe('APPROVED');
+  });
+
+  it('rejectCorrection succeeds even when month is confirmed (AC-TSS-008)', async () => {
+    const db = makeMockDb({
+      timeCorrection: {
+        findUnique: vi.fn().mockResolvedValue(pendingCorrection),
+        update: vi.fn().mockResolvedValue({ ...pendingCorrection, status: 'REJECTED' }),
+      },
+    });
+
+    const result = await rejectCorrection('corr-1', APPROVER, ORG, db);
+    expect(result.status).toBe('REJECTED');
   });
 });

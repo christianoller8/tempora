@@ -49,6 +49,9 @@ GRANT SELECT, INSERT                 ON audit_logs        TO tempora_app;
 -- Notifications
 GRANT SELECT, INSERT, UPDATE         ON notifications     TO tempora_app;
 
+-- Timesheet signatures: append-only — INSERT + SELECT only, no UPDATE/DELETE ever.
+GRANT SELECT, INSERT                 ON timesheet_signatures TO tempora_app;
+
 -- ─────────────────────────────────────────────────────────────────
 -- 2. ROW-LEVEL SECURITY — tenant isolation
 -- ─────────────────────────────────────────────────────────────────
@@ -191,6 +194,14 @@ ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notifications FORCE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS tenant_isolation ON notifications;
 CREATE POLICY tenant_isolation ON notifications
+  USING      ("organizationId" = current_setting('app.current_org', true)::uuid)
+  WITH CHECK ("organizationId" = current_setting('app.current_org', true)::uuid);
+
+-- timesheet_signatures
+ALTER TABLE timesheet_signatures ENABLE ROW LEVEL SECURITY;
+ALTER TABLE timesheet_signatures FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS tenant_isolation ON timesheet_signatures;
+CREATE POLICY tenant_isolation ON timesheet_signatures
   USING      ("organizationId" = current_setting('app.current_org', true)::uuid)
   WITH CHECK ("organizationId" = current_setting('app.current_org', true)::uuid);
 

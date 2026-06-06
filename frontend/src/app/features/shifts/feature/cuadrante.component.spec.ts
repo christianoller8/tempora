@@ -91,18 +91,18 @@ describe('CuadranteComponent', () => {
     expect(component['activeSchedule']()).toBeNull();
   });
 
-  it('dismissWarnings() clears the warnings signal', () => {
+  it('warnings can be cleared via set([])', () => {
     const fixture = TestBed.createComponent(CuadranteComponent);
     fixture.detectChanges();
 
     const component = fixture.componentInstance;
     component['warnings'].set([{ type: 'warn', code: 'MAX_DAILY_9H', message: 'Warning' }]);
-    component['dismissWarnings']();
+    component['warnings'].set([]);
 
-    expect(component['warnings']()).toHaveSize(0);
+    expect(component['warnings']()).toHaveLength(0);
   });
 
-  it('publish() calls schedulesStore.publishSchedule with active schedule id', async () => {
+  it('publish() calls schedulesStore.publishSchedule with the given scheduleId', async () => {
     const store = TestBed.inject(SchedulesStore);
     const publishSpy = vi.spyOn(store, 'publishSchedule').mockResolvedValue([]);
 
@@ -113,7 +113,7 @@ describe('CuadranteComponent', () => {
     component['selectedYear'].set(2026);
     component['selectedMonth'].set(6);
 
-    component['publish']();
+    component['publish']('sched-1');
     await Promise.resolve(); // allow microtask queue to flush
 
     expect(publishSpy).toHaveBeenCalledWith('sched-1');
@@ -172,7 +172,7 @@ describe('CuadranteComponent — Schedule PDF button (T11)', () => {
     fixture.detectChanges();
 
     const buttons = fixture.nativeElement.querySelectorAll('p-button');
-    const pdfBtn = Array.from(buttons).find((el: Element) =>
+    const pdfBtn = Array.from(buttons as NodeListOf<Element>).find((el) =>
       el.getAttribute('label') === 'Schedule PDF',
     );
     expect(pdfBtn).toBeTruthy();

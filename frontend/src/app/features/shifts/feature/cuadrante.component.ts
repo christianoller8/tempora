@@ -22,6 +22,8 @@ import { CuadranteGridComponent, type EmployeeRow, type AssignmentClickEvent } f
 import type { ShiftTemplate, ShiftAssignment, SwapRequest, RuleCheckResult, ShiftSchedule } from '../data-access/shifts.api';
 import { AuthStore } from '../../../core/auth/auth.store';
 import { ReportsApi } from '../../reports/data-access/reports.api';
+import { AbsencesApi } from '../../absences/data-access/absences.api';
+import type { AbsenceDto } from '../../absences/data-access/absences.api';
 
 interface CenterDto { id: string; name: string; }
 interface EmployeeDto { id: string; firstName: string; lastName: string; category: string; }
@@ -464,6 +466,7 @@ const SHIFT_COLORS: Record<string, { bg: string; text: string; border: string }>
         [year]="selectedYear()"
         [month]="selectedMonth()"
         [editable]="isDraft() && isAdminOrManager()"
+        [absences]="monthAbsences()"
         (assignmentClick)="onCellClick($event)"
       />
     }
@@ -613,6 +616,7 @@ export class CuadranteComponent implements OnInit {
   private readonly httpApi        = inject(ApiService);
   private readonly auth           = inject(AuthStore) as unknown as AuthStore;
   private readonly reportsApi     = inject(ReportsApi);
+  private readonly absencesApi    = inject(AbsencesApi);
 
   // ── State ──────────────────────────────────────────────────────────────────
   readonly loading             = signal(false);
@@ -624,10 +628,11 @@ export class CuadranteComponent implements OnInit {
   readonly swapViolations = signal<RuleCheckResult[]>([]);
   readonly processingSwap = signal<string | null>(null);
 
-  readonly employees   = signal<EmployeeDto[]>([]);
-  readonly templates   = signal<ShiftTemplate[]>([]);
-  readonly assignments = signal<ShiftAssignment[]>([]);
-  readonly pendingSwaps = signal<SwapRequest[]>([]);
+  readonly employees     = signal<EmployeeDto[]>([]);
+  readonly templates     = signal<ShiftTemplate[]>([]);
+  readonly assignments   = signal<ShiftAssignment[]>([]);
+  readonly pendingSwaps  = signal<SwapRequest[]>([]);
+  readonly monthAbsences = signal<AbsenceDto[]>([]);
 
   // Month/year picker
   readonly selectedYear  = signal(new Date().getFullYear());
@@ -712,6 +717,19 @@ export class CuadranteComponent implements OnInit {
       const sched = this.activeSchedule();
       if (sched) {
         await this.loadAssignments(sched.id);
+      }
+
+      // Load approved absences for the selected month (for grid overlay)
+      try {
+        const y = this.selectedYear(), m = this.selectedMonth();
+        const from = `${y}-${String(m).padStart(2, '0')}-01`;
+        const to   = `${y}-${String(m).padStart(2, '0')}-${String(new Date(y, m, 0).getDate()).padStart(2, '0')}`;
+        const absences = await firstValueFrom(
+          this.absencesApi.listAbsences({ status: 'APPROVED', from, to }),
+        );
+        this.monthAbsences.set(absences);
+      } catch {
+        this.monthAbsences.set([]);
       }
     } finally {
       this.loading.set(false);

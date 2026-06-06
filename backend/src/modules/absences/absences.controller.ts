@@ -25,6 +25,7 @@ import type { AbsenceStatus, AbsenceType } from '@prisma/client';
  * causeEncrypted is never included — only getAbsence (single-record) triggers GDPR audit.
  */
 export async function handleListAbsences(req: Request, res: Response): Promise<void> {
+  const user = getUser();
   const db = getDb();
   const q = req.query as {
     employeeId?: string;
@@ -32,9 +33,16 @@ export async function handleListAbsences(req: Request, res: Response): Promise<v
     type?: string;
   };
 
+  // FR-ABS-27 / D2: self-scoping enforced in controller (service is auth-agnostic).
+  // D3: fail-closed — EMPLOYEE without employeeId on token sees an empty list.
+  let employeeId = q.employeeId;
+  if (user.role === 'EMPLOYEE') {
+    employeeId = user.employeeId ?? '__none__';
+  }
+
   const absences = await listAbsences(
     {
-      employeeId: q.employeeId,
+      employeeId,
       status: q.status as AbsenceStatus | undefined,
       type: q.type as AbsenceType | undefined,
     },
@@ -58,8 +66,11 @@ export async function handleCreateAbsence(req: Request, res: Response): Promise<
     cause?: string;
   };
 
-  // Employee creates absence for themselves; manager/admin can specify employeeId.
-  const employeeId = body.employeeId ?? user.employeeId ?? user.userId;
+  // FR-ABS-23: EMPLOYEE can only create absences for themselves — always override.
+  // Manager/admin can specify employeeId freely.
+  const employeeId = user.role === 'EMPLOYEE'
+    ? (user.employeeId ?? user.userId)
+    : (body.employeeId ?? user.employeeId ?? user.userId);
 
   const { absence } = await createAbsence(
     { employeeId, type: body.type, startDate: body.startDate, endDate: body.endDate, cause: body.cause },
@@ -97,7 +108,11 @@ export async function handleGetAbsence(req: Request, res: Response): Promise<voi
   const user = getUser();
   const db = getDb();
 
-  const absence = await getAbsence(req.params['id'] as string, user.organizationId, user.userId, db);
+  // D7: pass requesterEmployeeId for EMPLOYEE role so the service guards ownership
+  // BEFORE the GDPR audit/decrypt block (avoids auditing an unauthorized read).
+  const requesterEmployeeId = user.role === 'EMPLOYEE' ? (user.employeeId ?? '__none__') : undefined;
+
+  const absence = await getAbsence(req.params['id'] as string, user.organizationId, user.userId, db, requesterEmployeeId);
   res.json({ data: absence });
 }
 
@@ -108,8 +123,9 @@ export async function handleGetAbsence(req: Request, res: Response): Promise<voi
 export async function handleApproveAbsence(req: Request, res: Response): Promise<void> {
   const user = getUser();
   const db = getDb();
+  const body = req.body as { comment?: string };
 
-  const absence = await approveAbsence(req.params['id'] as string, user.userId, user.organizationId, db);
+  const absence = await approveAbsence(req.params['id'] as string, user.userId, user.organizationId, db, body.comment);
   res.json({ data: absence });
 }
 
@@ -120,7 +136,8 @@ export async function handleApproveAbsence(req: Request, res: Response): Promise
 export async function handleRejectAbsence(req: Request, res: Response): Promise<void> {
   const user = getUser();
   const db = getDb();
+  const body = req.body as { comment?: string };
 
-  const absence = await rejectAbsence(req.params['id'] as string, user.userId, user.organizationId, db);
+  const absence = await rejectAbsence(req.params['id'] as string, user.userId, user.organizationId, db, body.comment);
   res.json({ data: absence });
 }

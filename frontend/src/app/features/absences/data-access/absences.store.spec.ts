@@ -12,6 +12,7 @@ const mockAbsence: AbsenceDto = {
   startDate: '2026-06-10',
   endDate: '2026-06-14',
   status: 'PENDING',
+  decisionComment: null,
 };
 
 const mockBalance: AbsenceBalanceDto = { entitled: 22, used: 5, remaining: 17 };

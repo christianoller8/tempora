@@ -386,7 +386,10 @@ declare const UpdateEmployeeSchema: z.ZodObject<{
     primaryCenterId: z.ZodOptional<z.ZodString>;
     workingCalendarId: z.ZodOptional<z.ZodOptional<z.ZodString>>;
     hireDate: z.ZodOptional<z.ZodString>;
+} & {
+    isActive: z.ZodOptional<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
+    isActive?: boolean | undefined;
     firstName?: string | undefined;
     lastName?: string | undefined;
     nif?: string | undefined;
@@ -397,6 +400,7 @@ declare const UpdateEmployeeSchema: z.ZodObject<{
     workingCalendarId?: string | undefined;
     hireDate?: string | undefined;
 }, {
+    isActive?: boolean | undefined;
     firstName?: string | undefined;
     lastName?: string | undefined;
     nif?: string | undefined;
@@ -892,29 +896,36 @@ declare const OvertimeQuerySchema: z.ZodObject<{
 
 declare const CreateAbsenceSchema: z.ZodObject<{
     employeeId: z.ZodString;
-    type: z.ZodEnum<["VACACIONES", "IT", "PERMISO_RETRIBUIDO", "AUSENCIA_INJUSTIFICADA", "LACTANCIA", "REDUCCION_JORNADA"]>;
+    type: z.ZodEnum<["VACACIONES", "IT", "PERMISO_RETRIBUIDO", "AUSENCIA_INJUSTIFICADA", "LACTANCIA", "REDUCCION_JORNADA", "ASUNTOS_PROPIOS", "PERMISO_NO_RETRIBUIDO", "MATERNIDAD_PATERNIDAD"]>;
     startDate: z.ZodString;
     endDate: z.ZodString;
     cause: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    type: "VACACIONES" | "IT" | "PERMISO_RETRIBUIDO" | "AUSENCIA_INJUSTIFICADA" | "LACTANCIA" | "REDUCCION_JORNADA";
+    type: "VACACIONES" | "IT" | "PERMISO_RETRIBUIDO" | "AUSENCIA_INJUSTIFICADA" | "LACTANCIA" | "REDUCCION_JORNADA" | "ASUNTOS_PROPIOS" | "PERMISO_NO_RETRIBUIDO" | "MATERNIDAD_PATERNIDAD";
     employeeId: string;
     startDate: string;
     endDate: string;
     cause?: string | undefined;
 }, {
-    type: "VACACIONES" | "IT" | "PERMISO_RETRIBUIDO" | "AUSENCIA_INJUSTIFICADA" | "LACTANCIA" | "REDUCCION_JORNADA";
+    type: "VACACIONES" | "IT" | "PERMISO_RETRIBUIDO" | "AUSENCIA_INJUSTIFICADA" | "LACTANCIA" | "REDUCCION_JORNADA" | "ASUNTOS_PROPIOS" | "PERMISO_NO_RETRIBUIDO" | "MATERNIDAD_PATERNIDAD";
     employeeId: string;
     startDate: string;
     endDate: string;
     cause?: string | undefined;
 }>;
-declare const ApproveAbsenceSchema: z.ZodObject<{
-    absenceId: z.ZodString;
+declare const DecisionAbsenceSchema: z.ZodObject<{
+    comment: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    absenceId: string;
+    comment?: string | undefined;
 }, {
-    absenceId: string;
+    comment?: string | undefined;
+}>;
+declare const ApproveAbsenceSchema: z.ZodObject<{
+    comment: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+    comment?: string | undefined;
+}, {
+    comment?: string | undefined;
 }>;
 declare const AbsenceBalanceQuerySchema: z.ZodObject<{
     employeeId: z.ZodOptional<z.ZodString>;
@@ -930,17 +941,18 @@ declare const AbsenceResponseSchema: z.ZodObject<{
     id: z.ZodString;
     organizationId: z.ZodString;
     employeeId: z.ZodString;
-    type: z.ZodEnum<["VACACIONES", "IT", "PERMISO_RETRIBUIDO", "AUSENCIA_INJUSTIFICADA", "LACTANCIA", "REDUCCION_JORNADA"]>;
+    type: z.ZodEnum<["VACACIONES", "IT", "PERMISO_RETRIBUIDO", "AUSENCIA_INJUSTIFICADA", "LACTANCIA", "REDUCCION_JORNADA", "ASUNTOS_PROPIOS", "PERMISO_NO_RETRIBUIDO", "MATERNIDAD_PATERNIDAD"]>;
     startDate: z.ZodString;
     endDate: z.ZodString;
     status: z.ZodEnum<["PENDING", "APPROVED", "REJECTED", "CANCELLED"]>;
     cause: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     approverId: z.ZodNullable<z.ZodString>;
     decidedAt: z.ZodNullable<z.ZodString>;
+    decisionComment: z.ZodNullable<z.ZodString>;
     createdAt: z.ZodString;
     updatedAt: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    type: "VACACIONES" | "IT" | "PERMISO_RETRIBUIDO" | "AUSENCIA_INJUSTIFICADA" | "LACTANCIA" | "REDUCCION_JORNADA";
+    type: "VACACIONES" | "IT" | "PERMISO_RETRIBUIDO" | "AUSENCIA_INJUSTIFICADA" | "LACTANCIA" | "REDUCCION_JORNADA" | "ASUNTOS_PROPIOS" | "PERMISO_NO_RETRIBUIDO" | "MATERNIDAD_PATERNIDAD";
     status: "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
     id: string;
     organizationId: string;
@@ -951,9 +963,10 @@ declare const AbsenceResponseSchema: z.ZodObject<{
     decidedAt: string | null;
     startDate: string;
     endDate: string;
+    decisionComment: string | null;
     cause?: string | null | undefined;
 }, {
-    type: "VACACIONES" | "IT" | "PERMISO_RETRIBUIDO" | "AUSENCIA_INJUSTIFICADA" | "LACTANCIA" | "REDUCCION_JORNADA";
+    type: "VACACIONES" | "IT" | "PERMISO_RETRIBUIDO" | "AUSENCIA_INJUSTIFICADA" | "LACTANCIA" | "REDUCCION_JORNADA" | "ASUNTOS_PROPIOS" | "PERMISO_NO_RETRIBUIDO" | "MATERNIDAD_PATERNIDAD";
     status: "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
     id: string;
     organizationId: string;
@@ -964,6 +977,7 @@ declare const AbsenceResponseSchema: z.ZodObject<{
     decidedAt: string | null;
     startDate: string;
     endDate: string;
+    decisionComment: string | null;
     cause?: string | null | undefined;
 }>;
 declare const AbsenceBalanceResponseSchema: z.ZodObject<{
@@ -1124,4 +1138,195 @@ declare const SseEventSchema: z.ZodObject<{
 }>;
 type SseEvent = z.infer<typeof SseEventSchema>;
 
-export { AbsenceBalanceQuerySchema, AbsenceBalanceResponseSchema, AbsenceResponseSchema, ApproveAbsenceSchema, ApproveCorrectionSchema, ApproveSwapSchema, CenterResponseSchema, ClockInSchema, ClockOutSchema, CorrectionResponseSchema, CreateAbsenceSchema, CreateCenterSchema, CreateCorrectionSchema, CreateDepartmentSchema, CreateEmployeeSchema, CreateOrganizationSchema, CreateScheduleSchema, CreateSwapSchema, CreateWorkingCalendarSchema, DepartmentResponseSchema, EmployeeResponseSchema, ErrorEnvelopeSchema, IsoDateSchema, IsoDateTimeSchema, LoginRequestSchema, LoginResponseSchema, MeResponseSchema, OperationWithWarningsSchema, OrganizationResponseSchema, OvertimeQuerySchema, PaginatedResultSchema, PaginationQuerySchema, PublishScheduleSchema, RefreshResponseSchema, RotationPatternResponseSchema, RotationPatternSchema, RuleCheckResultSchema, RuleSetSchema, SSE_EVENT_TYPES, ScheduleResponseSchema, ShiftAssignmentResponseSchema, ShiftAssignmentSchema, ShiftTemplateResponseSchema, ShiftTemplateSchema, type SseEvent, SseEventSchema, type SseEventType, SwapResponseSchema, TimeEntryResponseSchema, UpdateCenterSchema, UpdateDepartmentSchema, UpdateEmployeeSchema, UpdateOrganizationSchema, UuidSchema, WorkingCalendarSchema };
+declare const ConfirmTimesheetSchema: z.ZodObject<{
+    year: z.ZodNumber;
+    month: z.ZodNumber;
+}, "strip", z.ZodTypeAny, {
+    year: number;
+    month: number;
+}, {
+    year: number;
+    month: number;
+}>;
+declare const TimesheetSummaryQuerySchema: z.ZodObject<{
+    employeeId: z.ZodOptional<z.ZodString>;
+    year: z.ZodNumber;
+    month: z.ZodNumber;
+}, "strip", z.ZodTypeAny, {
+    year: number;
+    month: number;
+    employeeId?: string | undefined;
+}, {
+    year: number;
+    month: number;
+    employeeId?: string | undefined;
+}>;
+declare const ConfirmationStatusQuerySchema: z.ZodObject<{
+    year: z.ZodNumber;
+    month: z.ZodNumber;
+    centerId: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+    year: number;
+    month: number;
+    centerId?: string | undefined;
+}, {
+    year: number;
+    month: number;
+    centerId?: string | undefined;
+}>;
+declare const TimesheetSignatureResponseSchema: z.ZodObject<{
+    id: z.ZodString;
+    organizationId: z.ZodString;
+    employeeId: z.ZodString;
+    year: z.ZodNumber;
+    month: z.ZodNumber;
+    confirmedAt: z.ZodString;
+    createdAt: z.ZodString;
+    alreadyConfirmed: z.ZodBoolean;
+}, "strip", z.ZodTypeAny, {
+    id: string;
+    organizationId: string;
+    employeeId: string;
+    createdAt: string;
+    year: number;
+    month: number;
+    confirmedAt: string;
+    alreadyConfirmed: boolean;
+}, {
+    id: string;
+    organizationId: string;
+    employeeId: string;
+    createdAt: string;
+    year: number;
+    month: number;
+    confirmedAt: string;
+    alreadyConfirmed: boolean;
+}>;
+declare const TimesheetEntrySchema: z.ZodObject<{
+    id: z.ZodString;
+    clockIn: z.ZodString;
+    clockOut: z.ZodNullable<z.ZodString>;
+    status: z.ZodEnum<["OPEN", "CLOSED"]>;
+    durationMinutes: z.ZodNullable<z.ZodNumber>;
+}, "strip", z.ZodTypeAny, {
+    status: "OPEN" | "CLOSED";
+    id: string;
+    clockIn: string;
+    clockOut: string | null;
+    durationMinutes: number | null;
+}, {
+    status: "OPEN" | "CLOSED";
+    id: string;
+    clockIn: string;
+    clockOut: string | null;
+    durationMinutes: number | null;
+}>;
+declare const TimesheetSummaryResponseSchema: z.ZodObject<{
+    year: z.ZodNumber;
+    month: z.ZodNumber;
+    employeeId: z.ZodString;
+    hours: z.ZodNullable<z.ZodObject<{
+        regularHours: z.ZodNumber;
+        overtimeHours: z.ZodNumber;
+        partTimeDeviation: z.ZodNumber;
+    }, "strip", z.ZodTypeAny, {
+        regularHours: number;
+        overtimeHours: number;
+        partTimeDeviation: number;
+    }, {
+        regularHours: number;
+        overtimeHours: number;
+        partTimeDeviation: number;
+    }>>;
+    confirmed: z.ZodBoolean;
+    confirmedAt: z.ZodNullable<z.ZodString>;
+    hasOpenEntry: z.ZodBoolean;
+    totalAbsenceDays: z.ZodNumber;
+    entries: z.ZodArray<z.ZodObject<{
+        id: z.ZodString;
+        clockIn: z.ZodString;
+        clockOut: z.ZodNullable<z.ZodString>;
+        status: z.ZodEnum<["OPEN", "CLOSED"]>;
+        durationMinutes: z.ZodNullable<z.ZodNumber>;
+    }, "strip", z.ZodTypeAny, {
+        status: "OPEN" | "CLOSED";
+        id: string;
+        clockIn: string;
+        clockOut: string | null;
+        durationMinutes: number | null;
+    }, {
+        status: "OPEN" | "CLOSED";
+        id: string;
+        clockIn: string;
+        clockOut: string | null;
+        durationMinutes: number | null;
+    }>, "many">;
+}, "strip", z.ZodTypeAny, {
+    entries: {
+        status: "OPEN" | "CLOSED";
+        id: string;
+        clockIn: string;
+        clockOut: string | null;
+        durationMinutes: number | null;
+    }[];
+    employeeId: string;
+    year: number;
+    month: number;
+    confirmedAt: string | null;
+    hours: {
+        regularHours: number;
+        overtimeHours: number;
+        partTimeDeviation: number;
+    } | null;
+    confirmed: boolean;
+    hasOpenEntry: boolean;
+    totalAbsenceDays: number;
+}, {
+    entries: {
+        status: "OPEN" | "CLOSED";
+        id: string;
+        clockIn: string;
+        clockOut: string | null;
+        durationMinutes: number | null;
+    }[];
+    employeeId: string;
+    year: number;
+    month: number;
+    confirmedAt: string | null;
+    hours: {
+        regularHours: number;
+        overtimeHours: number;
+        partTimeDeviation: number;
+    } | null;
+    confirmed: boolean;
+    hasOpenEntry: boolean;
+    totalAbsenceDays: number;
+}>;
+declare const ConfirmationStatusRowSchema: z.ZodObject<{
+    employeeId: z.ZodString;
+    firstName: z.ZodString;
+    lastName: z.ZodString;
+    confirmed: z.ZodBoolean;
+    confirmedAt: z.ZodNullable<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+    employeeId: string;
+    firstName: string;
+    lastName: string;
+    confirmedAt: string | null;
+    confirmed: boolean;
+}, {
+    employeeId: string;
+    firstName: string;
+    lastName: string;
+    confirmedAt: string | null;
+    confirmed: boolean;
+}>;
+type ConfirmTimesheetDto = z.infer<typeof ConfirmTimesheetSchema>;
+type TimesheetSummaryQuery = z.infer<typeof TimesheetSummaryQuerySchema>;
+type ConfirmationStatusQuery = z.infer<typeof ConfirmationStatusQuerySchema>;
+type TimesheetSignatureResponse = z.infer<typeof TimesheetSignatureResponseSchema>;
+type TimesheetSummaryResponse = z.infer<typeof TimesheetSummaryResponseSchema>;
+type ConfirmationStatusRow = z.infer<typeof ConfirmationStatusRowSchema>;
+type TimesheetEntry = z.infer<typeof TimesheetEntrySchema>;
+
+export { AbsenceBalanceQuerySchema, AbsenceBalanceResponseSchema, AbsenceResponseSchema, ApproveAbsenceSchema, ApproveCorrectionSchema, ApproveSwapSchema, CenterResponseSchema, ClockInSchema, ClockOutSchema, type ConfirmTimesheetDto, ConfirmTimesheetSchema, type ConfirmationStatusQuery, ConfirmationStatusQuerySchema, type ConfirmationStatusRow, ConfirmationStatusRowSchema, CorrectionResponseSchema, CreateAbsenceSchema, CreateCenterSchema, CreateCorrectionSchema, CreateDepartmentSchema, CreateEmployeeSchema, CreateOrganizationSchema, CreateScheduleSchema, CreateSwapSchema, CreateWorkingCalendarSchema, DecisionAbsenceSchema, DepartmentResponseSchema, EmployeeResponseSchema, ErrorEnvelopeSchema, IsoDateSchema, IsoDateTimeSchema, LoginRequestSchema, LoginResponseSchema, MeResponseSchema, OperationWithWarningsSchema, OrganizationResponseSchema, OvertimeQuerySchema, PaginatedResultSchema, PaginationQuerySchema, PublishScheduleSchema, RefreshResponseSchema, RotationPatternResponseSchema, RotationPatternSchema, RuleCheckResultSchema, RuleSetSchema, SSE_EVENT_TYPES, ScheduleResponseSchema, ShiftAssignmentResponseSchema, ShiftAssignmentSchema, ShiftTemplateResponseSchema, ShiftTemplateSchema, type SseEvent, SseEventSchema, type SseEventType, SwapResponseSchema, TimeEntryResponseSchema, type TimesheetEntry, TimesheetEntrySchema, type TimesheetSignatureResponse, TimesheetSignatureResponseSchema, type TimesheetSummaryQuery, TimesheetSummaryQuerySchema, type TimesheetSummaryResponse, TimesheetSummaryResponseSchema, UpdateCenterSchema, UpdateDepartmentSchema, UpdateEmployeeSchema, UpdateOrganizationSchema, UuidSchema, WorkingCalendarSchema };

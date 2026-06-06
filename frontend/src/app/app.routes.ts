@@ -63,6 +63,21 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'timesheet',
+        loadComponent: () =>
+          import('./features/timesheet/feature/timesheet-review.component').then(
+            (m) => m.TimesheetReviewComponent,
+          ),
+      },
+      {
+        path: 'timesheet-status',
+        canActivate: [roleGuard(['ADMIN', 'MANAGER'])],
+        loadComponent: () =>
+          import('./features/timesheet/feature/timesheet-status.component').then(
+            (m) => m.TimesheetStatusComponent,
+          ),
+      },
+      {
         path: 'reports',
         canActivate: [roleGuard(['ADMIN', 'MANAGER'])],
         loadComponent: () =>
