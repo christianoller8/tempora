@@ -4,6 +4,41 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { catchError, firstValueFrom, of } from 'rxjs';
 import { providePrimeNG } from 'primeng/config';
 import Aura from '@primeuix/themes/aura';
+import { definePreset } from '@primeuix/themes';
+
+const TemporaTheme = definePreset(Aura, {
+  semantic: {
+    primary: {
+      50:  '#f0fdf4',
+      100: '#dcfce7',
+      200: '#bbf7d0',
+      300: '#86efac',
+      400: '#4ade80',
+      500: '#22c55e',
+      600: '#16a34a',
+      700: '#15803d',
+      800: '#166534',
+      900: '#14532d',
+      950: '#052e16',
+    },
+    focusRing: {
+      width: '2px',
+      style: 'solid',
+      color: '{primary.color}',
+      offset: '2px',
+      shadow: 'none',
+    },
+    formField: {
+      focusRing: {
+        width: '2px',
+        style: 'solid',
+        color: '{primary.color}',
+        offset: '0',
+        shadow: 'none',
+      },
+    },
+  },
+});
 import { routes } from './app.routes';
 import { authInterceptor } from './core/auth/auth.interceptor';
 import { API_BASE_URL } from './core/http/api.tokens';
@@ -17,7 +52,7 @@ export const appConfig: ApplicationConfig = {
     { provide: API_BASE_URL, useValue: 'http://localhost:3000' },
     providePrimeNG({
       theme: {
-        preset: Aura,
+        preset: TemporaTheme,
         options: {
           // .app-dark on <html> activates dark palette globally.
           darkModeSelector: '.app-dark',

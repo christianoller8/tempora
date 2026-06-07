@@ -244,10 +244,10 @@ interface NavItem {
       border-radius: 4px;
       border: 1px solid transparent;
     }
-    .role-badge--admin    { background: color-mix(in srgb, #ef4444 18%, transparent); color: #ef4444; border-color: color-mix(in srgb, #ef4444 35%, transparent); }
-    .role-badge--manager  { background: color-mix(in srgb, #f97316 18%, transparent); color: #f97316; border-color: color-mix(in srgb, #f97316 35%, transparent); }
-    .role-badge--employee { background: color-mix(in srgb, #38bdf8 18%, transparent); color: #38bdf8; border-color: color-mix(in srgb, #38bdf8 35%, transparent); }
-    .role-badge--unknown  { background: color-mix(in srgb, #94a3b8 18%, transparent); color: #94a3b8; border-color: color-mix(in srgb, #94a3b8 35%, transparent); }
+    .role-badge--admin    { background: var(--color-role-admin-bg);    color: var(--color-role-admin);    border-color: var(--color-role-admin-border); }
+    .role-badge--manager  { background: var(--color-role-manager-bg);  color: var(--color-role-manager);  border-color: var(--color-role-manager-border); }
+    .role-badge--employee { background: var(--color-role-employee-bg); color: var(--color-role-employee); border-color: var(--color-role-employee-border); }
+    .role-badge--unknown  { background: color-mix(in srgb, var(--p-surface-400) 18%, transparent); color: var(--p-surface-400); border-color: color-mix(in srgb, var(--p-surface-400) 35%, transparent); }
 
     /* ── Page content ────────────────────────────────────────────────── */
     .page-content {

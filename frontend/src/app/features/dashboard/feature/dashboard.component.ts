@@ -30,6 +30,7 @@ import {
 import { TimeApi } from '../../time-tracking/data-access/time.api';
 import { AuthStore } from '../../../core/auth/auth.store';
 import { ShiftsApi, type ShiftAssignment, type ShiftTemplate } from '../../shifts/data-access/shifts.api';
+import { ThemeService } from '../../../core/theme/theme.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -68,15 +69,17 @@ import { ShiftsApi, type ShiftAssignment, type ShiftTemplate } from '../../shift
       background: var(--p-surface-card);
       border: 1px solid var(--p-surface-border);
       border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
       padding: 1.25rem 1.25rem 1rem;
       display: flex;
       flex-direction: column;
       gap: 0.375rem;
-      transition: border-color 0.2s;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
 
     .stat-card:hover {
       border-color: var(--p-primary-color);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
     }
 
     .stat-icon-row {
@@ -97,9 +100,9 @@ import { ShiftsApi, type ShiftAssignment, type ShiftTemplate } from '../../shift
     }
 
     .stat-icon--primary { background: color-mix(in srgb, var(--p-primary-color) 15%, transparent); color: var(--p-primary-color); }
-    .stat-icon--green   { background: color-mix(in srgb, #22c55e 15%, transparent); color: #22c55e; }
-    .stat-icon--orange  { background: color-mix(in srgb, #f97316 15%, transparent); color: #f97316; }
-    .stat-icon--blue    { background: color-mix(in srgb, #38bdf8 15%, transparent); color: #38bdf8; }
+    .stat-icon--green   { background: color-mix(in srgb, var(--color-stat-green)  15%, transparent); color: var(--color-stat-green); }
+    .stat-icon--orange  { background: color-mix(in srgb, var(--color-stat-orange) 15%, transparent); color: var(--color-stat-orange); }
+    .stat-icon--blue    { background: color-mix(in srgb, var(--color-stat-blue)   15%, transparent); color: var(--color-stat-blue); }
 
     .stat-number {
       font-size: 2rem;
@@ -129,6 +132,7 @@ import { ShiftsApi, type ShiftAssignment, type ShiftTemplate } from '../../shift
       background: var(--p-surface-card);
       border: 1px solid var(--p-surface-border);
       border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
       overflow: hidden;
     }
 
@@ -208,10 +212,10 @@ import { ShiftsApi, type ShiftAssignment, type ShiftTemplate } from '../../shift
     .online-dot {
       width: 8px;
       height: 8px;
-      background: #22c55e;
+      background: var(--color-status-online);
       border-radius: 50%;
       flex-shrink: 0;
-      box-shadow: 0 0 0 2px color-mix(in srgb, #22c55e 30%, transparent);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-status-online) 30%, transparent);
       animation: pulse 2s infinite;
     }
 
@@ -261,6 +265,7 @@ import { ShiftsApi, type ShiftAssignment, type ShiftTemplate } from '../../shift
       background: var(--p-surface-card);
       border: 1px solid var(--p-surface-border);
       border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
       overflow: hidden;
       margin-bottom: 0.5rem;
     }
@@ -329,8 +334,8 @@ import { ShiftsApi, type ShiftAssignment, type ShiftTemplate } from '../../shift
     .my-status-dot {
       width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0;
     }
-    .my-status-dot.active { background: #22c55e; box-shadow: 0 0 0 3px color-mix(in srgb, #22c55e 25%, transparent); animation: pulse 2s infinite; }
-    .my-status-dot.idle   { background: var(--p-surface-400, #666); }
+    .my-status-dot.active { background: var(--color-status-online); box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-status-online) 25%, transparent); animation: pulse 2s infinite; }
+    .my-status-dot.idle   { background: var(--color-status-idle); }
 
     /* ── Responsive ─────────────────────────────────────────────────── */
     @media (max-width: 1100px) {
@@ -659,7 +664,7 @@ import { ShiftsApi, type ShiftAssignment, type ShiftTemplate } from '../../shift
             <p-chart
               type="bar"
               [data]="chartData()"
-              [options]="chartOptions"
+              [options]="chartOptions()"
               [style]="{ height: (weeklyHours().length * 36 + 40) + 'px', minHeight: '200px' }"
             />
           }
@@ -670,10 +675,11 @@ import { ShiftsApi, type ShiftAssignment, type ShiftTemplate } from '../../shift
   `,
 })
 export class DashboardComponent implements OnInit {
-  private readonly dashApi  = inject(DashboardApi);
-  private readonly timeApi  = inject(TimeApi);
-  private readonly auth     = inject(AuthStore) as unknown as AuthStore;
+  private readonly dashApi   = inject(DashboardApi);
+  private readonly timeApi   = inject(TimeApi);
+  private readonly auth      = inject(AuthStore) as unknown as AuthStore;
   private readonly shiftsApi = inject(ShiftsApi);
+  private readonly theme     = inject(ThemeService);
 
   readonly today = new Date();
 
@@ -779,66 +785,71 @@ export class DashboardComponent implements OnInit {
     return d ? deriveWeeklyHours(d) : [];
   });
 
+  private readonly chartColors = computed(() => {
+    this.theme.isDark(); // track for reactivity on theme change
+    const s = getComputedStyle(document.documentElement);
+    return Array.from({ length: 8 }, (_, i) =>
+      s.getPropertyValue(`--chart-color-${i + 1}`).trim(),
+    );
+  });
+
   readonly chartData = computed(() => {
     const wh = this.weeklyHours();
     if (wh.length === 0) return null;
-
-    const palette = [
-      'rgba(99,102,241,0.75)',
-      'rgba(139,92,246,0.75)',
-      'rgba(59,130,246,0.75)',
-      'rgba(16,185,129,0.75)',
-      'rgba(245,158,11,0.75)',
-      'rgba(239,68,68,0.75)',
-      'rgba(236,72,153,0.75)',
-      'rgba(20,184,166,0.75)',
-    ];
-
+    const palette = this.chartColors();
     return {
       labels: wh.map(e => e.name),
       datasets: [{
         label: 'Hours',
         data:  wh.map(e => e.hours),
-        backgroundColor: wh.map((_, i) => palette[i % palette.length]),
-        borderColor:     wh.map((_, i) => palette[i % palette.length].replace('0.75', '1')),
+        backgroundColor: wh.map((_, i) => `color-mix(in srgb, ${palette[i % palette.length]} 75%, transparent)`),
+        borderColor:     wh.map((_, i) => palette[i % palette.length]),
         borderWidth: 1,
         borderRadius: 4,
       }],
     };
   });
 
-  readonly chartOptions = {
-    indexAxis: 'y' as const,
-    responsive: true,
-    maintainAspectRatio: false,
-    animation: { duration: 500 },
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        backgroundColor: 'rgba(17,17,20,0.95)',
-        titleColor:      '#e2e8f0',
-        bodyColor:       '#94a3b8',
-        borderColor:     'rgba(255,255,255,0.12)',
-        borderWidth:     1,
-        padding:         10,
-        callbacks: {
-          label: (ctx: { raw: unknown }) => ` ${Number(ctx.raw).toFixed(1)} h`,
+  readonly chartOptions = computed(() => {
+    this.theme.isDark(); // track for reactivity
+    const s        = getComputedStyle(document.documentElement);
+    const surface  = s.getPropertyValue('--p-surface-card').trim()  || '#1e293b';
+    const border   = s.getPropertyValue('--p-surface-border').trim() || 'rgba(255,255,255,0.12)';
+    const textMuted = s.getPropertyValue('--p-text-color-secondary').trim() || '#94a3b8';
+    const textBody = s.getPropertyValue('--p-text-color').trim()     || '#e2e8f0';
+    return {
+      indexAxis: 'y' as const,
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 500 },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: surface,
+          titleColor:      textBody,
+          bodyColor:       textMuted,
+          borderColor:     border,
+          borderWidth:     1,
+          padding:         10,
+          callbacks: {
+            label: (ctx: { raw: unknown }) => ` ${Number(ctx.raw).toFixed(1)} h`,
+          },
         },
       },
-    },
-    scales: {
-      x: {
-        min: 0,
-        suggestedMax: 45,
-        grid:  { color: 'rgba(255,255,255,0.06)' },
-        ticks: { color: '#94a3b8', font: { size: 11 } },
+      scales: {
+        x: {
+          min: 0,
+          suggestedMax: 45,
+          grid:  { color: border },
+          ticks: { color: textMuted, font: { size: 11 } },
+        },
+        y: {
+          grid:  { display: false },
+          ticks: { color: textBody, font: { size: 12 } },
+        },
       },
-      y: {
-        grid:  { display: false },
-        ticks: { color: '#d1d5db', font: { size: 12 } },
-      },
-    },
-  };
+    };
+  });
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
   ngOnInit(): void {
