@@ -15,6 +15,8 @@ import { DividerModule } from 'primeng/divider';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 import { TooltipModule } from 'primeng/tooltip';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { LanguageService } from '../../../core/i18n/language.service';
 import { forkJoin, firstValueFrom } from 'rxjs';
 import {
   DashboardApi,
@@ -35,7 +37,7 @@ import { ThemeService } from '../../../core/theme/theme.service';
 @Component({
   selector: 'app-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, LowerCasePipe, TitleCasePipe, CardModule, ChartModule, TagModule, SkeletonModule, DividerModule, ButtonModule, MessageModule, TooltipModule],
+  imports: [DatePipe, LowerCasePipe, TitleCasePipe, CardModule, ChartModule, TagModule, SkeletonModule, DividerModule, ButtonModule, MessageModule, TooltipModule, TranslatePipe],
   styles: [`
     :host { display: block; }
 
@@ -347,15 +349,15 @@ import { ThemeService } from '../../../core/theme/theme.service';
     <!-- Header -->
     <div class="dash-header">
       <div>
-        <div class="dash-title">Dashboard</div>
-        <div class="dash-subtitle">{{ today | date:'EEEE, d MMMM y' }}</div>
+        <div class="dash-title">{{ 'DASHBOARD.TITLE' | translate }}</div>
+        <div class="dash-subtitle">{{ today | date:'EEEE, d MMMM y':undefined:lang.dateLocale() }}</div>
       </div>
       <p-button
         icon="pi pi-refresh"
         [text]="true"
         [rounded]="true"
         severity="secondary"
-        pTooltip="Refresh"
+        [pTooltip]="'COMMON.REFRESH' | translate"
         (onClick)="load()"
         [loading]="loading()"
       />
@@ -402,9 +404,9 @@ import { ThemeService } from '../../../core/theme/theme.service';
             <span class="my-status-dot" [class.active]="myOpenEntry()" [class.idle]="!myOpenEntry()"></span>
           </div>
           <div class="stat-number" style="font-size:1.125rem; font-weight:700; line-height:1.3;">
-            {{ myOpenEntry() ? 'Clocked In' : 'Clocked Out' }}
+            {{ myOpenEntry() ? ('DASHBOARD.CLOCKED_IN_STATUS' | translate) : ('DASHBOARD.CLOCKED_OUT_STATUS' | translate) }}
           </div>
-          <div class="stat-label">My Status</div>
+          <div class="stat-label">{{ 'DASHBOARD.MY_STATUS' | translate }}</div>
         </div>
 
         <div class="stat-card">
@@ -412,7 +414,7 @@ import { ThemeService } from '../../../core/theme/theme.service';
             <div class="stat-icon stat-icon--green"><i class="pi pi-stopwatch"></i></div>
           </div>
           <div class="stat-number">{{ myTodayHours() }}</div>
-          <div class="stat-label">Today</div>
+          <div class="stat-label">{{ 'DASHBOARD.TODAY' | translate }}</div>
         </div>
 
         <div class="stat-card">
@@ -420,7 +422,7 @@ import { ThemeService } from '../../../core/theme/theme.service';
             <div class="stat-icon stat-icon--blue"><i class="pi pi-chart-bar"></i></div>
           </div>
           <div class="stat-number">{{ myWeekHours() }}</div>
-          <div class="stat-label">This Week</div>
+          <div class="stat-label">{{ 'DASHBOARD.THIS_WEEK' | translate }}</div>
         </div>
 
         <div class="stat-card">
@@ -428,7 +430,7 @@ import { ThemeService } from '../../../core/theme/theme.service';
             <div class="stat-icon stat-icon--orange"><i class="pi pi-calendar"></i></div>
           </div>
           <div class="stat-number">{{ myUpcomingShifts().length }}</div>
-          <div class="stat-label">Upcoming Shifts</div>
+          <div class="stat-label">{{ 'DASHBOARD.UPCOMING_SHIFTS' | translate }}</div>
         </div>
       </div>
 
@@ -438,13 +440,13 @@ import { ThemeService } from '../../../core/theme/theme.service';
         <!-- Today's time activity -->
         <div class="panel">
           <div class="panel-header">
-            <div class="panel-title"><i class="pi pi-list"></i>Today's Activity</div>
+            <div class="panel-title"><i class="pi pi-list"></i>{{ 'DASHBOARD.TODAY_ACTIVITY' | translate }}</div>
           </div>
           <div class="panel-body">
             @if (myTodayEntries().length === 0) {
               <div class="empty-state">
                 <i class="pi pi-clock"></i>
-                <span>No entries today — clock in to start your session</span>
+                <span>{{ 'DASHBOARD.NO_ENTRIES_TODAY' | translate }}</span>
               </div>
             } @else {
               @for (entry of myTodayEntries(); track entry.id) {
@@ -453,14 +455,14 @@ import { ThemeService } from '../../../core/theme/theme.service';
                     <div class="feed-time">{{ entry.clockIn | date:'HH:mm' }}</div>
                     <div class="feed-duration">
                       @if (entry.clockOut) { → {{ entry.clockOut | date:'HH:mm' }} }
-                      @else { running… }
+                      @else { {{ 'DASHBOARD.RUNNING' | translate }} }
                     </div>
                   </div>
                   <div style="text-align:right;">
                     <div class="feed-duration">{{ entryDuration(entry) }}</div>
                   </div>
                   <p-tag
-                    [value]="entry.status === 'OPEN' ? 'Active' : 'Closed'"
+                    [value]="entry.status === 'OPEN' ? ('STATUS.OPEN' | translate) : ('STATUS.CLOSED' | translate)"
                     [severity]="entry.status === 'OPEN' ? 'success' : 'secondary'"
                     [rounded]="true" [style]="{ fontSize: '0.7rem' }"
                   />
@@ -473,7 +475,7 @@ import { ThemeService } from '../../../core/theme/theme.service';
         <!-- Upcoming shifts -->
         <div class="panel">
           <div class="panel-header">
-            <div class="panel-title"><i class="pi pi-calendar"></i>Upcoming Shifts</div>
+            <div class="panel-title"><i class="pi pi-calendar"></i>{{ 'DASHBOARD.UPCOMING_SHIFTS' | translate }}</div>
             @if (upcomingLoading()) {
               <i class="pi pi-spin pi-spinner" style="font-size:0.875rem; color:var(--p-primary-color);"></i>
             }
@@ -482,7 +484,7 @@ import { ThemeService } from '../../../core/theme/theme.service';
             @if (myUpcomingShifts().length === 0 && !upcomingLoading()) {
               <div class="empty-state">
                 <i class="pi pi-calendar"></i>
-                <span>No upcoming shifts scheduled</span>
+                <span>{{ 'DASHBOARD.NO_UPCOMING_SHIFTS' | translate }}</span>
               </div>
             } @else {
               @for (shift of myUpcomingShifts(); track shift.id) {
@@ -515,7 +517,7 @@ import { ThemeService } from '../../../core/theme/theme.service';
             <div class="stat-icon stat-icon--primary"><i class="pi pi-users"></i></div>
           </div>
           <div class="stat-number">{{ stats().totalEmployees }}</div>
-          <div class="stat-label">Total Employees</div>
+          <div class="stat-label">{{ 'DASHBOARD.TOTAL_EMPLOYEES' | translate }}</div>
         </div>
 
         <div class="stat-card">
@@ -523,7 +525,7 @@ import { ThemeService } from '../../../core/theme/theme.service';
             <div class="stat-icon stat-icon--green"><i class="pi pi-clock"></i></div>
           </div>
           <div class="stat-number">{{ stats().clockedIn }}</div>
-          <div class="stat-label">Currently Clocked In</div>
+          <div class="stat-label">{{ 'DASHBOARD.CLOCKED_IN' | translate }}</div>
         </div>
 
         <div class="stat-card">
@@ -531,7 +533,7 @@ import { ThemeService } from '../../../core/theme/theme.service';
             <div class="stat-icon stat-icon--orange"><i class="pi pi-calendar-times"></i></div>
           </div>
           <div class="stat-number">{{ stats().onAbsenceToday }}</div>
-          <div class="stat-label">On Absence Today</div>
+          <div class="stat-label">{{ 'DASHBOARD.ON_ABSENCE' | translate }}</div>
         </div>
 
         <div class="stat-card">
@@ -539,7 +541,7 @@ import { ThemeService } from '../../../core/theme/theme.service';
             <div class="stat-icon stat-icon--blue"><i class="pi pi-arrows-h"></i></div>
           </div>
           <div class="stat-number">{{ stats().pendingSwaps }}</div>
-          <div class="stat-label">Pending Shift Swaps</div>
+          <div class="stat-label">{{ 'DASHBOARD.PENDING_SWAPS' | translate }}</div>
         </div>
       </div>
 
@@ -551,10 +553,10 @@ import { ThemeService } from '../../../core/theme/theme.service';
           <div class="panel-header">
             <div class="panel-title">
               <i class="pi pi-wifi"></i>
-              Live Clock-In Feed
+              {{ 'DASHBOARD.LIVE_FEED_TITLE' | translate }}
             </div>
             <p-tag
-              [value]="feed().length + ' online'"
+              [value]="'DASHBOARD.ONLINE_BADGE' | translate:{ count: feed().length }"
               severity="success"
               [rounded]="true"
               [style]="{ fontSize: '0.7rem' }"
@@ -564,7 +566,7 @@ import { ThemeService } from '../../../core/theme/theme.service';
             @if (feed().length === 0) {
               <div class="empty-state">
                 <i class="pi pi-moon"></i>
-                <span>No one is clocked in right now</span>
+                <span>{{ 'DASHBOARD.NO_ONE_CLOCKED' | translate }}</span>
               </div>
             } @else {
               @for (entry of feed(); track entry.employeeId) {
@@ -589,11 +591,11 @@ import { ThemeService } from '../../../core/theme/theme.service';
           <div class="panel-header">
             <div class="panel-title">
               <i class="pi pi-exclamation-triangle"></i>
-              Daily Incidents
+              {{ 'DASHBOARD.INCIDENTS_TITLE' | translate }}
             </div>
             @if (incidents().length > 0) {
               <p-tag
-                [value]="incidents().length + ' alerts'"
+                [value]="'DASHBOARD.ALERTS_BADGE' | translate:{ count: incidents().length }"
                 severity="warn"
                 [rounded]="true"
                 [style]="{ fontSize: '0.7rem' }"
@@ -604,7 +606,7 @@ import { ThemeService } from '../../../core/theme/theme.service';
             @if (incidents().length === 0) {
               <div class="empty-state">
                 <i class="pi pi-check-circle"></i>
-                <span>No incidents today — all clear!</span>
+                <span>{{ 'DASHBOARD.NO_INCIDENTS' | translate }}</span>
               </div>
             } @else {
               @if (incidentCloseError()) {
@@ -621,14 +623,14 @@ import { ThemeService } from '../../../core/theme/theme.service';
                   </div>
                   @if (inc.employeeId) {
                     <p-button
-                      label="Close session"
+                      [label]="'DASHBOARD.CLOSE_SESSION' | translate"
                       icon="pi pi-sign-out"
                       size="small"
                       severity="danger"
                       [text]="true"
                       [loading]="closingIncidentId() === inc.id"
                       [disabled]="closingIncidentId() !== null"
-                      pTooltip="Force clock out this employee"
+                      [pTooltip]="'DASHBOARD.CLOSE_SESSION_TOOLTIP' | translate"
                       tooltipPosition="left"
                       (onClick)="closeIncident(inc)"
                     />
@@ -646,11 +648,11 @@ import { ThemeService } from '../../../core/theme/theme.service';
         <div class="panel-header">
           <div class="panel-title">
             <i class="pi pi-chart-bar"></i>
-            Weekly Hours — {{ weekLabel }}
+            {{ 'DASHBOARD.WEEKLY_CHART_TITLE' | translate }} — {{ weekLabel }}
           </div>
           @if (weeklyHours().length > 0) {
             <span style="font-size: 0.75rem; color: var(--p-text-color-muted, var(--p-text-color-secondary));">
-              {{ weeklyHours().length }} employee(s) with activity
+              {{ 'DASHBOARD.EMPLOYEES_ACTIVITY' | translate:{ count: weeklyHours().length } }}
             </span>
           }
         </div>
@@ -658,7 +660,7 @@ import { ThemeService } from '../../../core/theme/theme.service';
           @if (weeklyHours().length === 0) {
             <div class="empty-state" style="padding-top: 3rem;">
               <i class="pi pi-chart-bar"></i>
-              <span>No closed time entries this week yet</span>
+              <span>{{ 'DASHBOARD.NO_CHART_DATA' | translate }}</span>
             </div>
           } @else {
             <p-chart
@@ -680,6 +682,8 @@ export class DashboardComponent implements OnInit {
   private readonly auth      = inject(AuthStore) as unknown as AuthStore;
   private readonly shiftsApi = inject(ShiftsApi);
   private readonly theme     = inject(ThemeService);
+  private readonly translate = inject(TranslateService);
+  readonly lang              = inject(LanguageService);
 
   readonly today = new Date();
 
@@ -864,7 +868,7 @@ export class DashboardComponent implements OnInit {
       await firstValueFrom(this.timeApi.clockOut({ employeeId: inc.employeeId }));
       this.load();
     } catch {
-      this.incidentCloseError.set('Failed to close the session. Please try again.');
+      this.incidentCloseError.set(this.translate.instant('DASHBOARD.CLOSE_SESSION_ERROR'));
     } finally {
       this.closingIncidentId.set(null);
     }

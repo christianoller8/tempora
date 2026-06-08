@@ -6,6 +6,7 @@ import {
   OnInit,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { TranslatePipe } from '@ngx-translate/core';
 import { ShiftsApi } from '../data-access/shifts.api';
 import type { SwapRequest, RuleCheckResult } from '../data-access/shifts.api';
 
@@ -16,13 +17,13 @@ import type { SwapRequest, RuleCheckResult } from '../data-access/shifts.api';
 @Component({
   selector: 'app-swap-approval',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslatePipe],
   template: `
     <section aria-labelledby="swap-approval-heading">
-      <h2 id="swap-approval-heading">Swap Request Approvals</h2>
+      <h2 id="swap-approval-heading">{{ 'SHIFTS.SWAP_APPROVAL_TITLE' | translate }}</h2>
 
       @if (loading()) {
-        <p role="status" aria-live="polite">Loading pending requests...</p>
+        <p role="status" aria-live="polite">{{ 'COMMON.LOADING' | translate }}</p>
       }
 
       @if (error()) {
@@ -31,38 +32,38 @@ import type { SwapRequest, RuleCheckResult } from '../data-access/shifts.api';
 
       @if (violations().length > 0) {
         <div role="alert" class="violations-banner" aria-live="assertive">
-          <strong>Swap blocked by rule violations:</strong>
+          <strong>{{ 'SHIFTS.RULE_VIOLATION' | translate }}</strong>
           <ul>
             @for (v of violations(); track v.code) {
               <li>{{ v.message }}</li>
             }
           </ul>
-          <button type="button" (click)="clearViolations()" aria-label="Dismiss violations">
-            Dismiss
+          <button type="button" (click)="clearViolations()" [attr.aria-label]="'COMMON.CLOSE' | translate">
+            {{ 'COMMON.CLOSE' | translate }}
           </button>
         </div>
       }
 
       @if (pendingSwaps().length === 0 && !loading()) {
-        <p>No pending swap requests.</p>
+        <p>{{ 'SHIFTS.SWAP_EMPTY' | translate }}</p>
       }
 
       @if (pendingSwaps().length > 0) {
         <table aria-label="Pending swap requests">
           <thead>
             <tr>
-              <th scope="col">Requester Assignment</th>
-              <th scope="col">Target Assignment</th>
-              <th scope="col">Reason</th>
-              <th scope="col">Submitted</th>
-              <th scope="col">Actions</th>
+              <th scope="col">{{ 'SHIFTS.SWAP_FROM_LABEL' | translate }}</th>
+              <th scope="col">{{ 'SHIFTS.SWAP_TO_LABEL' | translate }}</th>
+              <th scope="col">{{ 'SHIFTS.SWAP_REASON_LABEL' | translate }}</th>
+              <th scope="col">{{ 'COMMON.DATE_FROM' | translate }}</th>
+              <th scope="col">{{ 'COMMON.ACTIONS' | translate }}</th>
             </tr>
           </thead>
           <tbody>
             @for (swap of pendingSwaps(); track swap.id) {
               <tr>
                 <td>{{ swap.requesterAssignmentId }}</td>
-                <td>{{ swap.targetAssignmentId ?? 'Open' }}</td>
+                <td>{{ swap.targetAssignmentId ?? ('SHIFTS.NO_SHIFT' | translate) }}</td>
                 <td>{{ swap.reason ?? '—' }}</td>
                 <td>{{ swap.createdAt | date:'shortDate' }}</td>
                 <td class="actions">
@@ -71,16 +72,16 @@ import type { SwapRequest, RuleCheckResult } from '../data-access/shifts.api';
                     class="btn-approve"
                     (click)="approve(swap.id)"
                     [disabled]="processing() === swap.id"
-                    [attr.aria-label]="'Approve swap request ' + swap.id">
-                    {{ processing() === swap.id ? 'Processing...' : 'Approve' }}
+                    [attr.aria-label]="'COMMON.APPROVE' | translate">
+                    {{ processing() === swap.id ? ('COMMON.LOADING' | translate) : ('COMMON.APPROVE' | translate) }}
                   </button>
                   <button
                     type="button"
                     class="btn-reject"
                     (click)="reject(swap.id)"
                     [disabled]="processing() === swap.id"
-                    [attr.aria-label]="'Reject swap request ' + swap.id">
-                    Reject
+                    [attr.aria-label]="'COMMON.REJECT' | translate">
+                    {{ 'COMMON.REJECT' | translate }}
                   </button>
                 </td>
               </tr>

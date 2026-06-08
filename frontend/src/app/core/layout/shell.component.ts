@@ -19,9 +19,11 @@ import { NotificationListComponent } from '../../features/notifications/feature/
 import { NotificationBellComponent } from '../../features/notifications/ui/notification-bell.component';
 import { ThemeService } from '../theme/theme.service';
 import { SseService } from '../sse/sse.service';
+import { LanguageService } from '../i18n/language.service';
+import { TranslatePipe } from '@ngx-translate/core';
 
 interface NavItem {
-  label: string;
+  labelKey: string;
   route: string;
   icon: string;
   comingSoon?: boolean;
@@ -36,6 +38,7 @@ interface NavItem {
     PopoverModule,
     NotificationListComponent,
     NotificationBellComponent,
+    TranslatePipe,
   ],
   styles: [`
     /* ── Layout ─────────────────────────────────────────────────────── */
@@ -266,7 +269,7 @@ interface NavItem {
         </div>
         <div class="brand-text">
           <span class="brand-name">Tempora</span>
-          <span class="brand-sub">Healthcare</span>
+          <span class="brand-sub">{{ 'NAV.BRAND_SUBTITLE' | translate }}</span>
         </div>
       </div>
 
@@ -277,8 +280,8 @@ interface NavItem {
               @if (item.comingSoon) {
                 <span class="nav-link nav-link--soon" aria-disabled="true" role="link">
                   <i class="pi {{ item.icon }}"></i>
-                  <span>{{ item.label }}</span>
-                  <span class="nav-soon-badge">Soon</span>
+                  <span>{{ item.labelKey | translate }}</span>
+                  <span class="nav-soon-badge">{{ 'NAV.COMING_SOON' | translate }}</span>
                 </span>
               } @else {
                 <a
@@ -286,13 +289,13 @@ interface NavItem {
                   [routerLink]="item.route"
                   routerLinkActive="active"
                   [routerLinkActiveOptions]="{ exact: item.route === '/dashboard' }"
-                  [pTooltip]="item.label"
+                  [pTooltip]="item.labelKey | translate"
                   tooltipPosition="right"
                   [showDelay]="600"
-                  [attr.aria-label]="item.label"
+                  [attr.aria-label]="item.labelKey | translate"
                 >
                   <i class="pi {{ item.icon }}"></i>
-                  <span>{{ item.label }}</span>
+                  <span>{{ item.labelKey | translate }}</span>
                 </a>
               }
             </li>
@@ -305,13 +308,13 @@ interface NavItem {
           class="nav-link"
           (click)="logout()"
           style="cursor:pointer"
-          aria-label="Sign out"
-          pTooltip="Sign out"
+          [attr.aria-label]="'NAV.SIGN_OUT' | translate"
+          [pTooltip]="'NAV.SIGN_OUT' | translate"
           tooltipPosition="right"
           [showDelay]="600"
         >
           <i class="pi pi-sign-out"></i>
-          <span>Sign out</span>
+          <span>{{ 'NAV.SIGN_OUT' | translate }}</span>
         </a>
       </div>
     </aside>
@@ -331,16 +334,28 @@ interface NavItem {
             <app-notification-list (navigated)="notifPanel.hide()" />
           </p-popover>
 
+          <!-- Language toggle -->
+          <p-button
+            [label]="lang.current() === 'es' ? 'EN' : 'ES'"
+            [text]="true"
+            [rounded]="true"
+            severity="secondary"
+            [pTooltip]="lang.current() === 'es' ? ('TOPBAR.SWITCH_TO_ENGLISH' | translate) : ('TOPBAR.SWITCH_TO_SPANISH' | translate)"
+            tooltipPosition="bottom"
+            (onClick)="lang.toggle()"
+            [attr.aria-label]="lang.current() === 'es' ? ('TOPBAR.SWITCH_TO_ENGLISH' | translate) : ('TOPBAR.SWITCH_TO_SPANISH' | translate)"
+          />
+
           <!-- Theme toggle -->
           <p-button
             [icon]="theme.isDark() ? 'pi pi-sun' : 'pi pi-moon'"
             [text]="true"
             [rounded]="true"
             severity="secondary"
-            [pTooltip]="theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
+            [pTooltip]="theme.isDark() ? ('TOPBAR.SWITCH_TO_LIGHT' | translate) : ('TOPBAR.SWITCH_TO_DARK' | translate)"
             tooltipPosition="bottom"
             (onClick)="theme.toggle()"
-            [attr.aria-label]="theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
+            [attr.aria-label]="theme.isDark() ? ('TOPBAR.SWITCH_TO_LIGHT' | translate) : ('TOPBAR.SWITCH_TO_DARK' | translate)"
           />
           <div class="user-block">
             <span class="user-email">{{ userEmail() }}</span>
@@ -373,6 +388,7 @@ export class ShellComponent implements OnInit {
   private readonly sse    = inject(SseService);
   protected readonly notificationsStore = inject(NotificationsStore) as unknown as NotificationsStore;
   protected readonly theme = inject(ThemeService);
+  protected readonly lang  = inject(LanguageService);
 
   readonly isAdminOrManager = computed(() =>
     ['ADMIN', 'MANAGER'].includes(this.auth.role() ?? ''),
@@ -388,38 +404,37 @@ export class ShellComponent implements OnInit {
 
   readonly navItems = computed((): NavItem[] => {
     const role = this.auth.role();
-    console.log('[Shell] navItems recomputed — role:', role);
     if (role === 'EMPLOYEE') {
       return [
-        { label: 'My Schedule',   route: '/shifts',        icon: 'pi-calendar' },
-        { label: 'My Time',       route: '/time-tracking', icon: 'pi-clock' },
-        { label: 'My Absences',   route: '/absences',      icon: 'pi-calendar-times' },
-        { label: 'My Timesheet',  route: '/timesheet',     icon: 'pi-file-check' },
-        { label: 'My Documents',  route: '/documents',     icon: 'pi-file',          comingSoon: true },
+        { labelKey: 'NAV.MY_SCHEDULE',  route: '/shifts',        icon: 'pi-calendar' },
+        { labelKey: 'NAV.MY_TIME',      route: '/time-tracking', icon: 'pi-clock' },
+        { labelKey: 'NAV.MY_ABSENCES',  route: '/absences',      icon: 'pi-calendar-times' },
+        { labelKey: 'NAV.MY_TIMESHEET', route: '/timesheet',     icon: 'pi-file-check' },
+        { labelKey: 'NAV.MY_DOCUMENTS', route: '/documents',     icon: 'pi-file', comingSoon: true },
       ];
     }
     if (role === 'MANAGER') {
       return [
-        { label: 'Dashboard',         route: '/dashboard',        icon: 'pi-home' },
-        { label: 'Shifts',            route: '/shifts',           icon: 'pi-calendar' },
-        { label: 'Time Tracking',     route: '/time-tracking',    icon: 'pi-clock' },
-        { label: 'Absences',          route: '/absences',         icon: 'pi-calendar-times' },
-        { label: 'My Timesheet',      route: '/timesheet',        icon: 'pi-file-check' },
-        { label: 'Timesheet Status',  route: '/timesheet-status', icon: 'pi-list-check' },
+        { labelKey: 'NAV.DASHBOARD',         route: '/dashboard',        icon: 'pi-home' },
+        { labelKey: 'NAV.SHIFTS',            route: '/shifts',           icon: 'pi-calendar' },
+        { labelKey: 'NAV.TIME_TRACKING',     route: '/time-tracking',    icon: 'pi-clock' },
+        { labelKey: 'NAV.ABSENCES',          route: '/absences',         icon: 'pi-calendar-times' },
+        { labelKey: 'NAV.MY_TIMESHEET',      route: '/timesheet',        icon: 'pi-file-check' },
+        { labelKey: 'NAV.TIMESHEET_STATUS',  route: '/timesheet-status', icon: 'pi-list-check' },
       ];
     }
     // ADMIN
     return [
-      { label: 'Dashboard',         route: '/dashboard',        icon: 'pi-home' },
-      { label: 'Shifts',            route: '/shifts',           icon: 'pi-calendar' },
-      { label: 'Time Tracking',     route: '/time-tracking',    icon: 'pi-clock' },
-      { label: 'Absences',          route: '/absences',         icon: 'pi-calendar-times' },
-      { label: 'My Timesheet',      route: '/timesheet',        icon: 'pi-file-check' },
-      { label: 'Timesheet Status',  route: '/timesheet-status', icon: 'pi-list-check' },
-      { label: 'Employees',         route: '/employees',        icon: 'pi-users' },
-      { label: 'Documents',         route: '/documents',        icon: 'pi-file',          comingSoon: true },
-      { label: 'Reports',           route: '/reports',          icon: 'pi-chart-bar' },
-      { label: 'Settings',          route: '/admin',            icon: 'pi-cog' },
+      { labelKey: 'NAV.DASHBOARD',        route: '/dashboard',        icon: 'pi-home' },
+      { labelKey: 'NAV.SHIFTS',           route: '/shifts',           icon: 'pi-calendar' },
+      { labelKey: 'NAV.TIME_TRACKING',    route: '/time-tracking',    icon: 'pi-clock' },
+      { labelKey: 'NAV.ABSENCES',         route: '/absences',         icon: 'pi-calendar-times' },
+      { labelKey: 'NAV.MY_TIMESHEET',     route: '/timesheet',        icon: 'pi-file-check' },
+      { labelKey: 'NAV.TIMESHEET_STATUS', route: '/timesheet-status', icon: 'pi-list-check' },
+      { labelKey: 'NAV.EMPLOYEES',        route: '/employees',        icon: 'pi-users' },
+      { labelKey: 'NAV.DOCUMENTS',        route: '/documents',        icon: 'pi-file', comingSoon: true },
+      { labelKey: 'NAV.REPORTS',          route: '/reports',          icon: 'pi-chart-bar' },
+      { labelKey: 'NAV.SETTINGS',         route: '/admin',            icon: 'pi-cog' },
     ];
   });
 

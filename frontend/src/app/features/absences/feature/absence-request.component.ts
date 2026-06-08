@@ -1,26 +1,21 @@
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { LanguageService } from '../../../core/i18n/language.service';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import { SkeletonModule } from 'primeng/skeleton';
+import { TooltipModule } from 'primeng/tooltip';
 import { AbsencesStore } from '../data-access/absences.store';
 import type { AbsenceDto, AbsenceType } from '../data-access/absences.api';
 import { AuthStore } from '../../../core/auth/auth.store';
 
-const ABSENCE_TYPE_LABELS: Record<AbsenceType, string> = {
-  VACACIONES: 'Vacaciones',
-  IT: 'Incapacidad Temporal (IT)',
-  PERMISO_RETRIBUIDO: 'Permiso Retribuido',
-  AUSENCIA_INJUSTIFICADA: 'Ausencia Injustificada',
-  LACTANCIA: 'Lactancia',
-  REDUCCION_JORNADA: 'Reducción de Jornada',
-  ASUNTOS_PROPIOS: 'Asuntos Propios',
-  PERMISO_NO_RETRIBUIDO: 'Permiso No Retribuido',
-  MATERNIDAD_PATERNIDAD: 'Maternidad / Paternidad',
-};
-
-const ABSENCE_TYPES = Object.keys(ABSENCE_TYPE_LABELS) as AbsenceType[];
+const ABSENCE_TYPES: AbsenceType[] = [
+  'VACACIONES', 'IT', 'PERMISO_RETRIBUIDO', 'AUSENCIA_INJUSTIFICADA',
+  'LACTANCIA', 'REDUCCION_JORNADA', 'ASUNTOS_PROPIOS',
+  'PERMISO_NO_RETRIBUIDO', 'MATERNIDAD_PATERNIDAD',
+];
 
 /**
  * AbsenceRequestComponent — smart container for creating absence requests.
@@ -41,7 +36,7 @@ const STATUS_SEVERITY: Record<AbsenceDto['status'], TagSeverity> = {
 @Component({
   selector: 'app-absence-request',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, DatePipe, ButtonModule, TagModule, SkeletonModule],
+  imports: [ReactiveFormsModule, DatePipe, ButtonModule, TagModule, SkeletonModule, TooltipModule, TranslatePipe],
   styles: [`
     :host { display: block; max-width: 860px; margin: 0 auto; }
 
@@ -178,15 +173,15 @@ const STATUS_SEVERITY: Record<AbsenceDto['status'], TagSeverity> = {
   template: `
     <!-- ── Page header ─────────────────────────────────────────────── -->
     <div class="page-header">
-      <div class="page-title">{{ isAdminOrManager() ? 'Absences' : 'My Absences' }}</div>
-      <div class="page-sub">{{ isAdminOrManager() ? 'Manage absence requests and approval queue' : 'Your absence history and new requests' }}</div>
+      <div class="page-title">{{ isAdminOrManager() ? ('ABSENCES.TITLE' | translate) : ('ABSENCES.MY_ABSENCES' | translate) }}</div>
+      <div class="page-sub">{{ isAdminOrManager() ? ('ABSENCES.APPROVAL_TITLE' | translate) : ('ABSENCES.MY_ABSENCES' | translate) }}</div>
     </div>
 
     <!-- ── ADMIN / MANAGER VIEW ────────────────────────────────────── -->
     @if (isAdminOrManager()) {
 
       <!-- Pending approval queue -->
-      <div class="section-title"><i class="pi pi-inbox"></i>Pending Requests</div>
+      <div class="section-title"><i class="pi pi-inbox"></i>{{ 'ABSENCES.APPROVAL_TITLE' | translate }}</div>
       <div class="abs-panel">
         @if (store.loading() && pendingAbsences().length === 0) {
           <div style="padding:1rem; display:flex; flex-direction:column; gap:0.5rem;">
@@ -195,54 +190,54 @@ const STATUS_SEVERITY: Record<AbsenceDto['status'], TagSeverity> = {
         } @else if (pendingAbsences().length === 0) {
           <div class="empty-state">
             <i class="pi pi-check-circle"></i>
-            <span>No pending requests — all clear!</span>
+            <span>{{ 'ABSENCES.EMPTY_REQUESTS' | translate }}</span>
           </div>
         } @else {
           <div class="abs-header-row">
-            <span class="abs-col-label">Type</span>
-            <span class="abs-col-label">From</span>
-            <span class="abs-col-label">To</span>
-            <span class="abs-col-label">Status</span>
-            <span class="abs-col-label">Actions</span>
+            <span class="abs-col-label">{{ 'ABSENCES.TABLE_TYPE' | translate }}</span>
+            <span class="abs-col-label">{{ 'ABSENCES.TABLE_FROM' | translate }}</span>
+            <span class="abs-col-label">{{ 'ABSENCES.TABLE_TO' | translate }}</span>
+            <span class="abs-col-label">{{ 'ABSENCES.TABLE_STATUS' | translate }}</span>
+            <span class="abs-col-label">{{ 'ABSENCES.TABLE_ACTIONS' | translate }}</span>
           </div>
           @for (abs of pendingAbsences(); track abs.id) {
             <div class="abs-row-wrap">
               <div class="abs-row">
-                <span class="abs-type">{{ typeLabels[abs.type] }}</span>
+                <span class="abs-type">{{ 'ABSENCES.TYPES.' + abs.type | translate }}</span>
                 <span class="abs-dates">{{ abs.startDate | date:'d MMM y' }}</span>
                 <span class="abs-dates">{{ abs.endDate | date:'d MMM y' }}</span>
                 <p-tag [value]="abs.status" [severity]="statusSeverity(abs.status)" [rounded]="true" [style]="{ fontSize: '0.7rem' }" />
                 <div class="abs-actions">
                   <p-button icon="pi pi-check" severity="success" size="small"
-                    pTooltip="Approve" [loading]="processingId() === abs.id" [disabled]="processingId() !== null"
+                    [pTooltip]="'COMMON.APPROVE' | translate" [loading]="processingId() === abs.id" [disabled]="processingId() !== null"
                     (onClick)="openDecision(abs.id, 'approve')" />
                   <p-button icon="pi pi-times" severity="danger" size="small"
-                    pTooltip="Reject" [loading]="processingId() === abs.id" [disabled]="processingId() !== null"
+                    [pTooltip]="'COMMON.REJECT' | translate" [loading]="processingId() === abs.id" [disabled]="processingId() !== null"
                     (onClick)="openDecision(abs.id, 'reject')" />
                 </div>
               </div>
               @if (decisionTargetId() === abs.id) {
                 <div class="decision-form" style="padding: 0.625rem 1.25rem 0.75rem;">
-                  <label [for]="'decision-comment-' + abs.id">Comentario (opcional)</label>
+                  <label [for]="'decision-comment-' + abs.id">{{ 'ABSENCES.FIELD_COMMENT' | translate }}</label>
                   <textarea
                     [id]="'decision-comment-' + abs.id"
-                    [attr.aria-label]="'Comentario para la decisión de ' + typeLabels[abs.type]"
+                    [attr.aria-label]="'ABSENCES.FIELD_COMMENT' | translate"
                     rows="2"
                     [value]="decisionComment()"
                     (input)="decisionComment.set($any($event.target).value)"
-                    placeholder="Motivo o nota para el empleado (máx. 500 caracteres)"
+                    [placeholder]="'ABSENCES.FIELD_COMMENT_PLACEHOLDER' | translate"
                     maxlength="500"
                   ></textarea>
                   <div class="decision-actions">
                     <p-button
-                      [label]="decisionAction() === 'approve' ? 'Confirmar aprobación' : 'Confirmar rechazo'"
+                      [label]="decisionAction() === 'approve' ? ('ABSENCES.CONFIRM_APPROVE' | translate) : ('ABSENCES.CONFIRM_REJECT' | translate)"
                       [icon]="decisionAction() === 'approve' ? 'pi pi-check' : 'pi pi-times'"
                       [severity]="decisionAction() === 'approve' ? 'success' : 'danger'"
                       size="small"
                       [loading]="processingId() === abs.id"
                       (onClick)="confirmDecision(abs.id)"
                     />
-                    <p-button label="Cancelar" severity="secondary" [text]="true" size="small"
+                    <p-button [label]="'COMMON.CANCEL' | translate" severity="secondary" [text]="true" size="small"
                       (onClick)="cancelDecision()" />
                   </div>
                 </div>
@@ -253,7 +248,7 @@ const STATUS_SEVERITY: Record<AbsenceDto['status'], TagSeverity> = {
       </div>
 
       <!-- All absences -->
-      <div class="section-title"><i class="pi pi-list"></i>All Absences</div>
+      <div class="section-title"><i class="pi pi-list"></i>{{ 'ABSENCES.TITLE' | translate }}</div>
       <div class="abs-panel">
         @if (store.loading() && nonPendingAbsences().length === 0) {
           <div style="padding:1rem; display:flex; flex-direction:column; gap:0.5rem;">
@@ -262,7 +257,7 @@ const STATUS_SEVERITY: Record<AbsenceDto['status'], TagSeverity> = {
         } @else if (nonPendingAbsences().length === 0) {
           <div class="empty-state">
             <i class="pi pi-calendar-times"></i>
-            <span>No processed absences yet</span>
+            <span>{{ 'ABSENCES.EMPTY_REQUESTS' | translate }}</span>
           </div>
         } @else {
           <div class="abs-header-row">
@@ -275,7 +270,7 @@ const STATUS_SEVERITY: Record<AbsenceDto['status'], TagSeverity> = {
           @for (abs of nonPendingAbsences(); track abs.id) {
             <div class="abs-row-wrap">
               <div class="abs-row">
-                <span class="abs-type">{{ typeLabels[abs.type] }}</span>
+                <span class="abs-type">{{ 'ABSENCES.TYPES.' + abs.type | translate }}</span>
                 <span class="abs-dates">{{ abs.startDate | date:'d MMM y' }}</span>
                 <span class="abs-dates">{{ abs.endDate | date:'d MMM y' }}</span>
                 <p-tag [value]="abs.status" [severity]="statusSeverity(abs.status)" [rounded]="true" [style]="{ fontSize: '0.7rem' }" />
@@ -294,7 +289,7 @@ const STATUS_SEVERITY: Record<AbsenceDto['status'], TagSeverity> = {
 
     <!-- ── EMPLOYEE VIEW ────────────────────────────────────────────── -->
     @if (!isAdminOrManager()) {
-      <div class="section-title"><i class="pi pi-list"></i>My Absence History</div>
+      <div class="section-title"><i class="pi pi-list"></i>{{ 'ABSENCES.MY_ABSENCES' | translate }}</div>
       <div class="abs-panel">
         @if (store.loading() && store.absences().length === 0) {
           <div style="padding:1rem; display:flex; flex-direction:column; gap:0.5rem;">
@@ -303,7 +298,7 @@ const STATUS_SEVERITY: Record<AbsenceDto['status'], TagSeverity> = {
         } @else if (store.absences().length === 0) {
           <div class="empty-state">
             <i class="pi pi-calendar-times"></i>
-            <span>No absence records yet</span>
+            <span>{{ 'ABSENCES.EMPTY_REQUESTS' | translate }}</span>
           </div>
         } @else {
           <div class="abs-header-row">
@@ -316,7 +311,7 @@ const STATUS_SEVERITY: Record<AbsenceDto['status'], TagSeverity> = {
           @for (abs of store.absences(); track abs.id) {
             <div class="abs-row-wrap">
               <div class="abs-row">
-                <span class="abs-type">{{ typeLabels[abs.type] }}</span>
+                <span class="abs-type">{{ 'ABSENCES.TYPES.' + abs.type | translate }}</span>
                 <span class="abs-dates">{{ abs.startDate | date:'d MMM y' }}</span>
                 <span class="abs-dates">{{ abs.endDate | date:'d MMM y' }}</span>
                 <p-tag [value]="abs.status" [severity]="statusSeverity(abs.status)" [rounded]="true" [style]="{ fontSize: '0.7rem' }" />
@@ -334,35 +329,35 @@ const STATUS_SEVERITY: Record<AbsenceDto['status'], TagSeverity> = {
     }
 
     <!-- ── Request form (all roles) ────────────────────────────────── -->
-    <div class="section-title"><i class="pi pi-plus-circle"></i>New Request</div>
+    <div class="section-title"><i class="pi pi-plus-circle"></i>{{ 'ABSENCES.REQUEST_TITLE' | translate }}</div>
     <div class="form-panel">
       <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate aria-label="Absence request form">
 
         <div class="field">
-          <label for="type">Absence type <span aria-hidden="true">*</span></label>
+          <label for="type">{{ 'ABSENCES.FIELD_TYPE' | translate }} <span aria-hidden="true">*</span></label>
           <select id="type" formControlName="type" aria-required="true">
             @for (type of absenceTypes; track type) {
-              <option [value]="type">{{ typeLabels[type] }}</option>
+              <option [value]="type">{{ 'ABSENCES.TYPES.' + type | translate }}</option>
             }
           </select>
           @if (f['type']?.invalid && f['type']?.touched) {
-            <span class="error" role="alert">Please select an absence type.</span>
+            <span class="error" role="alert">{{ 'ABSENCES.REQUIRED_TYPE' | translate }}</span>
           }
         </div>
 
         <div class="field">
-          <label for="startDate">Start date <span aria-hidden="true">*</span></label>
+          <label for="startDate">{{ 'ABSENCES.FIELD_DATE_FROM' | translate }} <span aria-hidden="true">*</span></label>
           <input id="startDate" type="date" formControlName="startDate" aria-required="true" />
           @if (f['startDate']?.invalid && f['startDate']?.touched) {
-            <span class="error" role="alert">Start date is required.</span>
+            <span class="error" role="alert">{{ 'ABSENCES.REQUIRED_DATE_FROM' | translate }}</span>
           }
         </div>
 
         <div class="field">
-          <label for="endDate">End date <span aria-hidden="true">*</span></label>
+          <label for="endDate">{{ 'ABSENCES.FIELD_DATE_TO' | translate }} <span aria-hidden="true">*</span></label>
           <input id="endDate" type="date" formControlName="endDate" aria-required="true" />
           @if (f['endDate']?.invalid && f['endDate']?.touched) {
-            <span class="error" role="alert">End date is required.</span>
+            <span class="error" role="alert">{{ 'ABSENCES.REQUIRED_DATE_TO' | translate }}</span>
           }
         </div>
 
@@ -379,13 +374,13 @@ const STATUS_SEVERITY: Record<AbsenceDto['status'], TagSeverity> = {
         <div class="form-actions">
           <p-button
             type="submit"
-            label="Submit Request"
+            [label]="'ABSENCES.REQUEST_ABSENCE' | translate"
             icon="pi pi-send"
             [loading]="store.loading()"
             [disabled]="form.invalid"
           />
           @if (submitSuccess()) {
-            <span class="submit-feedback success"><i class="pi pi-check"></i> Request submitted successfully.</span>
+            <span class="submit-feedback success"><i class="pi pi-check"></i> {{ 'ABSENCES.REQUEST_TITLE' | translate }}</span>
           }
           @if (submitError()) {
             <span class="submit-feedback error"><i class="pi pi-times"></i> {{ submitError() }}</span>
@@ -399,6 +394,7 @@ export class AbsenceRequestComponent implements OnInit {
   protected readonly store = inject(AbsencesStore) as unknown as AbsencesStore;
   private  readonly auth  = inject(AuthStore) as unknown as AuthStore;
   private  readonly fb    = inject(FormBuilder);
+  readonly lang            = inject(LanguageService);
 
   protected readonly isAdminOrManager = computed(() =>
     ['ADMIN', 'MANAGER'].includes(this.auth.role() ?? ''),
@@ -420,7 +416,6 @@ export class AbsenceRequestComponent implements OnInit {
   protected readonly decisionComment  = signal('');
 
   protected readonly absenceTypes = ABSENCE_TYPES;
-  protected readonly typeLabels = ABSENCE_TYPE_LABELS;
   protected readonly submitError = signal<string | null>(null);
   protected readonly submitSuccess = signal(false);
 

@@ -5,6 +5,7 @@ import {
   output,
 } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { TranslatePipe } from '@ngx-translate/core';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -28,7 +29,7 @@ const SKELETON_ROWS: unknown[] = [1, 2, 3, 4, 5];
 @Component({
   selector: 'app-employee-table',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, TableModule, TagModule, SkeletonModule, ButtonModule],
+  imports: [DatePipe, TableModule, TagModule, SkeletonModule, ButtonModule, TranslatePipe],
   styles: [`
     :host { display: block; overflow-x: auto; }
 
@@ -112,29 +113,29 @@ const SKELETON_ROWS: unknown[] = [1, 2, 3, 4, 5];
         <div class="table-header">
           <div class="table-title">
             <i class="pi pi-users" style="color: var(--p-primary-color); font-size:0.9rem;"></i>
-            Employees
+            {{ 'EMPLOYEES.TITLE' | translate }}
             <span class="count-badge">{{ employees().length }}</span>
           </div>
           <p-button
-            label="Add Employee"
+            [label]="'EMPLOYEES.ADD_EMPLOYEE' | translate"
             icon="pi pi-plus"
             size="small"
             (onClick)="addClick.emit()"
-            aria-label="Add Employee"
+            [attr.aria-label]="'EMPLOYEES.ADD_EMPLOYEE' | translate"
           />
         </div>
       </ng-template>
 
       <ng-template pTemplate="header">
         <tr>
-          <th>Full Name</th>
-          <th>NIF</th>
-          <th>Category</th>
-          <th>Contract Type</th>
-          <th>Hours/Week</th>
-          <th>Hire Date</th>
-          <th>Status</th>
-          <th>Actions</th>
+          <th>{{ 'EMPLOYEES.TABLE_NAME' | translate }}</th>
+          <th>{{ 'EMPLOYEES.TABLE_NIF' | translate }}</th>
+          <th>{{ 'EMPLOYEES.TABLE_CATEGORY' | translate }}</th>
+          <th>{{ 'EMPLOYEES.TABLE_CONTRACT' | translate }}</th>
+          <th>{{ 'EMPLOYEES.TABLE_HOURS_WEEK' | translate }}</th>
+          <th>{{ 'EMPLOYEES.TABLE_HIRE_DATE' | translate }}</th>
+          <th>{{ 'EMPLOYEES.TABLE_STATUS' | translate }}</th>
+          <th>{{ 'COMMON.ACTIONS' | translate }}</th>
         </tr>
       </ng-template>
 
@@ -173,7 +174,7 @@ const SKELETON_ROWS: unknown[] = [1, 2, 3, 4, 5];
             <td>{{ row.hireDate | date:'d MMM y' }}</td>
             <td>
               <p-tag
-                [value]="row.isActive ? 'Active' : 'Inactive'"
+                [value]="row.isActive ? ('STATUS.ACTIVE' | translate) : ('STATUS.INACTIVE' | translate)"
                 [severity]="row.isActive ? 'success' : 'secondary'"
                 [rounded]="true"
                 [style]="{ fontSize: '0.7rem' }"
@@ -185,7 +186,7 @@ const SKELETON_ROWS: unknown[] = [1, 2, 3, 4, 5];
                 size="small"
                 [text]="true"
                 severity="secondary"
-                [attr.aria-label]="'Edit ' + row.firstName + ' ' + row.lastName"
+                [attr.aria-label]="'COMMON.EDIT' | translate"
                 (onClick)="edit.emit(row)"
               />
             </td>
@@ -199,7 +200,7 @@ const SKELETON_ROWS: unknown[] = [1, 2, 3, 4, 5];
             <td colspan="8">
               <div class="empty-state">
                 <i class="pi pi-users"></i>
-                <span>No employees yet</span>
+                <span>{{ 'EMPLOYEES.EMPTY_STATE' | translate }}</span>
               </div>
             </td>
           </tr>

@@ -2,11 +2,14 @@ import {
   ChangeDetectionStrategy,
   Component,
   OnInit,
+  computed,
   inject,
   signal,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { DatePipe, DecimalPipe } from '@angular/common';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { LanguageService } from '../../../core/i18n/language.service';
 import { ButtonModule } from 'primeng/button';
 import { SkeletonModule } from 'primeng/skeleton';
 import { ToastModule } from 'primeng/toast';
@@ -14,10 +17,6 @@ import { MessageService } from 'primeng/api';
 import { TimesheetStore } from '../data-access/timesheet.store';
 import { ConfirmationBadgeComponent } from '../ui/confirmation-badge.component';
 
-const MONTH_NAMES = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-];
 
 /**
  * TimesheetReviewComponent — employee's monthly timesheet review.
@@ -31,7 +30,7 @@ const MONTH_NAMES = [
 @Component({
   selector: 'app-timesheet-review',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, DatePipe, DecimalPipe, ButtonModule, SkeletonModule, ToastModule, ConfirmationBadgeComponent],
+  imports: [ReactiveFormsModule, DatePipe, DecimalPipe, ButtonModule, SkeletonModule, ToastModule, ConfirmationBadgeComponent, TranslatePipe],
   providers: [MessageService],
   styles: [`
     :host { display: block; max-width: 760px; margin: 0 auto; }
@@ -172,15 +171,15 @@ const MONTH_NAMES = [
 
     <!-- ── Page header ─────────────────────────────── -->
     <div class="page-header">
-      <div class="page-title">My Timesheet</div>
-      <div class="page-sub">Review and confirm your monthly time records</div>
+      <div class="page-title">{{ 'TIMESHEET.MY_TIMESHEET' | translate }}</div>
+      <div class="page-sub">{{ 'TIMESHEET.SIGN_BANNER' | translate }}</div>
     </div>
 
     <!-- ── Month selector ─────────────────────────── -->
     <form [formGroup]="form" (ngSubmit)="onMonthChange()" class="month-selector">
       <label for="ts-month" class="visually-hidden">Month</label>
       <select id="ts-month" formControlName="month" (change)="onMonthChange()" aria-label="Select month">
-        @for (m of months; track m.value) {
+        @for (m of months(); track m.value) {
           <option [value]="m.value">{{ m.label }}</option>
         }
       </select>
@@ -198,10 +197,9 @@ const MONTH_NAMES = [
       <div class="locked-banner" role="status" aria-live="polite">
         <i class="pi pi-lock" aria-hidden="true"></i>
         <span class="locked-banner-text">
-          <strong>Timesheet locked.</strong>
-          You confirmed {{ selectedMonthName() }} {{ form.getRawValue().year }}
-          on {{ store.summary()?.confirmedAt | date:'d MMM y, HH:mm' }}.
-          No further edits are allowed for this month.
+          <strong>{{ 'TIMESHEET.STATUS_LOCKED' | translate }}</strong>
+          {{ selectedMonthName() }} {{ form.getRawValue().year }} —
+          {{ store.summary()?.confirmedAt | date:'d MMM y, HH:mm' }}
         </span>
       </div>
     }
@@ -220,12 +218,12 @@ const MONTH_NAMES = [
       } @else if (!store.summary()) {
         <div class="empty-state">
           <i class="pi pi-calendar-times" aria-hidden="true"></i>
-          <span>No data available for this period.</span>
+          <span>{{ 'TIMESHEET.EMPTY_STATE' | translate }}</span>
         </div>
       } @else {
         <div class="stats-grid">
           <div class="stat">
-            <span class="stat-label">Regular Hours</span>
+            <span class="stat-label">{{ 'TIMESHEET.TOTAL_HOURS' | translate }}</span>
             <span class="stat-value">
               @if (store.summary()?.hours) {
                 {{ store.summary()!.hours!.regularHours | number:'1.1-1' }}
@@ -233,7 +231,7 @@ const MONTH_NAMES = [
             </span>
           </div>
           <div class="stat">
-            <span class="stat-label">Overtime Hours</span>
+            <span class="stat-label">{{ 'TIMESHEET.EXPECTED_HOURS' | translate }}</span>
             <span class="stat-value">
               @if (store.summary()?.hours) {
                 {{ store.summary()!.hours!.overtimeHours | number:'1.1-1' }}
@@ -241,7 +239,7 @@ const MONTH_NAMES = [
             </span>
           </div>
           <div class="stat">
-            <span class="stat-label">Absence Days</span>
+            <span class="stat-label">{{ 'TIMESHEET.DAYS_WORKED' | translate }}</span>
             <span class="stat-value">{{ store.summary()?.totalAbsenceDays }}</span>
           </div>
         </div>
@@ -249,7 +247,7 @@ const MONTH_NAMES = [
         <!-- Status row -->
         <div class="status-row" style="margin-top:1.25rem;">
           <span style="font-size:0.8125rem; color:var(--p-text-color-muted, var(--p-text-color-secondary));">
-            Confirmation status:
+            {{ 'TIMESHEET.STATUS_OPEN' | translate }}:
           </span>
           <app-confirmation-badge [confirmed]="store.isConfirmed()" />
         </div>
@@ -258,7 +256,7 @@ const MONTH_NAMES = [
         @if (store.summary()?.hasOpenEntry) {
           <div class="open-entries-warning" role="alert">
             <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
-            You have an open time entry. Clock out before confirming.
+            {{ 'TIMESHEET.SIGN_BANNER' | translate }}
           </div>
         }
 
@@ -266,17 +264,17 @@ const MONTH_NAMES = [
         @if (!store.isConfirmed()) {
           <div class="confirm-actions">
             <p-button
-              [label]="'Confirm ' + selectedMonthName() + ' ' + form.getRawValue().year + ' timesheet'"
+              [label]="('TIMESHEET.SIGN_BUTTON' | translate) + ' ' + selectedMonthName() + ' ' + form.getRawValue().year"
               icon="pi pi-check"
               severity="success"
               [loading]="store.loading()"
               [disabled]="!store.canConfirm() || store.loading()"
-              [attr.aria-label]="'Confirm ' + selectedMonthName() + ' ' + form.getRawValue().year + ' timesheet'"
+              [attr.aria-label]="('TIMESHEET.SIGN_BUTTON' | translate) + ' ' + selectedMonthName() + ' ' + form.getRawValue().year"
               (onClick)="onConfirm()"
             />
             @if (store.summary()?.hasOpenEntry) {
               <span style="font-size:0.8125rem; color:var(--p-text-color-muted);">
-                Button disabled: please clock out first.
+                {{ 'TIMESHEET.SIGN_BANNER' | translate }}
               </span>
             }
           </div>
@@ -286,15 +284,23 @@ const MONTH_NAMES = [
   `,
 })
 export class TimesheetReviewComponent implements OnInit {
-  protected readonly store = inject(TimesheetStore) as unknown as TimesheetStore;
-  private  readonly messageService = inject(MessageService);
-  private  readonly fb = inject(FormBuilder);
+  protected readonly store   = inject(TimesheetStore) as unknown as TimesheetStore;
+  private  readonly msg      = inject(MessageService);
+  private  readonly fb       = inject(FormBuilder);
+  private  readonly t        = inject(TranslateService);
+  private  readonly lang     = inject(LanguageService);
 
   protected readonly successMessage = signal<string | null>(null);
 
   readonly today = new Date();
 
-  readonly months = MONTH_NAMES.map((label, i) => ({ value: i + 1, label }));
+  readonly months = computed(() => {
+    const locale = this.lang.dateLocale();
+    return Array.from({ length: 12 }, (_, i) => ({
+      value: i + 1,
+      label: new Intl.DateTimeFormat(locale, { month: 'long' }).format(new Date(2024, i, 1)),
+    }));
+  });
   readonly years = Array.from({ length: 5 }, (_, i) => this.today.getFullYear() - i);
 
   protected readonly form = this.fb.nonNullable.group({
@@ -303,7 +309,7 @@ export class TimesheetReviewComponent implements OnInit {
   });
 
   protected selectedMonthName(): string {
-    return MONTH_NAMES[(this.form.getRawValue().month as number) - 1] ?? '';
+    return this.months()[(this.form.getRawValue().month as number) - 1]?.label ?? '';
   }
 
   ngOnInit(): void {
@@ -322,16 +328,16 @@ export class TimesheetReviewComponent implements OnInit {
     const { year, month } = this.form.getRawValue();
     try {
       await this.store.confirmMonth(year, month);
-      this.messageService.add({
+      this.msg.add({
         severity: 'success',
-        summary: 'Timesheet confirmed',
-        detail: `${this.selectedMonthName()} ${year} timesheet has been confirmed successfully.`,
+        summary: this.t.instant('TIMESHEET.SIGN_SUCCESS_SUMMARY'),
+        detail:  this.t.instant('TIMESHEET.SIGN_SUCCESS_DETAIL'),
       });
     } catch {
-      this.messageService.add({
+      this.msg.add({
         severity: 'error',
-        summary: 'Confirmation failed',
-        detail: this.store.error() ?? 'An error occurred while confirming the timesheet.',
+        summary: this.t.instant('COMMON.ERROR'),
+        detail:  this.store.error() ?? this.t.instant('TIMESHEET.SIGN_ERROR'),
       });
     }
   }

@@ -7,6 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { DatePipe, SlicePipe } from '@angular/common';
+import { TranslatePipe } from '@ngx-translate/core';
 import { forkJoin, firstValueFrom } from 'rxjs';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
@@ -46,6 +47,7 @@ const SHIFT_COLORS: Record<string, { bg: string; text: string; border: string }>
     DatePipe, SlicePipe, CuadranteGridComponent,
     ButtonModule, TagModule, DialogModule,
     TooltipModule, MessageModule, SkeletonModule, DividerModule,
+    TranslatePipe,
   ],
   styles: [`
     :host { display: block; }
@@ -314,7 +316,7 @@ const SHIFT_COLORS: Record<string, { bg: string; text: string; border: string }>
       </div>
       <div style="display:flex; gap:0.5rem; align-items:center;">
         <p-button
-          label="Schedule PDF"
+          [label]="'REPORTS.EXPORT_PDF' | translate"
           icon="pi pi-file-pdf"
           [text]="true"
           [rounded]="true"
@@ -325,7 +327,7 @@ const SHIFT_COLORS: Record<string, { bg: string; text: string; border: string }>
         />
         @if (isAdminOrManager()) {
           <p-button
-            label="Refresh"
+            [label]="'COMMON.REFRESH' | translate"
             icon="pi pi-refresh"
             [text]="true" [rounded]="true" severity="secondary"
             (onClick)="loadAll()"
@@ -345,7 +347,7 @@ const SHIFT_COLORS: Record<string, { bg: string; text: string; border: string }>
           }
         </ul>
         <div style="margin-top:0.5rem;">
-          <p-button label="Dismiss" icon="pi pi-times" [text]="true" size="small" severity="warn"
+          <p-button [label]="'COMMON.CLOSE' | translate" icon="pi pi-times" [text]="true" size="small" severity="warn"
             (onClick)="warnings.set([])" />
         </div>
       </div>
@@ -353,7 +355,7 @@ const SHIFT_COLORS: Record<string, { bg: string; text: string; border: string }>
 
     <!-- ── Controls ───────────────────────────────────────────── -->
     <div class="controls-row">
-      <span class="ctrl-label">Year</span>
+      <span class="ctrl-label">{{ 'COMMON.YEAR' | translate }}</span>
       <select class="native-select"
         [value]="selectedYear()"
         (change)="selectedYear.set(+$any($event.target).value)">
@@ -362,7 +364,7 @@ const SHIFT_COLORS: Record<string, { bg: string; text: string; border: string }>
         }
       </select>
 
-      <span class="ctrl-label">Month</span>
+      <span class="ctrl-label">{{ 'COMMON.MONTH' | translate }}</span>
       <select class="native-select"
         [value]="selectedMonth()"
         (change)="selectedMonth.set(+$any($event.target).value)">
@@ -372,7 +374,7 @@ const SHIFT_COLORS: Record<string, { bg: string; text: string; border: string }>
       </select>
 
       <p-button
-        label="Load"
+        [label]="'COMMON.SEARCH' | translate"
         icon="pi pi-search"
         size="small"
         [loading]="loading()"
@@ -390,7 +392,7 @@ const SHIFT_COLORS: Record<string, { bg: string; text: string; border: string }>
           />
           @if (sched.status === 'DRAFT' && isAdminOrManager()) {
             <p-button
-              label="Publish"
+              [label]="'SHIFTS.SWAP_CONFIRM' | translate"
               icon="pi pi-send"
               size="small"
               severity="success"
@@ -405,7 +407,7 @@ const SHIFT_COLORS: Record<string, { bg: string; text: string; border: string }>
         </div>
       } @else if (isAdminOrManager()) {
         <p-button
-          label="New Draft"
+          [label]="'COMMON.CREATE' | translate"
           icon="pi pi-plus"
           size="small"
           [loading]="loading()"
@@ -476,7 +478,7 @@ const SHIFT_COLORS: Record<string, { bg: string; text: string; border: string }>
       <div class="section-header">
         <div class="section-title">
           <i class="pi pi-arrows-h"></i>
-          Pending Shift Swaps
+          {{ 'SHIFTS.SWAP_APPROVAL_TITLE' | translate }}
         </div>
         <div style="display:flex; align-items:center; gap:0.5rem;">
           @if (pendingSwaps().length > 0) {
@@ -489,14 +491,14 @@ const SHIFT_COLORS: Record<string, { bg: string; text: string; border: string }>
 
       @if (swapViolations().length > 0) {
         <div class="warnings-box" style="margin-bottom:0.875rem;">
-          <div class="warnings-title">Swap blocked by rule check</div>
+          <div class="warnings-title">{{ 'SHIFTS.RULE_VIOLATION' | translate }}</div>
           <ul class="warnings-list">
             @for (v of swapViolations(); track v.code) {
               <li>• {{ v.message }}</li>
             }
           </ul>
           <div style="margin-top:0.5rem;">
-            <p-button label="Dismiss" icon="pi pi-times" [text]="true" size="small" severity="warn"
+            <p-button [label]="'COMMON.CLOSE' | translate" icon="pi pi-times" [text]="true" size="small" severity="warn"
               (onClick)="swapViolations.set([])" />
           </div>
         </div>
@@ -510,14 +512,14 @@ const SHIFT_COLORS: Record<string, { bg: string; text: string; border: string }>
         } @else if (pendingSwaps().length === 0) {
           <div class="empty-state">
             <i class="pi pi-check-circle" style="font-size:1.25rem; opacity:0.4;"></i>
-            No pending swap requests
+            {{ 'SHIFTS.SWAP_EMPTY' | translate }}
           </div>
         } @else {
           <div class="swap-header-row">
-            <span class="swap-col-label">Requester Assignment</span>
-            <span class="swap-col-label">Target Assignment</span>
-            <span class="swap-col-label">Reason / Date</span>
-            <span class="swap-col-label">Actions</span>
+            <span class="swap-col-label">{{ 'SHIFTS.SWAP_FROM_LABEL' | translate }}</span>
+            <span class="swap-col-label">{{ 'SHIFTS.SWAP_TO_LABEL' | translate }}</span>
+            <span class="swap-col-label">{{ 'SHIFTS.SWAP_REASON_LABEL' | translate }}</span>
+            <span class="swap-col-label">{{ 'COMMON.ACTIONS' | translate }}</span>
           </div>
           @for (swap of pendingSwaps(); track swap.id) {
             <div class="swap-row">
@@ -561,7 +563,7 @@ const SHIFT_COLORS: Record<string, { bg: string; text: string; border: string }>
       [draggable]="false"
       [resizable]="false"
       styleClass="assign-dialog"
-      header="Assign Shift"
+      [header]="'SHIFTS.SWAP_CONFIRM' | translate"
       [style]="{ width: '440px' }"
     >
       @if (dialogCtx(); as ctx) {
@@ -597,9 +599,9 @@ const SHIFT_COLORS: Record<string, { bg: string; text: string; border: string }>
         </div>
 
         <div class="assign-footer">
-          <p-button label="Cancel" [text]="true" severity="secondary" (onClick)="closeDialog()" />
+          <p-button [label]="'COMMON.CANCEL' | translate" [text]="true" severity="secondary" (onClick)="closeDialog()" />
           <p-button
-            label="Assign"
+            [label]="'COMMON.CONFIRM' | translate"
             icon="pi pi-check"
             [disabled]="!selectedTemplateId()"
             [loading]="assigning()"

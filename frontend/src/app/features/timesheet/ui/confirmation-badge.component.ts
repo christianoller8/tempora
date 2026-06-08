@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 
 /**
  * ConfirmationBadgeComponent — presentational status pill.
@@ -10,6 +11,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 @Component({
   selector: 'app-confirmation-badge',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [TranslatePipe],
   styles: [`
     :host { display: inline-flex; }
 
@@ -41,19 +43,19 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
       <span
         class="badge badge--confirmed"
         role="status"
-        [attr.aria-label]="'Timesheet confirmed'"
+        [attr.aria-label]="'TIMESHEET.CONFIRMATION_SIGNED' | translate"
       >
         <i class="pi pi-check" aria-hidden="true"></i>
-        Confirmed
+        {{ 'TIMESHEET.CONFIRMATION_SIGNED' | translate }}
       </span>
     } @else {
       <span
         class="badge badge--pending"
         role="status"
-        [attr.aria-label]="'Timesheet pending confirmation'"
+        [attr.aria-label]="'TIMESHEET.CONFIRMATION_PENDING' | translate"
       >
         <i class="pi pi-clock" aria-hidden="true"></i>
-        Pending
+        {{ 'TIMESHEET.CONFIRMATION_PENDING' | translate }}
       </span>
     }
   `,

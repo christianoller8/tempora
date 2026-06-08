@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, input, computed } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import type { AbsenceBalanceDto } from '../data-access/absences.api';
 
 /**
@@ -13,20 +14,21 @@ import type { AbsenceBalanceDto } from '../data-access/absences.api';
 @Component({
   selector: 'app-absence-balance',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [TranslatePipe],
   template: `
     <div class="absence-balance" aria-label="Vacation balance">
       @if (balance()) {
         <dl>
           <div class="balance-item">
-            <dt>Entitled days</dt>
+            <dt>{{ 'ABSENCES.BALANCE_ALLOCATED' | translate }}</dt>
             <dd>{{ balance()!.entitled }}</dd>
           </div>
           <div class="balance-item">
-            <dt>Days used</dt>
+            <dt>{{ 'ABSENCES.BALANCE_USED' | translate }}</dt>
             <dd>{{ balance()!.used }}</dd>
           </div>
           <div class="balance-item" [class.balance-low]="isLow()">
-            <dt>Remaining</dt>
+            <dt>{{ 'ABSENCES.BALANCE_REMAINING' | translate }}</dt>
             <dd>
               {{ balance()!.remaining }}
               @if (isLow()) {
@@ -36,7 +38,7 @@ import type { AbsenceBalanceDto } from '../data-access/absences.api';
           </div>
         </dl>
       } @else {
-        <p>Balance not available.</p>
+        <p>{{ 'ABSENCES.EMPTY_BALANCE' | translate }}</p>
       }
     </div>
   `,

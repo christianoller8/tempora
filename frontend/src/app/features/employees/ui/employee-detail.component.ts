@@ -8,6 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { TranslatePipe } from '@ngx-translate/core';
 import { DialogModule } from 'primeng/dialog';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
@@ -30,7 +31,7 @@ function entryDuration(entry: TimeEntryDto): string {
 @Component({
   selector: 'app-employee-detail',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, DialogModule, ButtonModule, TagModule, SkeletonModule],
+  imports: [DatePipe, DialogModule, ButtonModule, TagModule, SkeletonModule, TranslatePipe],
   styles: [`
     .detail-grid {
       display: grid;
@@ -130,7 +131,7 @@ function entryDuration(entry: TimeEntryDto): string {
   `],
   template: `
     <p-dialog
-      header="Employee Detail"
+      [header]="'EMPLOYEES.EMPLOYEE_DETAIL' | translate"
       [visible]="visible()"
       [modal]="true"
       [closable]="true"
@@ -144,36 +145,36 @@ function entryDuration(entry: TimeEntryDto): string {
         <!-- ── Employee fields ─────────────────────────────── -->
         <div class="detail-grid">
           <div class="detail-field">
-            <span class="detail-label">Full Name</span>
+            <span class="detail-label">{{ 'EMPLOYEES.FIELD_FULL_NAME' | translate }}</span>
             <span class="detail-value">{{ employee()!.firstName }} {{ employee()!.lastName }}</span>
           </div>
 
           <div class="detail-field">
-            <span class="detail-label">Category</span>
+            <span class="detail-label">{{ 'EMPLOYEES.FIELD_CATEGORY' | translate }}</span>
             <span class="detail-value">{{ employee()!.category }}</span>
           </div>
 
           <div class="detail-field">
-            <span class="detail-label">Contract Type</span>
+            <span class="detail-label">{{ 'EMPLOYEES.TABLE_CONTRACT' | translate }}</span>
             <span class="detail-value">{{ employee()!.contractType }}</span>
           </div>
 
           @if (employee()!.contractType === 'TIEMPO_PARCIAL') {
             <div class="detail-field">
-              <span class="detail-label">Hours/Week</span>
+              <span class="detail-label">{{ 'EMPLOYEES.TABLE_HOURS_WEEK' | translate }}</span>
               <span class="detail-value">{{ employee()!.contractedHoursPerWeek }}h</span>
             </div>
           }
 
           <div class="detail-field">
-            <span class="detail-label">Hire Date</span>
+            <span class="detail-label">{{ 'EMPLOYEES.TABLE_HIRE_DATE' | translate }}</span>
             <span class="detail-value">{{ employee()!.hireDate | date:'d MMM y' }}</span>
           </div>
 
           <div class="detail-field">
-            <span class="detail-label">Status</span>
+            <span class="detail-label">{{ 'EMPLOYEES.TABLE_STATUS' | translate }}</span>
             <p-tag
-              [value]="employee()!.isActive ? 'Active' : 'Inactive'"
+              [value]="employee()!.isActive ? ('STATUS.ACTIVE' | translate) : ('STATUS.INACTIVE' | translate)"
               [severity]="employee()!.isActive ? 'success' : 'secondary'"
               [rounded]="true"
               [style]="{ fontSize: '0.7rem' }"
@@ -182,58 +183,58 @@ function entryDuration(entry: TimeEntryDto): string {
 
           @if (employee()!.nif) {
             <div class="detail-field">
-              <span class="detail-label">NIF</span>
+              <span class="detail-label">{{ 'EMPLOYEES.TABLE_NIF' | translate }}</span>
               <span class="detail-value">{{ employee()!.nif }}</span>
             </div>
           }
         </div>
 
         <!-- ── Actions ────────────────────────────────────── -->
-        <div class="section-title"><i class="pi pi-cog"></i>Actions</div>
+        <div class="section-title"><i class="pi pi-cog"></i>{{ 'COMMON.ACTIONS' | translate }}</div>
         <div class="actions-row">
           <p-button
-            label="Edit"
+            [label]="'COMMON.EDIT' | translate"
             icon="pi pi-pencil"
             severity="secondary"
             size="small"
             (onClick)="edit.emit(employee()!)"
-            aria-label="Edit employee"
+            [attr.aria-label]="'COMMON.EDIT' | translate"
           />
           @if (employee()!.isActive) {
             <p-button
-              label="Deactivate"
+              [label]="'COMMON.DEACTIVATE' | translate"
               icon="pi pi-times-circle"
               severity="danger"
               size="small"
               [text]="true"
               (onClick)="showConfirm.set(true)"
-              aria-label="Deactivate employee"
+              [attr.aria-label]="'COMMON.DEACTIVATE' | translate"
             />
           } @else {
             <p-button
-              label="Reactivate"
+              [label]="'COMMON.REACTIVATE' | translate"
               icon="pi pi-check-circle"
               severity="success"
               size="small"
               [text]="true"
               (onClick)="reactivate.emit(employee()!.id)"
-              aria-label="Reactivate employee"
+              [attr.aria-label]="'COMMON.REACTIVATE' | translate"
             />
           }
         </div>
 
         @if (showConfirm()) {
           <div class="confirm-inline" role="alertdialog" aria-live="assertive">
-            <span>Are you sure you want to deactivate this employee?</span>
+            <span>{{ 'EMPLOYEES.DEACTIVATE_CONFIRM' | translate:{ name: employee()!.firstName } }}</span>
             <div style="display:flex; gap:0.5rem;">
               <p-button
-                label="Confirm"
+                [label]="'COMMON.CONFIRM' | translate"
                 severity="danger"
                 size="small"
                 (onClick)="onConfirmDeactivate()"
               />
               <p-button
-                label="Cancel"
+                [label]="'COMMON.CANCEL' | translate"
                 severity="secondary"
                 size="small"
                 [text]="true"
@@ -244,7 +245,7 @@ function entryDuration(entry: TimeEntryDto): string {
         }
 
         <!-- ── Recent Time Entries ─────────────────────────── -->
-        <div class="section-title"><i class="pi pi-clock"></i>Recent Time Entries</div>
+        <div class="section-title"><i class="pi pi-clock"></i>{{ 'TIME.ENTRIES_TODAY' | translate }}</div>
 
         <div class="entries-panel">
           @if (entriesLoading()) {
@@ -256,7 +257,7 @@ function entryDuration(entry: TimeEntryDto): string {
           } @else if (entries().length === 0) {
             <div class="empty-entries">
               <i class="pi pi-clock"></i>
-              <span>No recent entries</span>
+              <span>{{ 'TIME.EMPTY_ENTRIES' | translate }}</span>
             </div>
           } @else {
             @for (entry of entries(); track entry.id) {
@@ -266,12 +267,12 @@ function entryDuration(entry: TimeEntryDto): string {
                   @if (entry.clockOut) {
                     → {{ entry.clockOut | date:'HH:mm' }}
                   } @else {
-                    running…
+                    {{ 'DASHBOARD.RUNNING' | translate }}
                   }
                 </span>
                 <span class="entry-dur">{{ duration(entry) }}</span>
                 <p-tag
-                  [value]="entry.status === 'OPEN' ? 'Active' : 'Closed'"
+                  [value]="entry.status === 'OPEN' ? ('STATUS.OPEN' | translate) : ('STATUS.CLOSED' | translate)"
                   [severity]="entry.status === 'OPEN' ? 'success' : 'secondary'"
                   [rounded]="true"
                   [style]="{ fontSize: '0.65rem' }"

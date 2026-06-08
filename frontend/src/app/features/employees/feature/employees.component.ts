@@ -7,6 +7,7 @@ import {
 } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ButtonModule } from 'primeng/button';
 import { SelectModule } from 'primeng/select';
 import { InputTextModule } from 'primeng/inputtext';
@@ -39,6 +40,7 @@ const STATUS_FILTER_OPTIONS = [
   imports: [
     FormsModule, ButtonModule, SelectModule, InputTextModule, ToastModule,
     EmployeeTableComponent, EmployeeFormComponent, EmployeeDetailComponent,
+    TranslatePipe,
   ],
   styles: [`
     :host { display: block; }
@@ -117,8 +119,8 @@ const STATUS_FILTER_OPTIONS = [
     <!-- ── Page header ─────────────────────────────────────────── -->
     <div class="page-header">
       <div>
-        <div class="page-title">Employees</div>
-        <div class="page-sub">Manage your organization's employees</div>
+        <div class="page-title">{{ 'EMPLOYEES.TITLE' | translate }}</div>
+        <div class="page-sub">{{ 'EMPLOYEES.TITLE' | translate }}</div>
       </div>
     </div>
 
@@ -126,7 +128,7 @@ const STATUS_FILTER_OPTIONS = [
     <div class="filter-bar">
       <input
         type="text"
-        placeholder="Search by name…"
+        [placeholder]="'EMPLOYEES.SEARCH_PLACEHOLDER' | translate"
         [value]="store.search()"
         (input)="store.setSearch($any($event.target).value)"
         aria-label="Search employees by name"
@@ -137,7 +139,7 @@ const STATUS_FILTER_OPTIONS = [
         optionValue="value"
         [ngModel]="store.categoryFilter()"
         (ngModelChange)="store.setCategory($any($event))"
-        placeholder="All Categories"
+        [placeholder]="'COMMON.ALL' | translate"
         aria-label="Filter by category"
       />
       <p-select
@@ -154,7 +156,7 @@ const STATUS_FILTER_OPTIONS = [
     @if (!store.loading() && store.filteredEmployees().length === 0 && store.employees().length > 0) {
       <div class="empty-state">
         <i class="pi pi-search"></i>
-        <span>No results match your filters</span>
+        <span>{{ 'EMPLOYEES.EMPTY_STATE' | translate }}</span>
       </div>
     } @else {
       <div class="table-panel">
@@ -194,6 +196,7 @@ export class EmployeesComponent implements OnInit {
   protected readonly store = inject(EmployeesStore) as unknown as EmployeesStore;
   private  readonly centersApi = inject(CentersApi);
   private  readonly messageService = inject(MessageService);
+  private  readonly translate = inject(TranslateService);
 
   readonly centers = signal<CenterDto[]>([]);
   readonly showForm = signal(false);
@@ -247,10 +250,10 @@ export class EmployeesComponent implements OnInit {
         const selected = this.store.selected();
         if (!selected) return;
         await this.store.update(selected.id, dto as UpdateEmployeeDto);
-        this.messageService.add({ severity: 'success', summary: 'Updated', detail: 'Employee updated successfully.' });
+        this.messageService.add({ severity: 'success', summary: this.translate.instant('EMPLOYEES.TOAST_UPDATED_SUMMARY'), detail: this.translate.instant('EMPLOYEES.TOAST_UPDATED_DETAIL') });
       } else {
         await this.store.create(dto as CreateEmployeeDto);
-        this.messageService.add({ severity: 'success', summary: 'Created', detail: 'Employee created successfully.' });
+        this.messageService.add({ severity: 'success', summary: this.translate.instant('EMPLOYEES.TOAST_CREATED_SUMMARY'), detail: this.translate.instant('EMPLOYEES.TOAST_CREATED_DETAIL') });
       }
       this.showForm.set(false);
       this.store.select(null);
@@ -270,12 +273,12 @@ export class EmployeesComponent implements OnInit {
       await this.store.reactivate(id);
       this.showDetail.set(false);
       this.store.select(null);
-      this.messageService.add({ severity: 'success', summary: 'Reactivated', detail: 'Employee reactivated successfully.' });
+      this.messageService.add({ severity: 'success', summary: this.translate.instant('EMPLOYEES.TOAST_REACTIVATED_SUMMARY'), detail: this.translate.instant('EMPLOYEES.TOAST_REACTIVATED_DETAIL') });
     } catch (err: unknown) {
       this.messageService.add({
         severity: 'error',
-        summary: 'Error',
-        detail: err instanceof Error ? err.message : 'Failed to reactivate employee.',
+        summary: this.translate.instant('EMPLOYEES.TOAST_ERROR_SUMMARY'),
+        detail: err instanceof Error ? err.message : this.translate.instant('EMPLOYEES.TOAST_ERROR_DETAIL'),
       });
     }
   }
@@ -285,12 +288,12 @@ export class EmployeesComponent implements OnInit {
       await this.store.deactivate(id);
       this.showDetail.set(false);
       this.store.select(null);
-      this.messageService.add({ severity: 'success', summary: 'Deactivated', detail: 'Employee deactivated successfully.' });
+      this.messageService.add({ severity: 'success', summary: this.translate.instant('EMPLOYEES.TOAST_DEACTIVATED_SUMMARY'), detail: this.translate.instant('EMPLOYEES.TOAST_DEACTIVATED_DETAIL') });
     } catch (err: unknown) {
       this.messageService.add({
         severity: 'error',
-        summary: 'Error',
-        detail: err instanceof Error ? err.message : 'Failed to deactivate employee.',
+        summary: this.translate.instant('EMPLOYEES.TOAST_ERROR_SUMMARY'),
+        detail: err instanceof Error ? err.message : this.translate.instant('EMPLOYEES.TOAST_ERROR_DETAIL'),
       });
     }
   }

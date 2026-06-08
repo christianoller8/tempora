@@ -8,6 +8,7 @@ import { CardModule } from 'primeng/card';
 import { MessageModule } from 'primeng/message';
 import { DividerModule } from 'primeng/divider';
 import { AuthStore } from '../../../core/auth/auth.store';
+import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-login',
@@ -20,6 +21,7 @@ import { AuthStore } from '../../../core/auth/auth.store';
     CardModule,
     MessageModule,
     DividerModule,
+    TranslatePipe,
   ],
   styles: [`
     :host {
@@ -117,8 +119,8 @@ import { AuthStore } from '../../../core/auth/auth.store';
         <div class="login-logo">
           <i class="pi pi-heart"></i>
         </div>
-        <h1 class="login-title">Welcome back</h1>
-        <p class="login-subtitle">Sign in to Tempora Healthcare</p>
+        <h1 class="login-title">{{ 'AUTH.WELCOME_BACK' | translate }}</h1>
+        <p class="login-subtitle">{{ 'AUTH.SIGN_IN_SUBTITLE' | translate }}</p>
       </div>
 
       <!-- Error -->
@@ -134,20 +136,20 @@ import { AuthStore } from '../../../core/auth/auth.store';
       <!-- Form -->
       <form [formGroup]="form" (ngSubmit)="submit()">
         <div class="field">
-          <label for="login-email">Email address</label>
+          <label for="login-email">{{ 'AUTH.EMAIL_LABEL' | translate }}</label>
           <input
             pInputText
             id="login-email"
             formControlName="email"
             type="email"
-            placeholder="admin@tempora.com"
+            [placeholder]="'AUTH.EMAIL_PLACEHOLDER' | translate"
             autocomplete="email"
             [attr.aria-invalid]="emailInvalid()"
           />
         </div>
 
         <div class="field">
-          <label for="login-password">Password</label>
+          <label for="login-password">{{ 'AUTH.PASSWORD_LABEL' | translate }}</label>
           <p-password
             inputId="login-password"
             formControlName="password"
@@ -162,7 +164,7 @@ import { AuthStore } from '../../../core/auth/auth.store';
 
         <p-button
           type="submit"
-          label="Sign in"
+          [label]="'AUTH.SIGN_IN_BUTTON' | translate"
           icon="pi pi-sign-in"
           iconPos="right"
           styleClass="w-full submit-btn"
@@ -172,7 +174,7 @@ import { AuthStore } from '../../../core/auth/auth.store';
       </form>
 
       <div class="login-footer">
-        Tempora &copy; {{ year }} — Healthcare Workforce Management
+        {{ 'AUTH.FOOTER' | translate:{ year: year } }}
       </div>
     </div>
   `,

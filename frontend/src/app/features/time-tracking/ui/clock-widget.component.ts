@@ -9,6 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import type { TimeEntryDto } from '../data-access/time.api';
+import { TranslatePipe } from '@ngx-translate/core';
 
 /**
  * ClockWidgetComponent — presentational clock-in/out widget.
@@ -24,8 +25,9 @@ import type { TimeEntryDto } from '../data-access/time.api';
 @Component({
   selector: 'app-clock-widget',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [TranslatePipe],
   template: `
-    <div class="clock-widget" role="region" aria-label="Time tracking clock">
+    <div class="clock-widget" role="region" [attr.aria-label]="'TIME.TITLE' | translate">
       <div class="clock-status">
         <span
           class="status-badge"
@@ -33,7 +35,7 @@ import type { TimeEntryDto } from '../data-access/time.api';
           [class.status-closed]="!isClockedIn()"
           aria-live="polite"
         >
-          {{ isClockedIn() ? 'CLOCKED IN' : 'CLOCKED OUT' }}
+          {{ isClockedIn() ? ('STATUS.OPEN' | translate) : ('STATUS.CLOSED' | translate) }}
         </span>
       </div>
 
@@ -50,9 +52,9 @@ import type { TimeEntryDto } from '../data-access/time.api';
             class="btn btn-primary"
             [disabled]="isClocking()"
             (click)="onClockIn()"
-            aria-label="Clock in"
+            [attr.aria-label]="'TIME.CLOCK_IN' | translate"
           >
-            {{ isClocking() ? 'Processing...' : 'Clock In' }}
+            {{ isClocking() ? ('COMMON.LOADING' | translate) : ('TIME.CLOCK_IN' | translate) }}
           </button>
         } @else {
           <button
@@ -60,9 +62,9 @@ import type { TimeEntryDto } from '../data-access/time.api';
             class="btn btn-secondary"
             [disabled]="isClocking()"
             (click)="onClockOut()"
-            aria-label="Clock out"
+            [attr.aria-label]="'TIME.CLOCK_OUT' | translate"
           >
-            {{ isClocking() ? 'Processing...' : 'Clock Out' }}
+            {{ isClocking() ? ('COMMON.LOADING' | translate) : ('TIME.CLOCK_OUT' | translate) }}
           </button>
         }
       </div>

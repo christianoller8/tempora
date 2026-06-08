@@ -1,10 +1,19 @@
 import { ApplicationConfig, inject, provideAppInitializer, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter, withComponentInputBinding, withEnabledBlockingInitialNavigation } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { registerLocaleData } from '@angular/common';
+import localeEs from '@angular/common/locales/es';
+import localeEn from '@angular/common/locales/en';
 import { catchError, firstValueFrom, of } from 'rxjs';
 import { providePrimeNG } from 'primeng/config';
 import Aura from '@primeuix/themes/aura';
 import { definePreset } from '@primeuix/themes';
+import { provideTranslateService } from '@ngx-translate/core';
+import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
+import { LanguageService } from './core/i18n/language.service';
+
+registerLocaleData(localeEs);
+registerLocaleData(localeEn);
 
 const TemporaTheme = definePreset(Aura, {
   semantic: {
@@ -50,6 +59,9 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes, withComponentInputBinding(), withEnabledBlockingInitialNavigation()),
     provideHttpClient(withInterceptors([authInterceptor])),
     { provide: API_BASE_URL, useValue: 'http://localhost:3000' },
+    provideTranslateService({ defaultLanguage: 'es' }),
+    ...provideTranslateHttpLoader({ prefix: '/assets/i18n/', suffix: '.json' }),
+    provideAppInitializer(() => inject(LanguageService).init()),
     providePrimeNG({
       theme: {
         preset: TemporaTheme,

@@ -7,6 +7,7 @@ import {
 import { Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { NotificationItem, NotificationsStore } from '../data-access/notifications.store';
 
 /** Routes per notification payload type (spec §2.5). */
@@ -16,14 +17,14 @@ const NOTIF_ROUTES: Record<string, string> = {
   ABSENCE_REQUESTED: '/absences',
 };
 
-/** Human-readable message per payload type (spec §2.3). */
-function notificationMessage(item: NotificationItem): string {
+/** Translation key per payload type. */
+function notificationKey(item: NotificationItem): string {
   const p = item.payload as { type?: string } | null;
   switch (p?.type) {
-    case 'ABSENCE_APPROVED':  return 'Your absence request was approved.';
-    case 'ABSENCE_REJECTED':  return 'Your absence request was rejected.';
-    case 'ABSENCE_REQUESTED': return 'A new absence request was submitted.';
-    default: return p?.type ?? 'Notification';
+    case 'ABSENCE_APPROVED':  return 'NOTIFICATIONS.MSG_ABSENCE_APPROVED';
+    case 'ABSENCE_REJECTED':  return 'NOTIFICATIONS.MSG_ABSENCE_REJECTED';
+    case 'ABSENCE_REQUESTED': return 'NOTIFICATIONS.MSG_ABSENCE_REQUESTED';
+    default: return 'NOTIFICATIONS.TITLE';
   }
 }
 
@@ -38,21 +39,21 @@ function iconForItem(item: NotificationItem): string {
   }
 }
 
-/** Relative time string from an ISO timestamp. */
-function relativeTime(isoString: string): string {
+/** Returns a {key, params} tuple for relative time display. */
+function relativeTimeKey(isoString: string): { key: string; params?: Record<string, number> } {
   const diff = Date.now() - new Date(isoString).getTime();
   const mins = Math.floor(diff / 60_000);
-  if (mins < 1)  return 'Just now';
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1)  return { key: 'NOTIFICATIONS.JUST_NOW' };
+  if (mins < 60) return { key: 'NOTIFICATIONS.MINUTES_AGO', params: { count: mins } };
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
+  if (hours < 24) return { key: 'NOTIFICATIONS.HOURS_AGO', params: { count: hours } };
+  return { key: 'NOTIFICATIONS.DAYS_AGO', params: { count: Math.floor(hours / 24) } };
 }
 
 @Component({
   selector: 'app-notification-list',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonModule, ProgressSpinnerModule],
+  imports: [ButtonModule, ProgressSpinnerModule, TranslatePipe],
   styles: [`
     :host {
       display: block;
@@ -166,10 +167,10 @@ function relativeTime(isoString: string): string {
   template: `
     <section aria-label="Notifications">
       <div class="notif-header">
-        <span class="notif-title">Notifications</span>
+        <span class="notif-title">{{ 'NOTIFICATIONS.TITLE' | translate }}</span>
         @if (store.unreadCount() > 0) {
           <p-button
-            label="Mark all read"
+            [label]="'NOTIFICATIONS.MARK_ALL_READ' | translate"
             [text]="true"
             size="small"
             severity="secondary"
@@ -181,12 +182,12 @@ function relativeTime(isoString: string): string {
       @if (store.loading()) {
         <div class="notif-loading">
           <p-progress-spinner strokeWidth="4" [style]="{ width: '24px', height: '24px' }" />
-          <span>Loading…</span>
+          <span>{{ 'COMMON.LOADING' | translate }}</span>
         </div>
       } @else if (store.notifications().length === 0) {
         <div class="notif-empty">
           <i class="pi pi-check-circle" style="font-size: 1.5rem; opacity: 0.4;"></i>
-          <span>All caught up!</span>
+          <span>{{ 'NOTIFICATIONS.EMPTY_STATE' | translate }}</span>
         </div>
       } @else {
         <ul class="notif-list">
@@ -198,14 +199,14 @@ function relativeTime(isoString: string): string {
               (keydown.enter)="onItemClick(n)"
               tabindex="0"
               role="button"
-              [attr.aria-label]="messageFor(n) + (n.read ? ' (read)' : ' (unread)')"
+              [attr.aria-label]="(keyFor(n) | translate) + (n.read ? '' : ' (unread)')"
             >
               <div class="notif-icon">
                 <i class="pi {{ iconFor(n) }}"></i>
               </div>
               <div class="notif-body">
-                <div class="notif-msg">{{ messageFor(n) }}</div>
-                <div class="notif-time">{{ timeFor(n) }}</div>
+                <div class="notif-msg">{{ keyFor(n) | translate }}</div>
+                <div class="notif-time">{{ timeKeyFor(n).key | translate:timeKeyFor(n).params }}</div>
               </div>
               @if (!n.read) {
                 <div class="notif-unread-dot" aria-hidden="true"></div>
@@ -224,16 +225,16 @@ export class NotificationListComponent {
   /** Emitted after a row click that triggers navigation, so the host can close the popover. */
   readonly navigated = output<void>();
 
-  messageFor(item: NotificationItem): string {
-    return notificationMessage(item);
+  keyFor(item: NotificationItem): string {
+    return notificationKey(item);
   }
 
   iconFor(item: NotificationItem): string {
     return iconForItem(item);
   }
 
-  timeFor(item: NotificationItem): string {
-    return relativeTime(item.createdAt);
+  timeKeyFor(item: NotificationItem): { key: string; params?: Record<string, number> } {
+    return relativeTimeKey(item.createdAt);
   }
 
   onMarkAllRead(): void {

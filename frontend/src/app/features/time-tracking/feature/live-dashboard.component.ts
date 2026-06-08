@@ -7,6 +7,7 @@ import {
 } from '@angular/core';
 import { TimeStore } from '../data-access/time.store';
 import { SseService } from '../../../core/sse/sse.service';
+import { TranslatePipe } from '@ngx-translate/core';
 import type { TimeEntryDto } from '../data-access/time.api';
 
 /**
@@ -20,26 +21,27 @@ import type { TimeEntryDto } from '../data-access/time.api';
 @Component({
   selector: 'app-live-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [TranslatePipe],
   template: `
     <section aria-label="Live clock dashboard">
       <header class="dashboard-header">
-        <h1>Live Dashboard</h1>
+        <h1>{{ 'TIME.LIVE_DASHBOARD' | translate }}</h1>
         <span
           class="connection-status"
           [class.connected]="sse.connected()"
           aria-live="polite"
         >
-          {{ sse.connected() ? 'Live' : 'Reconnecting...' }}
+          {{ sse.connected() ? ('COMMON.ACTIVE' | translate) : ('COMMON.LOADING' | translate) }}
         </span>
       </header>
 
       <table aria-label="Employee clock status">
         <thead>
           <tr>
-            <th scope="col">Employee</th>
-            <th scope="col">Status</th>
-            <th scope="col">Clock In</th>
-            <th scope="col">Clock Out</th>
+            <th scope="col">{{ 'TIME.ENTRY_TABLE_EMPLOYEE' | translate }}</th>
+            <th scope="col">{{ 'TIME.ENTRY_TABLE_STATUS' | translate }}</th>
+            <th scope="col">{{ 'TIME.ENTRY_TABLE_CLOCK_IN' | translate }}</th>
+            <th scope="col">{{ 'TIME.ENTRY_TABLE_CLOCK_OUT' | translate }}</th>
           </tr>
         </thead>
         <tbody>
@@ -56,7 +58,7 @@ import type { TimeEntryDto } from '../data-access/time.api';
             </tr>
           } @empty {
             <tr>
-              <td colspan="4">No time entries found.</td>
+              <td colspan="4">{{ 'TIME.EMPTY_ENTRIES' | translate }}</td>
             </tr>
           }
         </tbody>

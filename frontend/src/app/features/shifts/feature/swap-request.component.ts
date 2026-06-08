@@ -7,6 +7,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
 import { ShiftsApi } from '../data-access/shifts.api';
 import type { ShiftAssignment, SwapRequest } from '../data-access/shifts.api';
 
@@ -17,10 +18,10 @@ import type { ShiftAssignment, SwapRequest } from '../data-access/shifts.api';
 @Component({
   selector: 'app-swap-request',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, TranslatePipe],
   template: `
     <section aria-labelledby="swap-request-heading">
-      <h2 id="swap-request-heading">Request Shift Swap</h2>
+      <h2 id="swap-request-heading">{{ 'SHIFTS.SWAP_REQUEST_TITLE' | translate }}</h2>
 
       @if (successMessage()) {
         <div role="status" class="success-banner" aria-live="polite">
@@ -41,28 +42,28 @@ import type { ShiftAssignment, SwapRequest } from '../data-access/shifts.api';
         novalidate>
 
         <div class="field">
-          <label for="requester-assignment">Your Assignment</label>
+          <label for="requester-assignment">{{ 'SHIFTS.SWAP_FROM_LABEL' | translate }}</label>
           <select
             id="requester-assignment"
             formControlName="requesterAssignmentId"
             aria-required="true"
             [attr.aria-invalid]="requesterControl.invalid && requesterControl.touched">
-            <option value="">Select your assignment...</option>
+            <option value="">{{ 'SHIFTS.SWAP_SELECT_YOURS' | translate }}</option>
             @for (a of myAssignments(); track a.id) {
               <option [value]="a.id">{{ a.date }} — {{ a.shiftTemplateId }}</option>
             }
           </select>
           @if (requesterControl.invalid && requesterControl.touched) {
-            <span role="alert" class="field-error">Please select your assignment</span>
+            <span role="alert" class="field-error">{{ 'COMMON.REQUIRED' | translate }}</span>
           }
         </div>
 
         <div class="field">
-          <label for="target-assignment">Target Assignment</label>
+          <label for="target-assignment">{{ 'SHIFTS.SWAP_TO_LABEL' | translate }}</label>
           <select
             id="target-assignment"
             formControlName="targetAssignmentId">
-            <option value="">Open swap (no specific target)...</option>
+            <option value="">{{ 'SHIFTS.SWAP_OPEN' | translate }}</option>
             @for (a of availableAssignments(); track a.id) {
               <option [value]="a.id">{{ a.date }} — {{ a.employeeId }}</option>
             }
@@ -70,7 +71,7 @@ import type { ShiftAssignment, SwapRequest } from '../data-access/shifts.api';
         </div>
 
         <div class="field">
-          <label for="reason">Reason (optional)</label>
+          <label for="reason">{{ 'SHIFTS.SWAP_REASON_LABEL' | translate }}</label>
           <textarea
             id="reason"
             formControlName="reason"
@@ -85,7 +86,7 @@ import type { ShiftAssignment, SwapRequest } from '../data-access/shifts.api';
             type="submit"
             [disabled]="swapForm.invalid || submitting()"
             aria-label="Submit swap request">
-            @if (submitting()) { Submitting... } @else { Request Swap }
+            @if (submitting()) { {{ 'SHIFTS.SUBMITTING' | translate }} } @else { {{ 'SHIFTS.REQUEST_SWAP' | translate }} }
           </button>
         </div>
       </form>
@@ -93,7 +94,7 @@ import type { ShiftAssignment, SwapRequest } from '../data-access/shifts.api';
       <!-- Submitted swaps list -->
       @if (submittedSwaps().length > 0) {
         <div class="submitted-swaps" aria-label="Your submitted swap requests">
-          <h3>Your Swap Requests</h3>
+          <h3>{{ 'SHIFTS.SWAP_YOUR_REQUESTS' | translate }}</h3>
           <ul>
             @for (swap of submittedSwaps(); track swap.id) {
               <li>

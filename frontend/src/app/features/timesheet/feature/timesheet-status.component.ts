@@ -2,10 +2,13 @@ import {
   ChangeDetectionStrategy,
   Component,
   OnInit,
+  computed,
   inject,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
+import { TranslatePipe } from '@ngx-translate/core';
+import { LanguageService } from '../../../core/i18n/language.service';
 import { ButtonModule } from 'primeng/button';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
@@ -13,10 +16,6 @@ import { TimesheetStore } from '../data-access/timesheet.store';
 import { ConfirmationBadgeComponent } from '../ui/confirmation-badge.component';
 import type { ConfirmationStatusRowDto } from '../data-access/timesheet.api';
 
-const MONTH_NAMES = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-];
 
 /**
  * TimesheetStatusComponent — manager/admin confirmation-status overview.
@@ -29,7 +28,7 @@ const MONTH_NAMES = [
 @Component({
   selector: 'app-timesheet-status',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, DatePipe, ButtonModule, SkeletonModule, TableModule, ConfirmationBadgeComponent],
+  imports: [ReactiveFormsModule, DatePipe, ButtonModule, SkeletonModule, TableModule, ConfirmationBadgeComponent, TranslatePipe],
   styles: [`
     :host { display: block; max-width: 960px; margin: 0 auto; }
 
@@ -97,15 +96,15 @@ const MONTH_NAMES = [
   template: `
     <!-- ── Page header ─────────────────────────────── -->
     <div class="page-header">
-      <div class="page-title">Timesheet Status</div>
-      <div class="page-sub">Employee confirmation overview for the selected month</div>
+      <div class="page-title">{{ 'TIMESHEET.STATUS_TITLE' | translate }}</div>
+      <div class="page-sub">{{ 'TIMESHEET.PERIOD' | translate }}</div>
     </div>
 
     <!-- ── Month selector ─────────────────────────── -->
     <form [formGroup]="form" class="month-selector">
       <label for="ts-status-month" class="visually-hidden">Month</label>
       <select id="ts-status-month" formControlName="month" (change)="onMonthChange()" aria-label="Select month">
-        @for (m of months; track m.value) {
+        @for (m of months(); track m.value) {
           <option [value]="m.value">{{ m.label }}</option>
         }
       </select>
@@ -118,7 +117,7 @@ const MONTH_NAMES = [
       </select>
 
       <p-button
-        label="Refresh"
+        [label]="'COMMON.REFRESH' | translate"
         icon="pi pi-refresh"
         severity="secondary"
         size="small"
@@ -132,15 +131,15 @@ const MONTH_NAMES = [
       <div class="summary-chips">
         <div class="chip">
           <span class="chip-value">{{ store.statusList().length }}</span>
-          <span class="chip-label">Total</span>
+          <span class="chip-label">{{ 'COMMON.ALL' | translate }}</span>
         </div>
         <div class="chip chip--confirmed">
           <span class="chip-value">{{ confirmedCount() }}</span>
-          <span class="chip-label">Confirmed</span>
+          <span class="chip-label">{{ 'TIMESHEET.CONFIRMATION_SIGNED' | translate }}</span>
         </div>
         <div class="chip chip--pending">
           <span class="chip-value">{{ pendingCount() }}</span>
-          <span class="chip-label">Pending</span>
+          <span class="chip-label">{{ 'TIMESHEET.CONFIRMATION_PENDING' | translate }}</span>
         </div>
       </div>
     }
@@ -153,7 +152,7 @@ const MONTH_NAMES = [
     } @else if (store.statusList().length === 0) {
       <div class="empty-state">
         <i class="pi pi-users" aria-hidden="true"></i>
-        <span>No employees found for this period.</span>
+        <span>{{ 'TIMESHEET.EMPTY_STATE' | translate }}</span>
       </div>
     } @else {
       <p-table
@@ -169,11 +168,11 @@ const MONTH_NAMES = [
         <ng-template pTemplate="header">
           <tr>
             <th pSortableColumn="lastName" scope="col" style="width:40%">
-              Employee <p-sortIcon field="lastName" />
+              {{ 'TIMESHEET.TABLE_EMPLOYEE' | translate }} <p-sortIcon field="lastName" />
             </th>
-            <th scope="col" style="width:25%">Status</th>
+            <th scope="col" style="width:25%">{{ 'TIMESHEET.TABLE_STATUS' | translate }}</th>
             <th pSortableColumn="confirmedAt" scope="col" style="width:35%">
-              Confirmed At <p-sortIcon field="confirmedAt" />
+              {{ 'TIMESHEET.TABLE_SIGNED' | translate }} <p-sortIcon field="confirmedAt" />
             </th>
           </tr>
         </ng-template>
@@ -190,11 +189,18 @@ const MONTH_NAMES = [
 })
 export class TimesheetStatusComponent implements OnInit {
   protected readonly store = inject(TimesheetStore) as unknown as TimesheetStore;
-  private  readonly fb = inject(FormBuilder);
+  private  readonly fb   = inject(FormBuilder);
+  private  readonly lang = inject(LanguageService);
 
   readonly today = new Date();
 
-  readonly months = MONTH_NAMES.map((label, i) => ({ value: i + 1, label }));
+  readonly months = computed(() => {
+    const locale = this.lang.dateLocale();
+    return Array.from({ length: 12 }, (_, i) => ({
+      value: i + 1,
+      label: new Intl.DateTimeFormat(locale, { month: 'long' }).format(new Date(2024, i, 1)),
+    }));
+  });
   readonly years = Array.from({ length: 5 }, (_, i) => this.today.getFullYear() - i);
 
   protected readonly form = this.fb.nonNullable.group({
@@ -203,7 +209,7 @@ export class TimesheetStatusComponent implements OnInit {
   });
 
   protected selectedMonthName(): string {
-    return MONTH_NAMES[(this.form.getRawValue().month as number) - 1] ?? '';
+    return this.months()[(this.form.getRawValue().month as number) - 1]?.label ?? '';
   }
 
   protected confirmedCount(): number {

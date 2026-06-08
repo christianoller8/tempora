@@ -7,6 +7,7 @@ import {
 } from '@angular/core';
 import type { ShiftAssignment, ShiftTemplate } from '../data-access/shifts.api';
 import type { AbsenceDto } from '../../absences/data-access/absences.api';
+import { TranslatePipe } from '@ngx-translate/core';
 
 export interface EmployeeRow {
   id: string;
@@ -54,6 +55,7 @@ const ABSENCE_FALLBACK: AbsenceCfg = { label: 'AUS', bg: AMBER_BG, text: AMBER_T
 @Component({
   selector: 'app-cuadrante-grid',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [TranslatePipe],
   styles: [`
     :host { display: block; }
 
@@ -225,7 +227,7 @@ const ABSENCE_FALLBACK: AbsenceCfg = { label: 'AUS', bg: AMBER_BG, text: AMBER_T
       <table>
         <thead>
           <tr>
-            <th class="th-employee">Employee</th>
+            <th class="th-employee">{{ 'TIME.ENTRY_TABLE_EMPLOYEE' | translate }}</th>
             @for (d of days(); track d.num) {
               <th
                 class="th-day"

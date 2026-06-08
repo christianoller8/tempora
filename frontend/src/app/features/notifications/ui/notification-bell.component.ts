@@ -7,6 +7,7 @@ import {
 } from '@angular/core';
 import { BadgeModule } from 'primeng/badge';
 import { ButtonModule } from 'primeng/button';
+import { TranslatePipe } from '@ngx-translate/core';
 
 /**
  * NotificationBellComponent — topbar bell with unread count badge.
@@ -16,7 +17,7 @@ import { ButtonModule } from 'primeng/button';
 @Component({
   selector: 'app-notification-bell',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonModule, BadgeModule],
+  imports: [ButtonModule, BadgeModule, TranslatePipe],
   styles: [`
     :host { display: inline-flex; align-items: center; }
 
@@ -51,7 +52,7 @@ import { ButtonModule } from 'primeng/button';
         [rounded]="true"
         severity="secondary"
         (onClick)="open.emit($event)"
-        [attr.aria-label]="ariaLabel()"
+        [attr.aria-label]="count() > 0 ? ('NOTIFICATIONS.TITLE' | translate) + ': ' + count() : ('NOTIFICATIONS.TITLE' | translate)"
       />
       @if (count() > 0) {
         <span class="bell-badge" aria-live="polite" aria-atomic="true">
@@ -66,9 +67,4 @@ export class NotificationBellComponent {
   /** Emits the click MouseEvent so the host can anchor a p-popover to it. */
   readonly open  = output<MouseEvent>();
 
-  readonly ariaLabel = computed(() =>
-    this.count() > 0
-      ? `Notifications: ${this.count()} unread`
-      : 'Notifications',
-  );
 }

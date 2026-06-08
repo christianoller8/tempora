@@ -9,6 +9,8 @@ import {
   signal,
 } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { LanguageService } from '../../../core/i18n/language.service';
 import { interval, Subscription } from 'rxjs';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
@@ -36,7 +38,7 @@ type GeoStatus = 'idle' | 'requesting' | 'granted' | 'denied' | 'unavailable';
   imports: [
     DatePipe, ButtonModule, TagModule, DividerModule,
     TooltipModule, SkeletonModule, TextareaModule, MessageModule,
-    ExportDialogComponent,
+    ExportDialogComponent, TranslatePipe,
   ],
   styles: [`
     :host { display: block; max-width: 760px; margin: 0 auto; }
@@ -428,12 +430,12 @@ type GeoStatus = 'idle' | 'requesting' | 'granted' | 'denied' | 'unavailable';
     <div class="page-header">
       <div style="display:flex; align-items:center; justify-content:space-between;">
         <div>
-          <div class="page-title">Time Tracking</div>
-          <div class="page-sub">{{ today | date:'EEEE, d MMMM y' }}</div>
+          <div class="page-title">{{ 'TIME.TITLE' | translate }}</div>
+          <div class="page-sub">{{ today | date:'EEEE, d MMMM y':undefined:lang.dateLocale() }}</div>
         </div>
-        <div class="sse-badge" [pTooltip]="sse.connected() ? 'Live updates active' : 'Not connected'" tooltipPosition="left">
+        <div class="sse-badge" [pTooltip]="sse.connected() ? ('COMMON.ACTIVE' | translate) : ('COMMON.ERROR' | translate)" tooltipPosition="left">
           <span class="sse-dot" [class.connected]="sse.connected()" [class.disconnected]="!sse.connected()"></span>
-          {{ sse.connected() ? 'Live' : 'Offline' }}
+          {{ sse.connected() ? ('COMMON.ACTIVE' | translate) : ('COMMON.ERROR' | translate) }}
         </div>
       </div>
     </div>
@@ -445,7 +447,7 @@ type GeoStatus = 'idle' | 'requesting' | 'granted' | 'denied' | 'unavailable';
       <div class="status-row">
         <span class="status-dot" [class.online]="isClockedIn()" [class.offline]="!isClockedIn()"></span>
         <span class="status-text" [class.online]="isClockedIn()" [class.offline]="!isClockedIn()">
-          {{ isClockedIn() ? 'Clocked In' : 'Clocked Out' }}
+          {{ isClockedIn() ? ('STATUS.OPEN' | translate) : ('STATUS.CLOSED' | translate) }}
         </span>
       </div>
 
@@ -455,9 +457,9 @@ type GeoStatus = 'idle' | 'requesting' | 'granted' | 'denied' | 'unavailable';
       </div>
       <div class="timer-label">
         @if (isClockedIn()) {
-          Session running since {{ store.clockInTime() | date:'HH:mm' }}
+          {{ 'TIME.CLOCKED_IN_SINCE' | translate }} {{ store.clockInTime() | date:'HH:mm' }}
         } @else {
-          Ready to start your session
+          {{ 'TIME.NOT_CLOCKED_IN' | translate }}
         }
       </div>
 
@@ -466,7 +468,7 @@ type GeoStatus = 'idle' | 'requesting' | 'granted' | 'denied' | 'unavailable';
         @switch (geoStatus()) {
           @case ('requesting') {
             <i class="pi pi-spin pi-spinner"></i>
-            <span>Requesting location…</span>
+            <span>{{ 'TIME.LOCATION_REQUESTING' | translate }}</span>
           }
           @case ('granted') {
             <i class="pi pi-map-marker"></i>
@@ -474,11 +476,11 @@ type GeoStatus = 'idle' | 'requesting' | 'granted' | 'denied' | 'unavailable';
           }
           @case ('denied') {
             <i class="pi pi-ban"></i>
-            <span>Location unavailable — clocking in without coordinates</span>
+            <span>{{ 'TIME.LOCATION_UNAVAILABLE' | translate }}</span>
           }
           @default {
             <i class="pi pi-map-marker" style="opacity:0.3;"></i>
-            <span>Location will be requested on clock-in</span>
+            <span>{{ 'TIME.LOCATION_IDLE' | translate }}</span>
           }
         }
       </div>
@@ -488,23 +490,23 @@ type GeoStatus = 'idle' | 'requesting' | 'granted' | 'denied' | 'unavailable';
         @if (!isClockedIn()) {
           <div class="btn-clock-in">
             <p-button
-              [label]="store.isClocking() ? 'Clocking in…' : 'Clock In'"
+              [label]="store.isClocking() ? ('TIME.CLOCKING_IN' | translate) : ('TIME.CLOCK_IN' | translate)"
               icon="pi pi-play"
               iconPos="left"
               [loading]="store.isClocking()"
               (onClick)="onClockIn()"
-              [attr.aria-label]="'Clock in'"
+              [attr.aria-label]="'TIME.CLOCK_IN' | translate"
             />
           </div>
         } @else {
           <div class="btn-clock-out">
             <p-button
-              [label]="store.isClocking() ? 'Clocking out…' : 'Clock Out'"
+              [label]="store.isClocking() ? ('TIME.CLOCKING_OUT' | translate) : ('TIME.CLOCK_OUT' | translate)"
               icon="pi pi-stop"
               iconPos="left"
               [loading]="store.isClocking()"
               (onClick)="onClockOut()"
-              [attr.aria-label]="'Clock out'"
+              [attr.aria-label]="'TIME.CLOCK_OUT' | translate"
             />
           </div>
         }
@@ -515,7 +517,7 @@ type GeoStatus = 'idle' | 'requesting' | 'granted' | 'denied' | 'unavailable';
         <div style="display:flex; justify-content:center;">
           <span class="source-badge">
             <i class="pi pi-map-marker"></i>
-            GPS logged
+            {{ 'TIME.GPS_LOGGED' | translate }}
           </span>
         </div>
       }
@@ -525,11 +527,11 @@ type GeoStatus = 'idle' | 'requesting' | 'granted' | 'denied' | 'unavailable';
         <div class="api-error">
           <p-message
             severity="warn"
-            text="You have an open session from a previous day that was never closed."
+            [text]="'TIME.OPEN_SESSION_CONFLICT' | translate"
           />
           <div style="margin-top: 0.75rem; display:flex; justify-content:center;">
             <p-button
-              label="Force Clock Out"
+              [label]="'TIME.FORCE_CLOCK_OUT' | translate"
               icon="pi pi-sign-out"
               severity="warn"
               size="small"
@@ -553,10 +555,10 @@ type GeoStatus = 'idle' | 'requesting' | 'granted' | 'denied' | 'unavailable';
       <div class="section-header">
         <div class="section-title">
           <i class="pi pi-wifi"></i>
-          Live Team Status
+          {{ 'TIME.LIVE_TEAM' | translate }}
         </div>
         <p-tag
-          [value]="liveEntries().length + ' clocked in'"
+          [value]="'DASHBOARD.ONLINE_BADGE' | translate:{ count: liveEntries().length }"
           severity="success"
           [rounded]="true"
           [style]="{ fontSize: '0.7rem' }"
@@ -573,14 +575,14 @@ type GeoStatus = 'idle' | 'requesting' | 'granted' | 'denied' | 'unavailable';
         } @else if (liveEntries().length === 0) {
           <div class="empty-state">
             <i class="pi pi-moon"></i>
-            <span>No employees currently clocked in</span>
+            <span>{{ 'TIME.EMPTY_ENTRIES' | translate }}</span>
           </div>
         } @else {
           @for (entry of liveEntries(); track entry.id) {
             <div class="team-row">
               <div>
                 <div class="team-name">{{ employeeName(entry.employeeId) }}</div>
-                <div class="team-since">Since {{ entry.clockIn | date:'HH:mm' }}</div>
+                <div class="team-since">{{ entry.clockIn | date:'HH:mm' }}</div>
               </div>
               <div class="team-duration">{{ entryDuration(entry) }}</div>
               <span class="live-dot" title="Online"></span>
@@ -594,7 +596,7 @@ type GeoStatus = 'idle' | 'requesting' | 'granted' | 'denied' | 'unavailable';
     @if (isAdminOrManager()) {
       <div style="display:flex; justify-content:flex-end; margin-bottom:1rem;">
         <p-button
-          label="Export for Inspection"
+          [label]="'REPORTS.EXPORT_TITLE' | translate"
           icon="pi pi-file-export"
           severity="secondary"
           size="small"
@@ -607,7 +609,7 @@ type GeoStatus = 'idle' | 'requesting' | 'granted' | 'denied' | 'unavailable';
     <div class="section-header">
       <div class="section-title">
         <i class="pi pi-list"></i>
-        Today's Activity
+        {{ 'DASHBOARD.TODAY_ACTIVITY' | translate }}
       </div>
       <span style="font-size:0.75rem; color:var(--p-text-color-muted, var(--p-text-color-secondary));">
         {{ todayEntries().length }} {{ todayEntries().length === 1 ? 'entry' : 'entries' }}
@@ -624,14 +626,14 @@ type GeoStatus = 'idle' | 'requesting' | 'granted' | 'denied' | 'unavailable';
       } @else if (todayEntries().length === 0) {
         <div class="empty-state">
           <i class="pi pi-clock"></i>
-          <span>No entries today yet — clock in to start your session</span>
+          <span>{{ 'TIME.EMPTY_ENTRIES' | translate }}</span>
         </div>
       } @else {
         <div class="entry-header-row">
-          <span class="entry-col-label">Clock In</span>
-          <span class="entry-col-label">Clock Out</span>
-          <span class="entry-col-label">Duration</span>
-          <span class="entry-col-label">Status</span>
+          <span class="entry-col-label">{{ 'TIME.ENTRY_TABLE_CLOCK_IN' | translate }}</span>
+          <span class="entry-col-label">{{ 'TIME.ENTRY_TABLE_CLOCK_OUT' | translate }}</span>
+          <span class="entry-col-label">{{ 'TIME.ENTRY_TABLE_DURATION' | translate }}</span>
+          <span class="entry-col-label">{{ 'TIME.ENTRY_TABLE_STATUS' | translate }}</span>
         </div>
         @for (entry of todayEntries(); track entry.id) {
           <div class="entry-row">
@@ -640,14 +642,14 @@ type GeoStatus = 'idle' | 'requesting' | 'granted' | 'denied' | 'unavailable';
               @if (entry.clockOut) {
                 {{ entry.clockOut | date:'HH:mm' }}
               } @else {
-                <span class="entry-dash">running…</span>
+                <span class="entry-dash">{{ 'DASHBOARD.RUNNING' | translate }}</span>
               }
             </span>
             <span class="entry-duration" [class.running]="entry.status === 'OPEN'">
               {{ entryDuration(entry) }}
             </span>
             <p-tag
-              [value]="entry.status === 'OPEN' ? 'Active' : 'Closed'"
+              [value]="entry.status === 'OPEN' ? ('STATUS.OPEN' | translate) : ('STATUS.CLOSED' | translate)"
               [severity]="entry.status === 'OPEN' ? 'success' : 'secondary'"
               [rounded]="true"
               [style]="{ fontSize: '0.7rem' }"
@@ -666,27 +668,27 @@ type GeoStatus = 'idle' | 'requesting' | 'granted' | 'denied' | 'unavailable';
         [attr.aria-expanded]="showCorrection()"
       >
         <i class="pi" [class.pi-chevron-right]="!showCorrection()" [class.pi-chevron-down]="showCorrection()"></i>
-        Request a time correction
+        {{ 'TIME.CORRECTION_TITLE' | translate }}
       </button>
 
       @if (showCorrection()) {
         <div class="correction-form">
           <div class="form-field">
-            <label class="form-label" for="justification">Justification *</label>
+            <label class="form-label" for="justification">{{ 'TIME.CORRECTION_REASON' | translate }}</label>
             <textarea
               pTextarea
               id="justification"
               rows="3"
               [value]="justification()"
               (input)="justification.set($any($event.target).value)"
-              placeholder="Describe what needs to be corrected and why…"
+              [placeholder]="'TIME.CORRECTION_REASON_PLACEHOLDER' | translate"
               aria-required="true"
             ></textarea>
           </div>
 
           <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
             <p-button
-              label="Submit correction"
+              [label]="'TIME.CORRECTION_SUBMIT' | translate"
               icon="pi pi-send"
               [loading]="submittingCorrection()"
               [disabled]="!justification().trim() || !hasTodayEntry()"
@@ -695,7 +697,7 @@ type GeoStatus = 'idle' | 'requesting' | 'granted' | 'denied' | 'unavailable';
             />
             @if (!hasTodayEntry()) {
               <span style="font-size:0.75rem; color:var(--p-text-color-muted, var(--p-text-color-secondary));">
-                No entries today to correct
+                {{ 'TIME.EMPTY_ENTRIES' | translate }}
               </span>
             }
           </div>
@@ -722,6 +724,7 @@ export class ClockComponent implements OnInit, OnDestroy {
   private  readonly api    = inject(TimeApi);
   private  readonly apiService = inject(ApiService);
   private  readonly auth   = inject(AuthStore) as unknown as AuthStore;
+  readonly lang            = inject(LanguageService);
 
   readonly today = new Date();
 

@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { TranslatePipe } from '@ngx-translate/core';
 import { AbsencesStore } from '../data-access/absences.store';
 import type { AbsenceDto } from '../data-access/absences.api';
 
@@ -13,10 +14,10 @@ import type { AbsenceDto } from '../data-access/absences.api';
 @Component({
   selector: 'app-absence-approval',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslatePipe],
   template: `
     <section aria-labelledby="approval-queue-title">
-      <h2 id="approval-queue-title">Absence Approval Queue</h2>
+      <h2 id="approval-queue-title">{{ 'ABSENCES.APPROVAL_TITLE' | translate }}</h2>
 
       @if (store.loading()) {
         <p role="status" aria-live="polite">Loading…</p>
@@ -29,7 +30,7 @@ import type { AbsenceDto } from '../data-access/absences.api';
       }
 
       @if (!store.loading() && pendingAbsences().length === 0) {
-        <p>No pending absence requests.</p>
+        <p>{{ 'ABSENCES.EMPTY_REQUESTS' | translate }}</p>
       }
 
       @if (pendingAbsences().length > 0) {
@@ -37,12 +38,12 @@ import type { AbsenceDto } from '../data-access/absences.api';
           <caption>Pending absence requests requiring approval</caption>
           <thead>
             <tr>
-              <th scope="col">Employee</th>
-              <th scope="col">Type</th>
-              <th scope="col">Start date</th>
-              <th scope="col">End date</th>
-              <th scope="col">Status</th>
-              <th scope="col">Actions</th>
+              <th scope="col">{{ 'ABSENCES.TABLE_EMPLOYEE' | translate }}</th>
+              <th scope="col">{{ 'ABSENCES.TABLE_TYPE' | translate }}</th>
+              <th scope="col">{{ 'ABSENCES.TABLE_FROM' | translate }}</th>
+              <th scope="col">{{ 'ABSENCES.TABLE_TO' | translate }}</th>
+              <th scope="col">{{ 'ABSENCES.TABLE_STATUS' | translate }}</th>
+              <th scope="col">{{ 'ABSENCES.TABLE_ACTIONS' | translate }}</th>
             </tr>
           </thead>
           <tbody>
@@ -60,15 +61,15 @@ import type { AbsenceDto } from '../data-access/absences.api';
                     [disabled]="store.loading()"
                     aria-label="Approve absence for employee {{ absence.employeeId }}"
                   >
-                    Approve
+                    {{ 'COMMON.APPROVE' | translate }}
                   </button>
                   <button
                     type="button"
                     (click)="onReject(absence)"
                     [disabled]="store.loading()"
-                    aria-label="Reject absence for employee {{ absence.employeeId }}"
+                    [attr.aria-label]="'COMMON.REJECT' | translate"
                   >
-                    Reject
+                    {{ 'COMMON.REJECT' | translate }}
                   </button>
                 </td>
               </tr>

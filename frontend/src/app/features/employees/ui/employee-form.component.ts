@@ -12,6 +12,7 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
 import { DialogModule } from 'primeng/dialog';
 import { ButtonModule } from 'primeng/button';
 import { SelectModule } from 'primeng/select';
@@ -22,7 +23,7 @@ import { EMPLOYEE_CATEGORY_VALUES, CONTRACT_TYPE_VALUES } from '../data-access/e
 @Component({
   selector: 'app-employee-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DialogModule, ButtonModule, SelectModule, InputTextModule, ReactiveFormsModule],
+  imports: [DialogModule, ButtonModule, SelectModule, InputTextModule, ReactiveFormsModule, TranslatePipe],
   styles: [`
     .form-grid {
       display: grid;
@@ -86,7 +87,7 @@ import { EMPLOYEE_CATEGORY_VALUES, CONTRACT_TYPE_VALUES } from '../data-access/e
   `],
   template: `
     <p-dialog
-      [header]="employee() ? 'Edit Employee' : 'Add Employee'"
+      [header]="employee() ? ('EMPLOYEES.EDIT_EMPLOYEE' | translate) : ('EMPLOYEES.ADD_EMPLOYEE' | translate)"
       [visible]="visible()"
       [modal]="true"
       [closable]="false"
@@ -245,14 +246,14 @@ import { EMPLOYEE_CATEGORY_VALUES, CONTRACT_TYPE_VALUES } from '../data-access/e
         <div class="dialog-footer">
           <p-button
             type="button"
-            label="Cancel"
+            [label]="'COMMON.CANCEL' | translate"
             severity="secondary"
             [text]="true"
             (onClick)="onCancel()"
           />
           <p-button
             type="submit"
-            label="Save"
+            [label]="'COMMON.SAVE' | translate"
             icon="pi pi-check"
             [loading]="saving()"
             [disabled]="form.invalid"
