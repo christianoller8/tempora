@@ -17,13 +17,16 @@
     "prepare": "npm run build:shared"
   },
   "devDependencies": {
-    "typescript": "^6.0.3",
     "@angular/animations": "^21.2.0",
     "@angular/common": "^21.2.0",
     "@angular/compiler": "^21.2.0",
     "@angular/core": "^21.2.0",
     "@angular/forms": "^21.2.0",
     "@angular/platform-browser": "^21.2.0",
-    "@angular/router": "^21.2.0"
+    "@angular/router": "^21.2.0",
+    "typescript": "^6.0.3"
+  },
+  "dependencies": {
+    "@angular/service-worker": "^21.0.6"
   }
 }

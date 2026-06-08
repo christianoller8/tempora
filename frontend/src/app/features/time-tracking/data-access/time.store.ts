@@ -10,6 +10,7 @@ import {
 import { firstValueFrom } from 'rxjs';
 import { TimeApi } from './time.api';
 import type { TimeEntryDto } from './time.api';
+import { OfflineQueueService } from '../../../core/pwa/offline-queue.service';
 
 // withHooks omitted — TypeScript 5.9 cannot infer the store type when withHooks is present.
 // SseService.connect() is called from ClockComponent / LiveDashboardComponent instead.
@@ -20,6 +21,7 @@ type TimeState = {
   isClocking: boolean;
   error: string | null;
   clockInConflict: boolean;
+  pendingOfflineAction: 'clock-in' | 'clock-out' | null;
 };
 
 const initialState: TimeState = {
@@ -28,6 +30,7 @@ const initialState: TimeState = {
   isClocking: false,
   error: null,
   clockInConflict: false,
+  pendingOfflineAction: null,
 };
 
 export const TimeStore = signalStore(
@@ -39,9 +42,15 @@ export const TimeStore = signalStore(
   })),
   withMethods((store) => {
     const api = inject(TimeApi);
+    const offlineQueue = inject(OfflineQueueService);
     return {
       async clockIn(coords?: { lat: number; lng: number }): Promise<void> {
-        patchState(store, { isClocking: true, error: null, clockInConflict: false });
+        if (!navigator.onLine) {
+          offlineQueue.enqueue({ type: 'clock-in', timestamp: new Date().toISOString(), coords });
+          patchState(store, { pendingOfflineAction: 'clock-in', error: null });
+          return;
+        }
+        patchState(store, { isClocking: true, error: null, clockInConflict: false, pendingOfflineAction: null });
         try {
           const source = coords
             ? `web-gps:${coords.lat.toFixed(5)},${coords.lng.toFixed(5)}`
@@ -60,7 +69,12 @@ export const TimeStore = signalStore(
       },
 
       async clockOut(): Promise<void> {
-        patchState(store, { isClocking: true, error: null, clockInConflict: false });
+        if (!navigator.onLine) {
+          offlineQueue.enqueue({ type: 'clock-out', timestamp: new Date().toISOString() });
+          patchState(store, { pendingOfflineAction: 'clock-out', error: null });
+          return;
+        }
+        patchState(store, { isClocking: true, error: null, clockInConflict: false, pendingOfflineAction: null });
         try {
           const entry = await firstValueFrom(api.clockOut());
           patchState(store, { currentEntry: entry, isClocking: false });
@@ -115,6 +129,7 @@ export type TimeStore = {
   isClocking(): boolean;
   error(): string | null;
   clockInConflict(): boolean;
+  pendingOfflineAction(): 'clock-in' | 'clock-out' | null;
   isClockedIn(): boolean;
   clockInTime(): string | null;
   clockIn(coords?: { lat: number; lng: number }): Promise<void>;

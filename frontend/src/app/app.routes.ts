@@ -96,5 +96,10 @@ export const routes: Routes = [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],
   },
+  {
+    path: 'offline',
+    loadComponent: () =>
+      import('./features/offline/offline.component').then((m) => m.OfflineComponent),
+  },
   { path: '**', redirectTo: '' },
 ];

@@ -216,6 +216,33 @@ a {
   max-width: 420px;
 }
 
+/* ─── Mobile touch targets (min 44×44 px per WCAG 2.5.5) ────────────────── */
+
+@media (max-width: 768px) {
+  button,
+  a[role='button'],
+  [role='button'],
+  input[type='button'],
+  input[type='submit'],
+  input[type='reset'],
+  .p-button {
+    min-height: 44px;
+  }
+
+  .p-inputtext,
+  .p-select,
+  .p-dropdown,
+  .p-multiselect {
+    min-height: 44px;
+  }
+
+  .p-checkbox,
+  .p-radiobutton {
+    min-width: 24px;
+    min-height: 24px;
+  }
+}
+
 /* ─── Notifications overlay panel ───────────────────────────────────────── */
 
 .notifications-panel {

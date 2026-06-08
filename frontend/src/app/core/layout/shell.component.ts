@@ -1,12 +1,16 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   computed,
   effect,
   inject,
   OnInit,
+  signal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { fromEvent } from 'rxjs';
 import { ButtonModule } from 'primeng/button';
 import { AvatarModule } from 'primeng/avatar';
 import { BadgeModule } from 'primeng/badge';
@@ -21,6 +25,9 @@ import { ThemeService } from '../theme/theme.service';
 import { SseService } from '../sse/sse.service';
 import { LanguageService } from '../i18n/language.service';
 import { TranslatePipe } from '@ngx-translate/core';
+import { PwaService } from '../pwa/pwa.service';
+import { OfflineQueueService } from '../pwa/offline-queue.service';
+import { InstallPromptComponent } from '../pwa/install-prompt.component';
 
 interface NavItem {
   labelKey: string;
@@ -39,13 +46,14 @@ interface NavItem {
     NotificationListComponent,
     NotificationBellComponent,
     TranslatePipe,
+    InstallPromptComponent,
   ],
   styles: [`
     /* ── Layout ─────────────────────────────────────────────────────── */
     :host {
       display: grid;
       grid-template-columns: 260px 1fr;
-      grid-template-rows: 100vh;
+      grid-template-rows: 100dvh;
       overflow: hidden;
     }
 
@@ -56,6 +64,7 @@ interface NavItem {
       background: var(--p-surface-card);
       border-right: 1px solid var(--p-surface-border);
       overflow: hidden;
+      z-index: 200;
     }
 
     .sidebar-brand {
@@ -133,6 +142,7 @@ interface NavItem {
       align-items: center;
       gap: 0.75rem;
       padding: 0.625rem 0.875rem;
+      min-height: 44px;
       border-radius: 8px;
       color: var(--p-text-color-muted, var(--p-text-color-secondary));
       font-size: 0.875rem;
@@ -210,6 +220,17 @@ interface NavItem {
       background: var(--p-surface-card);
       border-bottom: 1px solid var(--p-surface-border);
       flex-shrink: 0;
+      gap: 0.5rem;
+    }
+
+    .topbar-start {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .hamburger-btn {
+      display: none;
     }
 
     .topbar-org {
@@ -252,6 +273,24 @@ interface NavItem {
     .role-badge--employee { background: var(--color-role-employee-bg); color: var(--color-role-employee); border-color: var(--color-role-employee-border); }
     .role-badge--unknown  { background: color-mix(in srgb, var(--p-surface-400) 18%, transparent); color: var(--p-surface-400); border-color: color-mix(in srgb, var(--p-surface-400) 35%, transparent); }
 
+    /* ── Offline banner ──────────────────────────────────────────────── */
+    .offline-banner {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1.5rem;
+      background: color-mix(in srgb, #f97316 15%, var(--p-surface-card));
+      border-bottom: 1px solid color-mix(in srgb, #f97316 40%, transparent);
+      color: #f97316;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      flex-shrink: 0;
+    }
+
+    .offline-banner .pi {
+      flex-shrink: 0;
+    }
+
     /* ── Page content ────────────────────────────────────────────────── */
     .page-content {
       flex: 1;
@@ -259,10 +298,81 @@ interface NavItem {
       overflow-x: hidden;
       padding: 1.5rem;
     }
+
+    /* ── Sidebar backdrop (mobile) ───────────────────────────────────── */
+    .sidebar-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 199;
+    }
+
+    /* ── Mobile styles (max-width: 768px) ────────────────────────────── */
+    @media (max-width: 768px) {
+      :host {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 260px;
+        transform: translateX(-100%);
+        transition: transform 0.25s ease;
+        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+      }
+
+      .sidebar.sidebar--open {
+        transform: translateX(0);
+      }
+
+      .sidebar-backdrop {
+        display: block;
+      }
+
+      .hamburger-btn {
+        display: flex;
+      }
+
+      .topbar-org {
+        display: none;
+      }
+
+      .user-block {
+        display: none;
+      }
+
+      .page-content {
+        padding: 1rem;
+      }
+    }
+
+    /* ── Tablet styles (769px–1024px) ────────────────────────────────── */
+    @media (min-width: 769px) and (max-width: 1024px) {
+      :host {
+        grid-template-columns: 220px 1fr;
+      }
+
+      .page-content {
+        padding: 1.25rem;
+      }
+    }
   `],
   template: `
+    <!-- ─ Sidebar backdrop (mobile overlay) ─────────────────────────────── -->
+    @if (mobileMenuOpen()) {
+      <div
+        class="sidebar-backdrop"
+        (click)="closeMobileMenu()"
+        aria-hidden="true"
+      ></div>
+    }
+
     <!-- ─ Sidebar ─────────────────────────────────────────────────────── -->
-    <aside class="sidebar">
+    <aside class="sidebar" [class.sidebar--open]="mobileMenuOpen()">
       <div class="sidebar-brand">
         <div class="brand-icon-wrap">
           <i class="pi pi-heart"></i>
@@ -293,6 +403,7 @@ interface NavItem {
                   tooltipPosition="right"
                   [showDelay]="600"
                   [attr.aria-label]="item.labelKey | translate"
+                  (click)="closeMobileMenu()"
                 >
                   <i class="pi {{ item.icon }}"></i>
                   <span>{{ item.labelKey | translate }}</span>
@@ -323,7 +434,19 @@ interface NavItem {
     <div class="main-area">
       <!-- Topbar -->
       <header class="topbar">
-        <span class="topbar-org">{{ orgName() }}</span>
+        <div class="topbar-start">
+          <!-- Hamburger (mobile only) -->
+          <p-button
+            class="hamburger-btn"
+            icon="pi pi-bars"
+            [text]="true"
+            severity="secondary"
+            aria-label="Abrir menú"
+            [style]="{ minHeight: '44px', minWidth: '44px' }"
+            (onClick)="toggleMobileMenu()"
+          />
+          <span class="topbar-org">{{ orgName() }}</span>
+        </div>
         <div class="topbar-end">
           <!-- Notification bell + popover -->
           <app-notification-bell
@@ -344,6 +467,7 @@ interface NavItem {
             tooltipPosition="bottom"
             (onClick)="lang.toggle()"
             [attr.aria-label]="lang.current() === 'es' ? ('TOPBAR.SWITCH_TO_ENGLISH' | translate) : ('TOPBAR.SWITCH_TO_SPANISH' | translate)"
+            [style]="{ minHeight: '44px' }"
           />
 
           <!-- Theme toggle -->
@@ -356,6 +480,7 @@ interface NavItem {
             tooltipPosition="bottom"
             (onClick)="theme.toggle()"
             [attr.aria-label]="theme.isDark() ? ('TOPBAR.SWITCH_TO_LIGHT' | translate) : ('TOPBAR.SWITCH_TO_DARK' | translate)"
+            [style]="{ minHeight: '44px' }"
           />
           <div class="user-block">
             <span class="user-email">{{ userEmail() }}</span>
@@ -375,20 +500,41 @@ interface NavItem {
         </div>
       </header>
 
+      <!-- Offline banner -->
+      @if (pwa.isOffline()) {
+        <div class="offline-banner" role="alert" aria-live="polite">
+          <i class="pi pi-wifi" aria-hidden="true"></i>
+          <span>
+            Sin conexión. Algunas funciones no están disponibles.
+            @if (offlineQueue.hasPending()) {
+              {{ offlineQueue.pendingCount() }} acción(es) pendiente(s) de sincronizar.
+            }
+          </span>
+        </div>
+      }
+
       <!-- Page content -->
       <main class="page-content" role="main">
         <router-outlet />
       </main>
     </div>
+
+    <!-- PWA install prompt -->
+    <app-install-prompt />
   `,
 })
 export class ShellComponent implements OnInit {
   private readonly auth   = inject(AuthStore) as unknown as AuthStore;
   private readonly router = inject(Router);
   private readonly sse    = inject(SseService);
+  private readonly destroyRef = inject(DestroyRef);
   protected readonly notificationsStore = inject(NotificationsStore) as unknown as NotificationsStore;
   protected readonly theme = inject(ThemeService);
   protected readonly lang  = inject(LanguageService);
+  protected readonly pwa   = inject(PwaService);
+  protected readonly offlineQueue = inject(OfflineQueueService);
+
+  readonly mobileMenuOpen = signal(false);
 
   readonly isAdminOrManager = computed(() =>
     ['ADMIN', 'MANAGER'].includes(this.auth.role() ?? ''),
@@ -439,8 +585,6 @@ export class ShellComponent implements OnInit {
   });
 
   constructor() {
-    // ADR-6: bridge SSE events into the store via an effect.
-    // The store stays HTTP-only and unit-testable; the shell is the single integration point.
     effect(() => {
       const ev = this.sse.lastEvent();
       if (ev) this.notificationsStore.applySseEvent(ev);
@@ -449,6 +593,19 @@ export class ShellComponent implements OnInit {
 
   ngOnInit(): void {
     void this.notificationsStore.loadNotifications();
+
+    // Close mobile menu on navigation.
+    fromEvent(window, 'popstate')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.mobileMenuOpen.set(false));
+  }
+
+  toggleMobileMenu(): void {
+    this.mobileMenuOpen.update(v => !v);
+  }
+
+  closeMobileMenu(): void {
+    this.mobileMenuOpen.set(false);
   }
 
   /** Called when the notifications popover opens — refreshes the list (FR-NOT-14). */
