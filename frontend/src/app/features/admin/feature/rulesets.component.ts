@@ -999,6 +999,93 @@ type SettingsSection = 'reglas' | 'fichaje' | 'notif' | 'org' | 'seg';
 
         }
 
+        <!-- ── SEGURIDAD ─────────────────────────────────────── -->
+        @else if (activeSection() === 'seg') {
+
+          <div class="sec-card">
+            <div class="sec-head">
+              <h2>Seguridad</h2>
+              <p>Acceso, sesión y conservación de datos.</p>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">Doble factor (2FA)</div>
+                <div class="setting-desc">Exigir verificación adicional a los administradores.</div>
+              </div>
+              <div class="setting-ctrl">
+                <p-toggleswitch
+                  [ngModel]="sec2fa()"
+                  (ngModelChange)="sec2fa.set($event)"
+                  aria-label="Doble factor (2FA)"
+                />
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">Cierre de sesión por inactividad</div>
+                <div class="setting-desc">Tiempo antes de cerrar sesión automáticamente.</div>
+              </div>
+              <div class="setting-ctrl">
+                <input
+                  class="num-input"
+                  type="number"
+                  [ngModel]="secSessionTimeout()"
+                  (ngModelChange)="secSessionTimeout.set($event)"
+                  min="1"
+                  aria-label="Cierre de sesión por inactividad en minutos"
+                />
+                <span class="unit-label">min</span>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">Conservación de registros</div>
+                <div class="setting-desc">Plazo legal mínimo de conservación de fichajes (RD 8/2019).</div>
+              </div>
+              <div class="setting-ctrl">
+                <input
+                  class="num-input"
+                  type="number"
+                  [ngModel]="secRetentionYears()"
+                  (ngModelChange)="secRetentionYears.set($event)"
+                  min="4"
+                  aria-label="Conservación de registros en años"
+                />
+                <span class="unit-label">años</span>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">Registro de auditoría</div>
+                <div class="setting-desc">Guardar el historial de cambios y exportaciones.</div>
+              </div>
+              <div class="setting-ctrl">
+                <p-toggleswitch
+                  [ngModel]="secAuditLog()"
+                  (ngModelChange)="secAuditLog.set($event)"
+                  aria-label="Registro de auditoría"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="save-bar">
+            <div class="save-note">
+              <i class="pi pi-info-circle" aria-hidden="true"></i>
+              Los cambios se aplican a toda la organización.
+            </div>
+            <button type="button" class="btn-submit" (click)="onSaveSeg()">
+              <i class="pi pi-save" aria-hidden="true"></i>
+              Guardar cambios
+            </button>
+          </div>
+
+        }
+
         <!-- ── OTHER SECTIONS (placeholder) ─────────────────── -->
         @else {
           <div class="sec-card">
@@ -1072,6 +1159,16 @@ export class RulesetsComponent implements OnInit {
 
   protected onSaveOrg(): void {
     // TODO: wire to PATCH /settings/organizacion when backend endpoint is available
+  }
+
+  // Seguridad settings state
+  protected readonly sec2fa             = signal(true);
+  protected readonly secSessionTimeout  = signal(30);
+  protected readonly secRetentionYears  = signal(4);
+  protected readonly secAuditLog        = signal(true);
+
+  protected onSaveSeg(): void {
+    // TODO: wire to PATCH /settings/seguridad when backend endpoint is available
   }
 
   async ngOnInit(): Promise<void> {
