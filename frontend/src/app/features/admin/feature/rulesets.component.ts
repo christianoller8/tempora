@@ -1,11 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { InputNumberModule } from 'primeng/inputnumber';
-import { TextareaModule } from 'primeng/textarea';
-import { MessageModule } from 'primeng/message';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ApiService } from '../../../core/http/api.service';
 import { firstValueFrom } from 'rxjs';
@@ -21,30 +16,103 @@ export interface RuleSetDto {
   params: Record<string, unknown>;
 }
 
-/**
- * RulesetsComponent — admin form to create/update per-org RuleSet configuration.
- *
- * ADMIN role only (enforced by roleGuard at route level).
- * Satisfies FR-RULES-2, FR-RULES-4.
- */
+type SettingsSection = 'reglas' | 'fichaje' | 'notif' | 'org' | 'seg';
+
 @Component({
   selector: 'app-rulesets',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, CommonModule, ButtonModule, InputTextModule, InputNumberModule, TextareaModule, MessageModule, TranslatePipe],
+  imports: [ReactiveFormsModule, CommonModule, TranslatePipe],
   styles: [`
-    /* ── Host ───────────────────────────────────────────────────── */
-    :host { display: block; max-width: 720px; }
+    :host { display: block; }
 
-    /* ── Page header ─────────────────────────────────────────────── */
+    /* ── Page header ─────────────────────────────────────────── */
     .page-header { margin-bottom: 1.5rem; }
-    .page-title {
-      font-size: 1.5rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
+    .page-title  { font-size: 1.5625rem; font-weight: 700; letter-spacing: -.02em; color: var(--text); }
+    .page-sub    { font-size: 0.8125rem; color: var(--text-2); margin-top: 4px; }
+
+    /* ── Settings two-column layout ──────────────────────────── */
+    .settings {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    /* ── Sub-navigation panel ────────────────────────────────── */
+    .subnav {
+      background: var(--surface);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      padding: 8px;
+      position: sticky;
+      top: 80px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .sub-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 14px;
+      border-radius: 10px;
+      color: var(--text-2);
+      font-size: 0.84375rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background var(--transition), color var(--transition), border-color var(--transition);
+      border: 1px solid transparent;
+      background: transparent;
+      width: 100%;
+      text-align: left;
+      font-family: inherit;
+    }
+
+    .sub-item:hover {
+      background: var(--primary-soft);
       color: var(--text);
     }
 
-    /* ── Banners ─────────────────────────────────────────────────── */
+    .sub-item.active {
+      background: var(--primary-soft);
+      border-color: var(--border-soft);
+      color: var(--text);
+    }
+
+    .sub-item .sub-icon {
+      font-size: 0.875rem;
+      flex-shrink: 0;
+      color: var(--text-3);
+      transition: color var(--transition);
+    }
+
+    .sub-item:hover .sub-icon,
+    .sub-item.active .sub-icon { color: var(--accent-ico); }
+
+    /* ── Content area ────────────────────────────────────────── */
+    .content-area { min-width: 0; }
+
+    /* ── Section card ────────────────────────────────────────── */
+    .sec-card {
+      background: var(--surface);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      margin-bottom: 18px;
+      overflow: hidden;
+    }
+
+    .sec-head {
+      padding: 20px 22px;
+      border-bottom: 1px solid var(--border-soft);
+    }
+
+    .sec-head h2 { font-size: 1rem; font-weight: 700; color: var(--text); }
+    .sec-head p  { font-size: 0.78125rem; color: var(--text-2); margin-top: 3px; }
+
+    /* ── Banners ─────────────────────────────────────────────── */
     .banner {
       display: flex;
       align-items: center;
@@ -52,314 +120,518 @@ export interface RuleSetDto {
       padding: 0.75rem 1rem;
       border-radius: var(--radius-sm);
       font-size: 0.875rem;
-      margin-bottom: 1rem;
+      margin-bottom: 14px;
       border: 1px solid transparent;
     }
-    .banner--success {
-      background: var(--ok-soft);
-      border-color: var(--ok);
-      color: var(--ok);
-    }
-    .banner--error {
-      background: var(--danger-soft);
-      border-color: var(--danger);
-      color: var(--danger);
+    .banner--success { background: var(--ok-soft);     border-color: var(--ok);     color: var(--ok);     }
+    .banner--error   { background: var(--danger-soft); border-color: var(--danger); color: var(--danger); }
+
+    /* ── Rules 2-column grid ─────────────────────────────────── */
+    .rules-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      padding: 18px 22px;
     }
 
-    /* ── Ruleset list card ───────────────────────────────────────── */
-    .ruleset-list {
-      background: var(--surface);
+    .rule-card {
+      background: var(--bg);
       border: 1px solid var(--border-soft);
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow);
-      padding: 1.25rem 1.375rem;
-      margin-bottom: 1.5rem;
-      transition: var(--transition);
+      border-radius: 13px;
+      padding: 16px;
+      transition: border-color var(--transition), box-shadow var(--transition);
     }
-    .ruleset-list h3 {
-      font-size: 0.6875rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--text-3);
-      margin-bottom: 0.625rem;
+
+    .rule-card--selected {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px var(--primary-soft);
     }
-    .ruleset-list ul {
-      list-style: none;
-      margin: 0;
-      padding: 0;
+
+    .rule-top {
       display: flex;
-      flex-direction: column;
-      gap: 0.125rem;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
     }
-    .ruleset-list button {
-      display: block;
-      width: 100%;
-      text-align: left;
-      padding: 0.625rem 0.875rem;
-      border-radius: var(--radius-sm);
-      border: 1px solid transparent;
-      background: transparent;
-      color: var(--text-2);
+
+    .rule-name {
+      display: flex;
+      align-items: center;
+      gap: 9px;
       font-size: 0.875rem;
-      font-weight: 500;
+      font-weight: 700;
+      color: var(--text);
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .rule-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--ok);
+      flex-shrink: 0;
+    }
+
+    .rule-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+    .rule-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-3);
+      border: 1px solid var(--border-soft);
+      background: transparent;
       cursor: pointer;
-      transition: var(--transition);
+      font-size: 0.8125rem;
+      transition: all var(--transition);
       font-family: inherit;
     }
-    .ruleset-list button:hover {
-      background: var(--primary-soft);
-      color: var(--text);
-    }
-    .ruleset-list button[aria-pressed="true"] {
-      background: var(--primary-soft);
-      border-color: var(--border-soft);
-      color: var(--primary);
-      font-weight: 600;
+
+    .rule-btn:hover:not(:disabled) { color: var(--text); background: var(--surface-2); border-color: var(--border); }
+    .rule-btn--delete:hover:not(:disabled) { color: var(--danger); border-color: var(--danger-soft); background: var(--danger-soft); }
+    .rule-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── Rule metrics 2×2 grid ───────────────────────────────── */
+    .rule-metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
     }
 
-    /* ── Form card ───────────────────────────────────────────────── */
-    .form-card {
+    .metric {
       background: var(--surface);
-      border: 1px solid var(--border-soft);
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow);
-      padding: 1.375rem 1.5rem;
-      transition: var(--transition);
+      border-radius: 9px;
+      padding: 10px 12px;
     }
-    .form-legend {
-      font-size: 1rem;
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: 1.25rem;
-      padding-bottom: 0.75rem;
-      border-bottom: 1px solid var(--border-soft);
-    }
-    fieldset { border: none; padding: 0; margin: 0; }
 
-    /* ── Fields ──────────────────────────────────────────────────── */
-    .field { margin-bottom: 1.125rem; }
-    .field label {
-      display: block;
+    .metric-value { font-size: 1.0625rem; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+    .metric-label { font-size: 0.625rem; color: var(--text-3); text-transform: uppercase; letter-spacing: .05em; margin-top: 3px; }
+
+    /* ── Empty / loading state ───────────────────────────────── */
+    .state-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 48px 1rem;
+      color: var(--text-3);
+      font-size: 0.8125rem;
+      text-align: center;
+    }
+    .state-box .pi { font-size: 2rem; }
+
+    /* ── Form 3-column grid ──────────────────────────────────── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+      padding: 18px 22px;
+    }
+
+    .form-field { display: flex; flex-direction: column; gap: 8px; }
+    .form-field--full { grid-column: 1 / -1; }
+
+    .form-field label {
       font-size: 0.6875rem;
       font-weight: 700;
+      letter-spacing: .06em;
       color: var(--text-2);
       text-transform: uppercase;
-      letter-spacing: 0.06em;
-      margin-bottom: 0.375rem;
     }
-    .field input[type="text"],
-    .field input[type="number"],
-    .field textarea {
-      width: 100%;
+
+    .form-field label .req { color: var(--danger); }
+
+    .form-input {
       height: 44px;
-      padding: 0 0.875rem;
+      padding: 0 14px;
       background: var(--bg);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
       color: var(--text);
-      font-size: 0.875rem;
+      font-size: 0.84375rem;
       font-family: inherit;
       outline: none;
+      width: 100%;
       box-sizing: border-box;
-      transition: var(--transition);
+      transition: border-color var(--transition), box-shadow var(--transition);
     }
-    .field input[type="number"] {
+
+    .form-input:focus {
+      border-color: var(--primary-hover);
+      box-shadow: 0 0 0 3px var(--primary-soft);
+    }
+
+    .form-input--num {
       width: 96px;
       text-align: center;
       font-weight: 700;
+      font-variant-numeric: tabular-nums;
     }
-    .field input:focus,
-    .field textarea:focus {
-      border-color: var(--primary-hover);
-      box-shadow: 0 0 0 3px var(--primary-soft);
-    }
-    .field textarea {
+
+    .form-input--textarea {
       height: auto;
       min-height: 80px;
-      padding: 0.75rem 0.875rem;
+      padding: 12px 14px;
       resize: vertical;
       line-height: 1.5;
     }
-    .field .hint {
-      font-size: 0.6875rem;
-      font-weight: 600;
-      color: var(--accent-ico);
-      margin-top: 0.25rem;
+
+    .field-hint  { font-size: 0.6875rem; font-weight: 600; color: var(--accent-ico); }
+    .field-error { font-size: 0.6875rem; color: var(--danger); }
+
+    /* ── Form footer ─────────────────────────────────────────── */
+    .form-foot {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 10px;
+      padding: 0 22px 20px;
     }
-    .field .error {
-      font-size: 0.75rem;
-      color: var(--danger);
-      margin-top: 0.25rem;
-      display: block;
-    }
-    .field-checkbox {
+
+    .btn-cancel {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      font-size: 0.875rem;
-      color: var(--text);
+      gap: 8px;
+      height: 44px;
+      padding: 0 18px;
+      border-radius: 11px;
+      border: 1px solid var(--border-soft);
+      background: transparent;
+      color: var(--text-2);
+      font-size: 0.8125rem;
+      font-weight: 600;
       cursor: pointer;
+      transition: all var(--transition);
+      font-family: inherit;
     }
 
-    /* ── Form actions ────────────────────────────────────────────── */
-    .form-actions {
+    .btn-cancel:hover { border-color: var(--border); color: var(--text); background: var(--surface-2); }
+
+    .btn-submit {
       display: flex;
-      gap: 0.75rem;
-      margin-top: 1.5rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border-soft);
+      align-items: center;
+      gap: 8px;
+      height: 44px;
+      padding: 0 18px;
+      border-radius: 11px;
+      border: none;
+      background: var(--primary);
+      color: #fff;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: var(--glow);
+      transition: background var(--transition);
+      font-family: inherit;
     }
 
-    /* ── Dark mode overrides ─────────────────────────────────────── */
-    :host-context([data-theme="dark"]) .ruleset-list,
-    :host-context([data-theme="dark"]) .form-card {
-      box-shadow: var(--shadow);
+    .btn-submit:hover:not(:disabled) { background: var(--primary-hover); }
+    .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+
+    /* ── Coming-soon placeholder ─────────────────────────────── */
+    .coming-soon {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 56px 1rem;
+      color: var(--text-3);
+      font-size: 0.8125rem;
+      text-align: center;
     }
-    :host-context([data-theme="dark"]) .field input[type="text"],
-    :host-context([data-theme="dark"]) .field input[type="number"],
-    :host-context([data-theme="dark"]) .field textarea {
-      background: var(--bg);
-      border-color: var(--border);
-      color: var(--text);
+    .coming-soon .pi { font-size: 2rem; }
+
+    /* ── Responsive ──────────────────────────────────────────── */
+    @media (max-width: 960px) {
+      .settings { grid-template-columns: 1fr; }
+      .subnav   { position: static; flex-direction: row; flex-wrap: wrap; }
     }
-    :host-context([data-theme="dark"]) .field input:focus,
-    :host-context([data-theme="dark"]) .field textarea:focus {
-      border-color: var(--primary-hover);
-      box-shadow: 0 0 0 3px var(--primary-soft);
-    }
-    :host-context([data-theme="dark"]) .ruleset-list button[aria-pressed="true"] {
-      background: var(--primary-soft);
-      border-color: var(--border-soft);
-      color: var(--primary);
+
+    @media (max-width: 700px) {
+      .rules-grid { grid-template-columns: 1fr; }
+      .form-grid  { grid-template-columns: 1fr 1fr; }
     }
   `],
   template: `
-    <section aria-labelledby="rulesets-title">
-      <div class="page-header">
-        <div class="page-title" id="rulesets-title">{{ 'ADMIN.RULESETS_TITLE' | translate }}</div>
-      </div>
+    <!-- ── Page header ───────────────────────────────────────── -->
+    <div class="page-header">
+      <div class="page-title">Configuración</div>
+      <div class="page-sub">Ajustes de la organización, reglas de jornada y fichaje</div>
+    </div>
 
-      @if (submitError()) {
-        <div role="alert" class="banner banner--error">
-          <i class="pi pi-exclamation-triangle"></i>
-          {{ submitError() }}
-        </div>
-      }
+    <!-- ── Settings layout ───────────────────────────────────── -->
+    <div class="settings">
 
-      @if (submitSuccess()) {
-        <div role="status" class="banner banner--success">
-          <i class="pi pi-check-circle"></i>
-          {{ 'ADMIN.TOAST_SAVED_SUMMARY' | translate }}
-        </div>
-      }
+      <!-- Sub-navigation -->
+      <nav class="subnav" aria-label="Secciones de configuración">
+        <button type="button" class="sub-item" [class.active]="activeSection() === 'reglas'" (click)="activeSection.set('reglas')">
+          <i class="pi pi-check-square sub-icon" aria-hidden="true"></i>
+          Reglas de jornada
+        </button>
+        <button type="button" class="sub-item" [class.active]="activeSection() === 'fichaje'" (click)="activeSection.set('fichaje')">
+          <i class="pi pi-clock sub-icon" aria-hidden="true"></i>
+          Fichaje
+        </button>
+        <button type="button" class="sub-item" [class.active]="activeSection() === 'notif'" (click)="activeSection.set('notif')">
+          <i class="pi pi-bell sub-icon" aria-hidden="true"></i>
+          Notificaciones
+        </button>
+        <button type="button" class="sub-item" [class.active]="activeSection() === 'org'" (click)="activeSection.set('org')">
+          <i class="pi pi-building sub-icon" aria-hidden="true"></i>
+          Organización
+        </button>
+        <button type="button" class="sub-item" [class.active]="activeSection() === 'seg'" (click)="activeSection.set('seg')">
+          <i class="pi pi-shield sub-icon" aria-hidden="true"></i>
+          Seguridad
+        </button>
+      </nav>
 
-      <!-- Existing rule sets list -->
-      @if (loading() && ruleSets().length === 0) {
-        <p role="status" aria-live="polite" style="color:var(--p-text-color-secondary); font-size:0.875rem;">
-          {{ 'COMMON.LOADING' | translate }}
-        </p>
-      }
+      <!-- Content panels -->
+      <div class="content-area">
 
-      @if (ruleSets().length > 0) {
-        <div class="ruleset-list" aria-label="Existing rule sets">
-          <h3>{{ 'ADMIN.RULESETS_TITLE' | translate }}</h3>
-          <ul>
-            @for (rs of ruleSets(); track rs.id) {
-              <li>
-                <button
-                  type="button"
-                  (click)="selectRuleSet(rs)"
-                  [attr.aria-pressed]="selectedId() === rs.id"
-                >
-                  {{ rs.name }}
-                  @if (rs.isDefault) {
-                    <span style="font-size:0.7rem; margin-left:0.5rem; opacity:0.6;">(default)</span>
-                  }
-                </button>
-              </li>
+        <!-- ── REGLAS DE JORNADA ─────────────────────────────── -->
+        @if (activeSection() === 'reglas') {
+
+          @if (submitError()) {
+            <div role="alert" class="banner banner--error">
+              <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+              {{ submitError() }}
+            </div>
+          }
+
+          @if (submitSuccess()) {
+            <div role="status" class="banner banner--success">
+              <i class="pi pi-check-circle" aria-hidden="true"></i>
+              {{ 'ADMIN.TOAST_SAVED_SUMMARY' | translate }}
+            </div>
+          }
+
+          <!-- Active rules -->
+          <div class="sec-card">
+            <div class="sec-head">
+              <h2>Reglas de jornada activas</h2>
+              <p>Límites legales y de convenio aplicados al cómputo de horas (Estatuto de los Trabajadores).</p>
+            </div>
+
+            @if (loading() && ruleSets().length === 0) {
+              <div class="state-box" role="status" aria-live="polite">
+                <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
+                <span>{{ 'COMMON.LOADING' | translate }}</span>
+              </div>
             }
-          </ul>
-        </div>
-      }
 
-      <!-- Create / Edit form -->
-      <div class="form-card">
-        <div class="form-legend">
-          {{ selectedId() ? ('ADMIN.EDIT_RULESET' | translate) : ('ADMIN.ADD_RULESET' | translate) }}
-        </div>
-        <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
-          <fieldset>
-            <div class="field">
-              <label for="name">{{ 'ADMIN.RULESET_NAME' | translate }} <span aria-hidden="true">*</span></label>
-              <input pInputText id="name" type="text" formControlName="name" aria-required="true" />
-              @if (f['name']?.invalid && f['name']?.touched) {
-                <span class="error" role="alert">{{ 'COMMON.REQUIRED' | translate }}</span>
-              }
+            @if (ruleSets().length > 0) {
+              <div class="rules-grid">
+                @for (rs of ruleSets(); track rs.id) {
+                  <div class="rule-card" [class.rule-card--selected]="selectedId() === rs.id">
+                    <div class="rule-top">
+                      <div class="rule-name">
+                        <span class="rule-dot"></span>
+                        {{ rs.name }}
+                      </div>
+                      <div class="rule-actions">
+                        <button
+                          type="button"
+                          class="rule-btn"
+                          (click)="selectRuleSet(rs)"
+                          [attr.aria-label]="'Editar ' + rs.name"
+                          [disabled]="deletingId() !== null"
+                        >
+                          <i class="pi pi-pencil" aria-hidden="true"></i>
+                        </button>
+                        <button
+                          type="button"
+                          class="rule-btn rule-btn--delete"
+                          (click)="deleteRuleSet(rs.id)"
+                          [attr.aria-label]="'Eliminar ' + rs.name"
+                          [disabled]="deletingId() !== null"
+                        >
+                          @if (deletingId() === rs.id) {
+                            <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
+                          } @else {
+                            <i class="pi pi-trash" aria-hidden="true"></i>
+                          }
+                        </button>
+                      </div>
+                    </div>
+                    <div class="rule-metrics">
+                      <div class="metric">
+                        <div class="metric-value">{{ rs.minRestHours }} h</div>
+                        <div class="metric-label">Descanso entre turnos</div>
+                      </div>
+                      <div class="metric">
+                        <div class="metric-value">{{ rs.maxDailyHours }} h</div>
+                        <div class="metric-label">Máx. diario</div>
+                      </div>
+                      <div class="metric">
+                        <div class="metric-value">{{ rs.maxAnnualOvertime }} h</div>
+                        <div class="metric-label">Máx. horas extra</div>
+                      </div>
+                      <div class="metric">
+                        <div class="metric-value">{{ rs.weeklyRestDays }} d</div>
+                        <div class="metric-label">Descanso semanal</div>
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+
+            @if (!loading() && ruleSets().length === 0) {
+              <div class="state-box">
+                <i class="pi pi-inbox" aria-hidden="true"></i>
+                <span>No hay reglas de jornada configuradas</span>
+              </div>
+            }
+          </div>
+
+          <!-- Add / Edit form -->
+          <div class="sec-card">
+            <div class="sec-head">
+              <h2>{{ selectedId() ? ('ADMIN.EDIT_RULESET' | translate) : ('ADMIN.ADD_RULESET' | translate) }}</h2>
+              <p>Define un nuevo perfil de jornada. Los campos muestran el mínimo/máximo legal de referencia.</p>
             </div>
 
-            <div class="field">
-              <label class="field-checkbox">
-                <input type="checkbox" formControlName="isDefault" />
-                {{ 'ADMIN.RULESET_NAME' | translate }}
-              </label>
-            </div>
+            <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+              <div class="form-grid">
 
-            <div class="field">
-              <label for="minRestHours">{{ 'ADMIN.RULESET_MIN_REST' | translate }}</label>
-              <input id="minRestHours" type="number" formControlName="minRestHours" min="0" step="0.5" aria-describedby="minRestHours-hint" />
-              <p id="minRestHours-hint" class="hint">Mínimo legal: 12h (Art. 34.3 ET)</p>
-            </div>
+                <!-- Nombre — full width, first -->
+                <div class="form-field form-field--full">
+                  <label for="rs-name">
+                    {{ 'ADMIN.RULESET_NAME' | translate }}
+                    <span class="req" aria-hidden="true"> *</span>
+                  </label>
+                  <input
+                    class="form-input"
+                    id="rs-name"
+                    type="text"
+                    formControlName="name"
+                    placeholder="p. ej. Convenio Atención Primaria"
+                    aria-required="true"
+                  />
+                  @if (f['name']?.invalid && f['name']?.touched) {
+                    <span class="field-error" role="alert">{{ 'COMMON.REQUIRED' | translate }}</span>
+                  }
+                </div>
 
-            <div class="field">
-              <label for="maxDailyHours">{{ 'ADMIN.RULESET_MAX_HOURS' | translate }}</label>
-              <input id="maxDailyHours" type="number" formControlName="maxDailyHours" min="0" step="0.5" aria-describedby="maxDailyHours-hint" />
-              <p id="maxDailyHours-hint" class="hint">Máximo legal: 9h (Art. 34.3 ET)</p>
-            </div>
+                <!-- 3-column numeric row -->
+                <div class="form-field">
+                  <label for="rs-minRest">Descanso mínimo entre turnos</label>
+                  <input
+                    class="form-input form-input--num"
+                    id="rs-minRest"
+                    type="number"
+                    formControlName="minRestHours"
+                    min="0"
+                    step="0.5"
+                    aria-describedby="rs-minRest-hint"
+                  />
+                  <span class="field-hint" id="rs-minRest-hint">Mínimo legal: 12 h (Art. 34.3 ET)</span>
+                </div>
 
-            <div class="field">
-              <label for="maxAnnualOvertime">{{ 'ADMIN.RULESET_MAX_WEEK' | translate }}</label>
-              <input id="maxAnnualOvertime" type="number" formControlName="maxAnnualOvertime" min="0" aria-describedby="maxAnnualOvertime-hint" />
-              <p id="maxAnnualOvertime-hint" class="hint">Máximo legal: 80h (Art. 35.2 ET)</p>
-            </div>
+                <div class="form-field">
+                  <label for="rs-maxDaily">Máx. horas diarias</label>
+                  <input
+                    class="form-input form-input--num"
+                    id="rs-maxDaily"
+                    type="number"
+                    formControlName="maxDailyHours"
+                    min="0"
+                    step="0.5"
+                    aria-describedby="rs-maxDaily-hint"
+                  />
+                  <span class="field-hint" id="rs-maxDaily-hint">Máximo legal: 9 h (Art. 34.3 ET)</span>
+                </div>
 
-            <div class="field">
-              <label for="weeklyRestDays">{{ 'ADMIN.RULESET_MIN_REST' | translate }}</label>
-              <input id="weeklyRestDays" type="number" formControlName="weeklyRestDays" min="0" step="0.5" aria-describedby="weeklyRestDays-hint" />
-              <p id="weeklyRestDays-hint" class="hint">Mínimo legal: 1,5 días (Art. 37.1 ET)</p>
-            </div>
+                <div class="form-field">
+                  <label for="rs-maxOT">Máx. horas extra anuales</label>
+                  <input
+                    class="form-input form-input--num"
+                    id="rs-maxOT"
+                    type="number"
+                    formControlName="maxAnnualOvertime"
+                    min="0"
+                    aria-describedby="rs-maxOT-hint"
+                  />
+                  <span class="field-hint" id="rs-maxOT-hint">Máximo legal: 80 h (Art. 35.2 ET)</span>
+                </div>
 
-            <div class="field">
-              <label for="params">{{ 'ADMIN.TITLE' | translate }}</label>
-              <textarea pTextarea id="params" formControlName="params" rows="4" placeholder='{"key": "value"}' aria-describedby="params-hint"></textarea>
-              <p id="params-hint" class="hint">Parámetros específicos del convenio en formato JSON.</p>
-              @if (f['params']?.errors?.['jsonInvalid']) {
-                <span class="error" role="alert">{{ 'COMMON.ERROR' | translate }}</span>
-              }
-            </div>
+                <!-- Descanso semanal — col 1 of new row -->
+                <div class="form-field">
+                  <label for="rs-weekly">Descanso semanal mínimo</label>
+                  <input
+                    class="form-input form-input--num"
+                    id="rs-weekly"
+                    type="number"
+                    formControlName="weeklyRestDays"
+                    min="0"
+                    step="0.5"
+                    aria-describedby="rs-weekly-hint"
+                  />
+                  <span class="field-hint" id="rs-weekly-hint">Mínimo legal: 1,5 días (Art. 37.1 ET)</span>
+                </div>
 
-            <div class="form-actions">
-              <p-button
-                type="submit"
-                [label]="selectedId() ? ('ADMIN.EDIT_RULESET' | translate) : ('ADMIN.ADD_RULESET' | translate)"
-                icon="pi pi-check"
-                [loading]="loading()"
-                [disabled]="form.invalid"
-              />
-              @if (selectedId()) {
-                <p-button
-                  type="button"
-                  [label]="'COMMON.CANCEL' | translate"
-                  severity="secondary"
-                  [text]="true"
-                  (onClick)="clearSelection()"
-                />
-              }
+                <!-- JSON params — full width, last -->
+                <div class="form-field form-field--full">
+                  <label for="rs-params">Parámetros del convenio (JSON)</label>
+                  <textarea
+                    class="form-input form-input--textarea"
+                    id="rs-params"
+                    formControlName="params"
+                    rows="4"
+                    placeholder='{"festivos_anuales": 14, "plus_nocturnidad": true, "computo": "anual"}'
+                    aria-describedby="rs-params-hint"
+                  ></textarea>
+                  <span class="field-hint" id="rs-params-hint" style="color: var(--text-3)">
+                    Parámetros específicos del convenio en formato JSON.
+                  </span>
+                  @if (f['params']?.errors?.['jsonInvalid']) {
+                    <span class="field-error" role="alert">{{ 'COMMON.ERROR' | translate }}</span>
+                  }
+                </div>
+
+              </div>
+
+              <div class="form-foot">
+                @if (selectedId()) {
+                  <button type="button" class="btn-cancel" (click)="clearSelection()">
+                    {{ 'COMMON.CANCEL' | translate }}
+                  </button>
+                }
+                <button type="submit" class="btn-submit" [disabled]="form.invalid || loading()">
+                  @if (loading()) {
+                    <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
+                  } @else {
+                    <i class="pi pi-check" aria-hidden="true"></i>
+                  }
+                  {{ selectedId() ? ('ADMIN.EDIT_RULESET' | translate) : ('ADMIN.ADD_RULESET' | translate) }}
+                </button>
+              </div>
+            </form>
+          </div>
+
+        }
+
+        <!-- ── OTHER SECTIONS (placeholder) ─────────────────── -->
+        @else {
+          <div class="sec-card">
+            <div class="coming-soon">
+              <i class="pi pi-wrench" aria-hidden="true"></i>
+              <span>Esta sección estará disponible próximamente</span>
             </div>
-          </fieldset>
-        </form>
+          </div>
+        }
+
       </div>
-    </section>
+    </div>
   `,
 })
 export class RulesetsComponent implements OnInit {
@@ -367,25 +639,25 @@ export class RulesetsComponent implements OnInit {
   private readonly fb        = inject(FormBuilder);
   private readonly translate = inject(TranslateService);
 
-  protected readonly ruleSets = signal<RuleSetDto[]>([]);
-  protected readonly loading = signal(false);
-  protected readonly submitError = signal<string | null>(null);
+  protected readonly ruleSets      = signal<RuleSetDto[]>([]);
+  protected readonly loading       = signal(false);
+  protected readonly submitError   = signal<string | null>(null);
   protected readonly submitSuccess = signal(false);
-  protected readonly selectedId = signal<string | null>(null);
+  protected readonly selectedId    = signal<string | null>(null);
+  protected readonly activeSection = signal<SettingsSection>('reglas');
+  protected readonly deletingId    = signal<string | null>(null);
 
   protected readonly form = this.fb.nonNullable.group({
-    name: ['', Validators.required],
-    isDefault: [false],
-    minRestHours: [12, [Validators.required, Validators.min(0)]],
-    maxDailyHours: [9, [Validators.required, Validators.min(0)]],
-    maxAnnualOvertime: [80, [Validators.required, Validators.min(0)]],
-    weeklyRestDays: [1.5, [Validators.required, Validators.min(0)]],
-    params: ['{}'],
+    name:              ['', Validators.required],
+    isDefault:         [false],
+    minRestHours:      [12,  [Validators.required, Validators.min(0)]],
+    maxDailyHours:     [9,   [Validators.required, Validators.min(0)]],
+    maxAnnualOvertime: [80,  [Validators.required, Validators.min(0)]],
+    weeklyRestDays:    [1.5, [Validators.required, Validators.min(0)]],
+    params:            ['{}'],
   });
 
-  get f() {
-    return this.form.controls;
-  }
+  get f() { return this.form.controls; }
 
   async ngOnInit(): Promise<void> {
     await this.loadRuleSets();
@@ -394,9 +666,7 @@ export class RulesetsComponent implements OnInit {
   private async loadRuleSets(): Promise<void> {
     this.loading.set(true);
     try {
-      const res = await firstValueFrom(
-        this.api.get<{ data: RuleSetDto[] }>('/rule-sets'),
-      );
+      const res = await firstValueFrom(this.api.get<{ data: RuleSetDto[] }>('/rule-sets'));
       this.ruleSets.set(res.data);
     } catch {
       this.submitError.set(this.translate.instant('ADMIN.TOAST_ERROR_DETAIL'));
@@ -410,27 +680,42 @@ export class RulesetsComponent implements OnInit {
     this.submitSuccess.set(false);
     this.submitError.set(null);
     this.form.setValue({
-      name: rs.name,
-      isDefault: rs.isDefault,
-      minRestHours: rs.minRestHours,
-      maxDailyHours: rs.maxDailyHours,
+      name:              rs.name,
+      isDefault:         rs.isDefault,
+      minRestHours:      rs.minRestHours,
+      maxDailyHours:     rs.maxDailyHours,
       maxAnnualOvertime: rs.maxAnnualOvertime,
-      weeklyRestDays: rs.weeklyRestDays,
-      params: JSON.stringify(rs.params, null, 2),
+      weeklyRestDays:    rs.weeklyRestDays,
+      params:            JSON.stringify(rs.params, null, 2),
     });
   }
 
   protected clearSelection(): void {
     this.selectedId.set(null);
     this.form.reset({
-      name: '',
-      isDefault: false,
-      minRestHours: 12,
-      maxDailyHours: 9,
+      name:              '',
+      isDefault:         false,
+      minRestHours:      12,
+      maxDailyHours:     9,
       maxAnnualOvertime: 80,
-      weeklyRestDays: 1.5,
-      params: '{}',
+      weeklyRestDays:    1.5,
+      params:            '{}',
     });
+  }
+
+  protected async deleteRuleSet(id: string): Promise<void> {
+    this.deletingId.set(id);
+    this.submitError.set(null);
+    try {
+      await firstValueFrom(this.api.delete<void>(`/rule-sets/${id}`));
+      await this.loadRuleSets();
+      if (this.selectedId() === id) this.clearSelection();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : this.translate.instant('ADMIN.TOAST_ERROR_DETAIL');
+      this.submitError.set(message);
+    } finally {
+      this.deletingId.set(null);
+    }
   }
 
   protected async onSubmit(): Promise<void> {
@@ -439,7 +724,6 @@ export class RulesetsComponent implements OnInit {
       return;
     }
 
-    // Validate JSON params field.
     const rawParams = this.form.getRawValue().params;
     let parsedParams: Record<string, unknown> = {};
     try {
