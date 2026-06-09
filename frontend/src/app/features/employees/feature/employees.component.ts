@@ -22,15 +22,24 @@ import { EmployeeFormComponent } from '../ui/employee-form.component';
 import { EmployeeDetailComponent } from '../ui/employee-detail.component';
 import type { EmployeeCategory } from '@tempora/shared';
 
+const CATEGORY_DISPLAY: Partial<Record<string, string>> = {
+  MEDICO:         'MÉDICO',
+  ENFERMERO:      'ENFERMERO/A',
+  TCAE:           'TCAE',
+  FISIOTERAPEUTA: 'FISIOTERAPEUTA',
+  CELADOR:        'CELADOR',
+  ADMINISTRATIVO: 'ADMINISTRATIVO',
+};
+
 const CATEGORY_FILTER_OPTIONS = [
-  { label: 'All Categories', value: null as EmployeeCategory | null },
-  ...EMPLOYEE_CATEGORY_VALUES.map(v => ({ label: v, value: v as EmployeeCategory | null })),
+  { label: 'Todas las categorías', value: null as EmployeeCategory | null },
+  ...EMPLOYEE_CATEGORY_VALUES.map(v => ({ label: CATEGORY_DISPLAY[v] ?? v, value: v as EmployeeCategory | null })),
 ];
 
 const STATUS_FILTER_OPTIONS = [
-  { label: 'All', value: 'ALL' as const },
-  { label: 'Active', value: 'ACTIVE' as const },
-  { label: 'Inactive', value: 'INACTIVE' as const },
+  { label: 'Todos los estados', value: 'ALL'      as const },
+  { label: 'Activo',            value: 'ACTIVE'   as const },
+  { label: 'Inactivo',          value: 'INACTIVE' as const },
 ];
 
 @Component({
@@ -210,27 +219,29 @@ const STATUS_FILTER_OPTIONS = [
     <div class="page-header">
       <div>
         <div class="page-title">{{ 'EMPLOYEES.TITLE' | translate }}</div>
-        <div class="page-sub">{{ 'EMPLOYEES.TITLE' | translate }}</div>
+        <div class="page-sub">Plantilla y categorías profesionales</div>
       </div>
     </div>
 
     <!-- ── Search + filter bar ────────────────────────────────── -->
     <div class="filter-bar">
-      <input
-        type="text"
-        [placeholder]="'EMPLOYEES.SEARCH_PLACEHOLDER' | translate"
-        [value]="store.search()"
-        (input)="store.setSearch($any($event.target).value)"
-        aria-label="Search employees by name"
-      />
+      <div class="search-wrap">
+        <i class="pi pi-search search-ico" aria-hidden="true"></i>
+        <input
+          type="text"
+          [placeholder]="'EMPLOYEES.SEARCH_PLACEHOLDER' | translate"
+          [value]="store.search()"
+          (input)="store.setSearch($any($event.target).value)"
+          aria-label="Buscar empleados"
+        />
+      </div>
       <p-select
         [options]="categoryFilterOptions"
         optionLabel="label"
         optionValue="value"
         [ngModel]="store.categoryFilter()"
         (ngModelChange)="store.setCategory($any($event))"
-        [placeholder]="'COMMON.ALL' | translate"
-        aria-label="Filter by category"
+        aria-label="Filtrar por categoría"
       />
       <p-select
         [options]="statusFilterOptions"
@@ -238,7 +249,14 @@ const STATUS_FILTER_OPTIONS = [
         optionValue="value"
         [ngModel]="store.statusFilter()"
         (ngModelChange)="store.setStatus($any($event))"
-        aria-label="Filter by status"
+        aria-label="Filtrar por estado"
+      />
+      <p-button
+        [style]="{ 'margin-left': 'auto' }"
+        [label]="'EMPLOYEES.ADD_EMPLOYEE' | translate"
+        icon="pi pi-plus"
+        (onClick)="onAddClick()"
+        [attr.aria-label]="'EMPLOYEES.ADD_EMPLOYEE' | translate"
       />
     </div>
 
@@ -255,7 +273,6 @@ const STATUS_FILTER_OPTIONS = [
           [loading]="store.loading()"
           (employeeSelect)="onSelectEmployee($event)"
           (edit)="onEditFromTable($event)"
-          (addClick)="onAddClick()"
         />
       </div>
     }
