@@ -59,167 +59,225 @@ const ABSENCE_FALLBACK: AbsenceCfg = { label: 'AUS', bg: AMBER_BG, text: AMBER_T
   styles: [`
     :host { display: block; }
 
+    /* ── Scroll wrapper ──────────────────────────────────────── */
     .grid-scroll {
       overflow-x: auto;
-      border-radius: 10px;
-      border: 1px solid var(--p-surface-border);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-soft);
+      box-shadow: var(--shadow);
+      background: var(--surface);
     }
 
+    .grid-scroll::-webkit-scrollbar { height: 8px; }
+    .grid-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 8px; }
+    .grid-scroll::-webkit-scrollbar-track { background: transparent; }
+
+    /* ── Table ───────────────────────────────────────────────── */
     table {
-      border-collapse: collapse;
-      /* Use auto layout so column widths come from cell content/CSS, not the
-         first-row heuristic. min-content keeps each day column at exactly its
-         CSS width and lets the scroll container handle overflow. */
+      border-collapse: separate;
+      border-spacing: 0;
       width: max-content;
       min-width: 100%;
     }
 
-    /* ── Header row ─────────────────────────────────────────────── */
-    thead tr { background: var(--p-surface-section); }
+    /* ── Header row ──────────────────────────────────────────── */
+    thead tr { background: var(--surface-2); }
 
     th {
-      font-size: 0.6875rem;
+      font-size: 0.625rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--p-text-color-muted, var(--p-text-color-secondary));
-      border-bottom: 1px solid var(--p-surface-border);
+      letter-spacing: 0.06em;
+      color: var(--text-3);
+      border-bottom: 1px solid var(--border-soft);
       white-space: nowrap;
       padding: 0;
     }
 
     .th-employee {
-      width: 140px;
-      min-width: 140px;
-      padding: 0.5rem 0.75rem;
+      width: 200px;
+      min-width: 200px;
+      padding: 0.75rem 1.125rem;
       text-align: left;
       position: sticky;
       left: 0;
       z-index: 3;
-      background: var(--p-surface-section);
-      border-right: 1px solid var(--p-surface-border);
+      background: var(--surface-2);
+      border-right: 1px solid var(--border);
     }
 
     .th-day {
-      width: 38px;
-      min-width: 38px;
+      width: 44px;
+      min-width: 44px;
       text-align: center;
-      padding: 0.375rem 0;
-      border-right: 1px solid color-mix(in srgb, var(--p-surface-border) 60%, transparent);
+      padding: 0.5rem 0;
+      border-right: 1px solid var(--border-soft);
     }
 
     .th-day.is-weekend {
-      background: color-mix(in srgb, var(--p-surface-border) 30%, transparent);
+      background: rgba(0, 0, 0, 0.04);
     }
 
     .th-day.is-today {
-      color: var(--p-primary-color);
-      background: color-mix(in srgb, var(--p-primary-color) 10%, transparent);
+      background: var(--primary-soft);
+      color: var(--primary);
     }
 
-    .day-num { display: block; font-size: 0.875rem; font-weight: 700; line-height: 1.1; }
-    .day-label { display: block; font-size: 0.6rem; opacity: 0.7; margin-top: 1px; }
+    .day-num   { display: block; font-size: 0.875rem; font-weight: 700; line-height: 1.1; color: var(--text); }
+    .day-label { display: block; font-size: 0.5625rem; font-weight: 700; letter-spacing: 0.04em; opacity: 0.6; margin-top: 2px; }
 
-    /* ── Body rows ──────────────────────────────────────────────── */
-    tbody tr:nth-child(even) { background: color-mix(in srgb, var(--p-surface-ground) 50%, var(--p-surface-card)); }
-    tbody tr:nth-child(odd)  { background: var(--p-surface-card); }
-    tbody tr:hover td        { background: color-mix(in srgb, var(--p-primary-color) 5%, transparent); }
+    .th-day.is-today .day-num,
+    .th-day.is-today .day-label { color: var(--primary); opacity: 1; }
+
+    /* ── Body rows ───────────────────────────────────────────── */
+    tbody tr:nth-child(even) { background: var(--surface-2); }
+    tbody tr:nth-child(odd)  { background: var(--surface); }
+
+    tbody tr:hover td {
+      background: var(--primary-soft);
+      transition: background var(--transition);
+    }
+
+    /* Preserve sticky-column contrast on hover */
+    tbody tr:hover .td-employee { background: var(--primary-soft); }
 
     td {
-      border-bottom: 1px solid color-mix(in srgb, var(--p-surface-border) 50%, transparent);
+      border-bottom: 1px solid var(--border-soft);
       padding: 0;
-      height: 38px;
+      height: 44px;
     }
 
+    /* ── Employee sticky column ──────────────────────────────── */
     .td-employee {
       position: sticky;
       left: 0;
       z-index: 2;
-      /* Explicit backgrounds so the sticky column hides scrolled content.
-         Odd rows default to surface-card; even rows get a slightly different shade.
-         These must match the tr backgrounds exactly. */
-      background: var(--p-surface-card);
-      padding: 0 0.75rem;
-      border-right: 1px solid var(--p-surface-border);
+      background: var(--surface);
+      padding: 0 1.125rem;
+      border-right: 1px solid var(--border);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      min-width: 200px;
+      width: 200px;
     }
+
+    tbody tr:nth-child(even) .td-employee { background: var(--surface-2); }
 
     .emp-name {
       font-size: 0.8125rem;
       font-weight: 600;
-      color: var(--p-text-color);
+      color: var(--text);
       display: block;
+      line-height: 1.2;
     }
 
     .emp-cat {
-      font-size: 0.65rem;
-      color: var(--p-text-color-muted, var(--p-text-color-secondary));
+      font-size: 0.625rem;
+      color: var(--text-2);
       text-transform: capitalize;
+      margin-top: 1px;
     }
 
+    /* ── Day cells ───────────────────────────────────────────── */
     .td-day {
-      width: 38px;
-      min-width: 38px;
+      width: 44px;
+      min-width: 44px;
       text-align: center;
       vertical-align: middle;
-      border-right: 1px solid color-mix(in srgb, var(--p-surface-border) 40%, transparent);
+      border-right: 1px solid var(--border-soft);
       cursor: default;
-      padding: 3px;
+      padding: 4px;
     }
 
+    .td-day.is-weekend { background: rgba(0, 0, 0, 0.04); }
+    .td-day.is-today   { background: var(--primary-soft); }
+
     .td-day.editable { cursor: pointer; }
-    .td-day.editable:hover .cell-empty { background: color-mix(in srgb, var(--p-primary-color) 12%, transparent); border-color: var(--p-primary-color); border-radius: 4px; }
 
-    .td-day.is-weekend { background: color-mix(in srgb, var(--p-surface-border) 20%, transparent); }
-    .td-day.is-today   { background: color-mix(in srgb, var(--p-primary-color) 6%, transparent); }
+    .td-day.editable:hover .cell-empty {
+      background: var(--primary-soft);
+      border-color: var(--primary);
+      border-radius: var(--radius-sm);
+      color: var(--text-3);
+    }
 
-    /* ── Shift cell ─────────────────────────────────────────────── */
+    /* ── Shift chip ──────────────────────────────────────────── */
     .shift-chip {
       display: flex;
       align-items: center;
       justify-content: center;
       width: 100%;
-      height: 30px;
-      border-radius: 5px;
+      height: 32px;
+      border-radius: 6px;
       font-size: 0.65rem;
       font-weight: 800;
       letter-spacing: 0.04em;
       border: 1px solid transparent;
-      transition: filter 0.15s, transform 0.1s;
+      transition: filter 0.13s, transform 0.1s;
       cursor: inherit;
     }
 
     .td-day.editable .shift-chip:hover {
       filter: brightness(1.15);
-      transform: scale(1.05);
+      transform: translateY(-1px);
     }
 
+    /* ── Empty cell placeholder ──────────────────────────────── */
     .cell-empty {
       display: flex;
       align-items: center;
       justify-content: center;
       width: 100%;
-      height: 30px;
+      height: 32px;
       border: 1px dashed transparent;
-      border-radius: 5px;
+      border-radius: 6px;
       color: transparent;
-      transition: all 0.15s;
+      font-size: 1rem;
+      font-weight: 400;
+      transition: all 0.13s;
     }
 
+    /* ── Absence chip ────────────────────────────────────────── */
     .absence-chip {
       display: flex;
       align-items: center;
       justify-content: center;
       width: 100%;
-      height: 30px;
-      border-radius: 5px;
-      font-size: 0.6rem;
+      height: 32px;
+      border-radius: 6px;
+      font-size: 0.5625rem;
       font-weight: 800;
       letter-spacing: 0.04em;
       border: 1px solid transparent;
       cursor: default;
+    }
+
+    /* ── Dark mode overrides ─────────────────────────────────── */
+    :host-context([data-theme="dark"]) .grid-scroll {
+      border-color: var(--border-soft);
+    }
+
+    :host-context([data-theme="dark"]) thead tr,
+    :host-context([data-theme="dark"]) .th-employee {
+      background: var(--surface-2);
+    }
+
+    :host-context([data-theme="dark"]) .th-day.is-weekend {
+      background: rgba(0, 0, 0, 0.18);
+    }
+
+    :host-context([data-theme="dark"]) .th-day.is-today {
+      background: var(--primary-soft);
+      color: var(--primary);
+    }
+
+    :host-context([data-theme="dark"]) tbody tr:nth-child(even) .td-employee {
+      background: var(--surface-2);
+    }
+
+    :host-context([data-theme="dark"]) .td-day.is-weekend {
+      background: rgba(0, 0, 0, 0.14);
     }
   `],
   template: `

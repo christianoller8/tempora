@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tempora — Configuración</title>
+<style>
+  :root{
+    --bg:#150F26;--surface:#1E1640;--surface-2:#241A4D;--border:#3F336A;--border-soft:rgba(63,51,106,.55);
+    --text:#FFFFFF;--text-2:rgba(255,255,255,.6);--text-3:rgba(255,255,255,.36);
+    --primary:#401BBB;--primary-hover:#5229D4;--primary-soft:rgba(64,27,187,.18);
+    --ok:#3FD79A;--ok-soft:rgba(63,215,154,.14);--warn:#F5B044;--warn-soft:rgba(245,176,68,.14);
+    --danger:#FF647C;--danger-soft:rgba(255,100,124,.14);
+    --r:12px;--r-lg:16px;--shadow:0 12px 40px -12px rgba(8,4,24,.7);--glow:0 8px 28px -8px rgba(64,27,187,.55);
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --mono:"SF Mono",ui-monospace,"Roboto Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiased}
+  body{line-height:1.45}
+  ::selection{background:rgba(82,41,212,.4)}
+  svg{display:block}
+  .ico{width:20px;height:20px;stroke:currentColor;stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round;flex:none}
+  .ico-sm{width:16px;height:16px}
+
+  .app{display:grid;grid-template-columns:256px 1fr;min-height:100vh}
+  .sidebar{background:var(--bg);border-right:1px solid var(--border-soft);display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+  .brand{display:flex;align-items:center;gap:12px;padding:22px 22px 20px}
+  .brand-mark{width:38px;height:38px;border-radius:11px;background:linear-gradient(150deg,var(--primary-hover),var(--primary));display:grid;place-items:center;box-shadow:var(--glow)}
+  .brand-mark svg{width:20px;height:20px;fill:#fff}
+  .brand-name{font-size:16px;font-weight:700}
+  .brand-sub{font-size:9.5px;font-weight:700;letter-spacing:2.4px;color:var(--text-3);margin-top:1px}
+  .nav{flex:1;padding:8px 14px;display:flex;flex-direction:column;gap:2px;overflow-y:auto}
+  .nav-item{display:flex;align-items:center;gap:13px;padding:10px 12px;border-radius:10px;color:var(--text-2);font-size:13.5px;font-weight:500;cursor:pointer;position:relative;transition:.16s}
+  .nav-item:hover{background:rgba(255,255,255,.04);color:var(--text)}
+  .nav-item.active{background:var(--primary-soft);color:#fff}
+  .nav-item.active::before{content:"";position:absolute;left:-14px;top:9px;bottom:9px;width:3px;border-radius:0 3px 3px 0;background:var(--primary-hover)}
+  .nav-item.active .ico{color:#a78bff}
+  .nav-item .ico{color:var(--text-3)}
+  .nav-item:hover .ico{color:var(--text-2)}
+  .nav-tag{margin-left:auto;font-size:8.5px;font-weight:700;letter-spacing:.6px;color:var(--text-3);border:1px solid var(--border);padding:2px 6px;border-radius:20px}
+  .sidebar-foot{padding:14px;border-top:1px solid var(--border-soft)}
+  .main{display:flex;flex-direction:column;min-width:0}
+  .topbar{height:64px;background:var(--surface);border-bottom:1px solid var(--border-soft);display:flex;align-items:center;justify-content:space-between;padding:0 26px;position:sticky;top:0;z-index:30}
+  .workspace{display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:600;color:var(--text-2)}
+  .workspace .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px var(--ok-soft)}
+  .top-actions{display:flex;align-items:center;gap:8px}
+  .icon-btn{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;color:var(--text-2);cursor:pointer;border:1px solid transparent;transition:.16s;position:relative}
+  .icon-btn:hover{background:rgba(255,255,255,.04);color:#fff;border-color:var(--border-soft)}
+  .lang{font-size:12px;font-weight:700;padding:0 12px;height:38px;display:flex;align-items:center;gap:6px}
+  .notif-dot{position:absolute;top:8px;right:9px;width:7px;height:7px;border-radius:50%;background:var(--danger);border:2px solid var(--surface)}
+  .user{display:flex;align-items:center;gap:11px;padding-left:12px;margin-left:6px;border-left:1px solid var(--border-soft);cursor:pointer}
+  .user-meta{text-align:right;line-height:1.25}
+  .user-email{font-size:12.5px;font-weight:600}
+  .user-role{font-size:9px;font-weight:700;letter-spacing:1px;color:#a78bff;background:var(--primary-soft);padding:1px 7px;border-radius:5px;display:inline-block;margin-top:2px}
+  .avatar{width:38px;height:38px;border-radius:11px;background:linear-gradient(150deg,var(--primary-hover),var(--primary));display:grid;place-items:center;font-size:12.5px;font-weight:700}
+
+  .content{padding:28px 30px 48px;width:100%;max-width:1320px;margin:0 auto}
+  .page-head{margin-bottom:24px}
+  .page-title{font-size:25px;font-weight:700;letter-spacing:-.3px}
+  .page-sub{font-size:13px;color:var(--text-2);margin-top:4px}
+  .card{background:var(--surface);border:1px solid var(--border-soft);border-radius:var(--r-lg);box-shadow:var(--shadow)}
+
+  /* settings layout */
+  .settings{display:grid;grid-template-columns:240px 1fr;gap:24px;align-items:start}
+  @media(max-width:920px){.settings{grid-template-columns:1fr}}
+  .subnav{display:flex;flex-direction:column;gap:3px;position:sticky;top:84px}
+  .sub-item{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:11px;color:var(--text-2);font-size:13.5px;font-weight:500;cursor:pointer;transition:.14s}
+  .sub-item:hover{background:rgba(255,255,255,.04);color:#fff}
+  .sub-item.active{background:var(--surface);color:#fff;border:1px solid var(--border-soft)}
+  .sub-item.active .ico{color:#a78bff}
+  .sub-item .ico{color:var(--text-3)}
+
+  .panel{display:none}
+  .panel.active{display:block}
+  .sec{margin-bottom:18px}
+  .sec-head{padding:20px 22px;border-bottom:1px solid var(--border-soft)}
+  .sec-head h2{font-size:16px;font-weight:700}
+  .sec-head p{font-size:12.5px;color:var(--text-2);margin-top:3px}
+  .sec-body{padding:6px 22px 18px}
+
+  /* form rows */
+  .row{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:16px 0;border-bottom:1px solid var(--border-soft)}
+  .row:last-child{border-bottom:none}
+  .row-info{flex:1;min-width:0}
+  .row-label{font-size:13.5px;font-weight:600}
+  .row-desc{font-size:12px;color:var(--text-2);margin-top:3px}
+  .row-desc .legal{color:#b9a4ff;font-weight:600}
+  .row-ctrl{flex:none;display:flex;align-items:center;gap:10px}
+  .input{height:44px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:#fff;font-size:13.5px;font-family:inherit;padding:0 14px;outline:none;transition:.16s}
+  .input:focus{border-color:var(--primary-hover);box-shadow:0 0 0 3px rgba(64,27,187,.3)}
+  .input.num{width:96px;text-align:center;font-family:var(--mono);font-weight:700}
+  .input.wide{width:280px;max-width:46vw}
+  .unit{font-size:12px;color:var(--text-3);font-weight:600}
+  .select{position:relative;display:flex;align-items:center}
+  .select select{appearance:none;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:#fff;font-family:inherit;font-size:13.5px;font-weight:600;height:44px;padding:0 38px 0 14px;cursor:pointer;outline:none;min-width:180px}
+  .select select:focus{border-color:var(--primary-hover);box-shadow:0 0 0 3px rgba(64,27,187,.3)}
+  .select svg{position:absolute;right:12px;pointer-events:none;color:var(--text-3)}
+
+  /* toggle */
+  .switch{width:46px;height:26px;border-radius:20px;background:var(--bg);border:1px solid var(--border);position:relative;cursor:pointer;transition:.18s;flex:none}
+  .switch::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:var(--text-2);transition:.18s}
+  .switch.on{background:var(--primary);border-color:var(--primary)}
+  .switch.on::after{left:22px;background:#fff}
+
+  /* rules list */
+  .rules{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:18px 22px}
+  @media(max-width:1100px){.rules{grid-template-columns:1fr}}
+  .rule{border:1px solid var(--border-soft);border-radius:13px;padding:16px;background:var(--bg)}
+  .rule-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .rule-name{font-size:14px;font-weight:700;display:flex;align-items:center;gap:9px}
+  .rule-dot{width:9px;height:9px;border-radius:50%;background:var(--ok)}
+  .rule-acts{display:flex;gap:6px}
+  .ra{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;color:var(--text-3);border:1px solid var(--border-soft);cursor:pointer;transition:.16s}
+  .ra:hover{color:#fff;background:var(--surface-2)}
+  .ra.del:hover{color:var(--danger);border-color:rgba(255,100,124,.4);background:var(--danger-soft)}
+  .rule-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .rg{background:var(--surface);border-radius:9px;padding:10px 12px}
+  .rg .v{font-size:17px;font-weight:700;font-family:var(--mono)}
+  .rg .l{font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-top:3px}
+  .rule-tag{font-size:10px;font-weight:700;color:#b9a4ff;background:var(--primary-soft);padding:3px 9px;border-radius:20px}
+
+  /* add-rule form card */
+  .form-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;padding:18px 22px}
+  @media(max-width:900px){.form-grid{grid-template-columns:1fr 1fr}}
+  .field{display:flex;flex-direction:column;gap:8px}
+  .field.full{grid-column:1/-1}
+  .field label{font-size:11px;font-weight:700;letter-spacing:.6px;color:var(--text-2);text-transform:uppercase}
+  .field label b{color:var(--danger)}
+  .field .input{width:100%}
+  .field .hint{font-size:11px;color:#b9a4ff;font-weight:600}
+  textarea.input{height:80px;padding:12px 14px;resize:vertical;font-family:var(--mono);font-size:12.5px;line-height:1.5}
+  .form-foot{display:flex;justify-content:flex-end;gap:10px;padding:0 22px 20px}
+
+  .btn{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;height:44px;padding:0 18px;border-radius:11px;cursor:pointer;transition:.16s;border:1px solid var(--border-soft);background:transparent;color:var(--text-2);font-family:inherit}
+  .btn:hover{border-color:var(--border);color:#fff;background:var(--surface-2)}
+  .btn.primary{background:var(--primary);border-color:transparent;color:#fff;box-shadow:var(--glow)}
+  .btn.primary:hover{background:var(--primary-hover)}
+  .save-bar{display:flex;align-items:center;justify-content:space-between;padding:16px 22px;border-top:1px solid var(--border-soft)}
+  .save-bar .note{font-size:12px;color:var(--text-3);display:flex;align-items:center;gap:8px}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.9-7.5-10.2A4.2 4.2 0 0 1 12 7.7a4.2 4.2 0 0 1 7.5 3.1C19.5 16.1 12 21 12 21z"/></svg></div>
+      <div><div class="brand-name">Tempora</div><div class="brand-sub">HEALTHCARE</div></div>
+    </div>
+    <nav class="nav">
+      <a class="nav-item" href="Tempora — Dashboard.html"><svg class="ico" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.3V20h5v-6h4v6h5V9.3"/></svg>Panel de control</a>
+      <a class="nav-item" href="Tempora — Turnos.html"><svg class="ico" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg>Turnos</a>
+      <a class="nav-item" href="Tempora — Control Horario.html"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg>Control horario</a>
+      <a class="nav-item" href="Tempora — Ausencias.html"><svg class="ico" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9h18M8 2.5v4M16 2.5v4M10 14l4 4M14 14l-4 4"/></svg>Ausencias</a>
+      <a class="nav-item" href="Tempora — Mi Ficha Horaria.html"><svg class="ico" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><circle cx="8.5" cy="12" r="2.2"/><path d="M13 10h5M13 14h5"/></svg>Mi ficha horaria</a>
+      <a class="nav-item" href="Tempora — Estado Fichas.html"><svg class="ico" viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>Estado fichas</a>
+      <a class="nav-item" href="Tempora — Empleados.html"><svg class="ico" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19.5c.7-3 3-4.7 5.5-4.7s4.8 1.7 5.5 4.7"/><path d="M16 5.5a3 3 0 0 1 0 5.6M18.5 19.5c-.3-1.4-1-2.6-2-3.5"/></svg>Empleados</a>
+      <div class="nav-item"><svg class="ico" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>Documentos<span class="nav-tag">PRÓXIMAMENTE</span></div>
+      <a class="nav-item" href="Tempora — Informes.html"><svg class="ico" viewBox="0 0 24 24"><path d="M4 20V4M4 20h16"/><rect x="8" y="11" width="3" height="6"/><rect x="14" y="7" width="3" height="10"/></svg>Informes</a>
+      <div class="nav-item active"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>Configuración</div>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="nav-item"><svg class="ico" viewBox="0 0 24 24"><path d="M15 4h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-2"/><path d="M10 17l-5-5 5-5M5 12h11"/></svg>Cerrar sesión</div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="workspace"><span class="dot"></span> Tempora Demo</div>
+      <div class="top-actions">
+        <div class="icon-btn"><svg class="ico" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span class="notif-dot"></span></div>
+        <div class="icon-btn lang"><svg class="ico ico-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 2.5 15 0 18M12 3c-2.5 2.5-2.5 15 0 18"/></svg> EN</div>
+        <div class="icon-btn"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12h2.5M19 12h2.5M5 5l1.8 1.8M17.2 17.2 19 19M19 5l-1.8 1.8M6.8 17.2 5 19"/></svg></div>
+        <div class="user"><div class="user-meta"><div class="user-email">admin@tempora.com</div><span class="user-role">ADMIN</span></div><div class="avatar">AD</div></div>
+      </div>
+    </header>
+
+    <div class="content">
+      <div class="page-head">
+        <h1 class="page-title">Configuración</h1>
+        <div class="page-sub">Ajustes de la organización, reglas de jornada y fichaje</div>
+      </div>
+
+      <div class="settings">
+        <!-- subnav -->
+        <div class="subnav" id="subnav">
+          <div class="sub-item active" data-p="reglas"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Reglas de jornada</div>
+          <div class="sub-item" data-p="fichaje"><svg class="ico ico-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg>Fichaje</div>
+          <div class="sub-item" data-p="notif"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>Notificaciones</div>
+          <div class="sub-item" data-p="general"><svg class="ico ico-sm" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9h18"/></svg>Organización</div>
+          <div class="sub-item" data-p="seg"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M12 3l8 3v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/></svg>Seguridad</div>
+        </div>
+
+        <!-- panels -->
+        <div>
+          <!-- REGLAS -->
+          <div class="panel active" data-panel="reglas">
+            <div class="card sec">
+              <div class="sec-head">
+                <h2>Reglas de jornada activas</h2>
+                <p>Límites legales y de convenio aplicados al cómputo de horas (Estatuto de los Trabajadores).</p>
+              </div>
+              <div class="rules">
+                <div class="rule">
+                  <div class="rule-top">
+                    <div class="rule-name"><span class="rule-dot"></span>Convenio Sanidad General</div>
+                    <div class="rule-acts">
+                      <div class="ra"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M11 4H4v16h16v-7M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4z"/></svg></div>
+                      <div class="ra del"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M4 7h16M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M6 7l1 13h10l1-13"/></svg></div>
+                    </div>
+                  </div>
+                  <div class="rule-grid">
+                    <div class="rg"><div class="v">12 h</div><div class="l">Descanso entre turnos</div></div>
+                    <div class="rg"><div class="v">9 h</div><div class="l">Máx. diario</div></div>
+                    <div class="rg"><div class="v">40 h</div><div class="l">Máx. semanal</div></div>
+                    <div class="rg"><div class="v">1,5 d</div><div class="l">Descanso semanal</div></div>
+                  </div>
+                </div>
+                <div class="rule">
+                  <div class="rule-top">
+                    <div class="rule-name"><span class="rule-dot"></span>Personal de noche</div>
+                    <div class="rule-acts">
+                      <div class="ra"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M11 4H4v16h16v-7M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4z"/></svg></div>
+                      <div class="ra del"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M4 7h16M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M6 7l1 13h10l1-13"/></svg></div>
+                    </div>
+                  </div>
+                  <div class="rule-grid">
+                    <div class="rg"><div class="v">12 h</div><div class="l">Descanso entre turnos</div></div>
+                    <div class="rg"><div class="v">8 h</div><div class="l">Máx. diario nocturno</div></div>
+                    <div class="rg"><div class="v">38 h</div><div class="l">Máx. semanal</div></div>
+                    <div class="rg"><div class="v">2 d</div><div class="l">Descanso semanal</div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card sec">
+              <div class="sec-head">
+                <h2>Añadir regla</h2>
+                <p>Define un nuevo perfil de jornada. Los campos muestran el mínimo/máximo legal de referencia.</p>
+              </div>
+              <div class="form-grid">
+                <div class="field full">
+                  <label>Nombre de la regla <b>*</b></label>
+                  <input class="input" placeholder="p. ej. Convenio Atención Primaria" />
+                </div>
+                <div class="field">
+                  <label>Descanso mínimo entre turnos</label>
+                  <input class="input num" value="12" /><span class="hint">Mínimo legal: 12 h (Art. 34.3 ET)</span>
+                </div>
+                <div class="field">
+                  <label>Máximo horas diarias</label>
+                  <input class="input num" value="9" /><span class="hint">Máximo legal: 9 h (Art. 34.3 ET)</span>
+                </div>
+                <div class="field">
+                  <label>Máximo horas semanales</label>
+                  <input class="input num" value="40" /><span class="hint">Promedio: 40 h (Art. 34.1 ET)</span>
+                </div>
+                <div class="field">
+                  <label>Descanso semanal mínimo</label>
+                  <input class="input num" value="1,5" /><span class="hint">Mínimo legal: 1,5 días (Art. 37.1 ET)</span>
+                </div>
+                <div class="field full">
+                  <label>Parámetros del convenio (JSON)</label>
+                  <textarea class="input">{
+  "festivos_anuales": 14,
+  "plus_nocturnidad": true,
+  "computo": "anual"
+}</textarea>
+                  <span class="hint" style="color:var(--text-3)">Parámetros específicos del convenio en formato JSON.</span>
+                </div>
+              </div>
+              <div class="form-foot">
+                <button class="btn">Cancelar</button>
+                <button class="btn primary"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Añadir regla</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- FICHAJE -->
+          <div class="panel" data-panel="fichaje">
+            <div class="card sec">
+              <div class="sec-head"><h2>Reglas de fichaje</h2><p>Cómo y desde dónde puede fichar el personal.</p></div>
+              <div class="sec-body">
+                <div class="row">
+                  <div class="row-info"><div class="row-label">Geolocalización al fichar</div><div class="row-desc">Solicita la ubicación del dispositivo en cada fichaje.</div></div>
+                  <div class="row-ctrl"><div class="switch on" data-t></div></div>
+                </div>
+                <div class="row">
+                  <div class="row-info"><div class="row-label">Restringir a centros autorizados</div><div class="row-desc">Solo permite fichar dentro del radio de las sedes registradas.</div></div>
+                  <div class="row-ctrl"><div class="switch on" data-t></div></div>
+                </div>
+                <div class="row">
+                  <div class="row-info"><div class="row-label">Pausa de comida automática</div><div class="row-desc">Descuenta el tiempo de pausa configurado en jornadas largas.</div></div>
+                  <div class="row-ctrl"><input class="input num" value="30" /><span class="unit">min</span></div>
+                </div>
+                <div class="row">
+                  <div class="row-info"><div class="row-label">Tolerancia de entrada</div><div class="row-desc">Margen sin marcar incidencia respecto al turno previsto.</div></div>
+                  <div class="row-ctrl"><input class="input num" value="10" /><span class="unit">min</span></div>
+                </div>
+                <div class="row">
+                  <div class="row-info"><div class="row-label">Cierre automático de fichajes abiertos</div><div class="row-desc">Cierra fichas sin salida pasada la medianoche y genera incidencia.</div></div>
+                  <div class="row-ctrl"><div class="switch" data-t></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- NOTIF -->
+          <div class="panel" data-panel="notif">
+            <div class="card sec">
+              <div class="sec-head"><h2>Notificaciones</h2><p>Avisos por correo y dentro de la aplicación.</p></div>
+              <div class="sec-body">
+                <div class="row"><div class="row-info"><div class="row-label">Fichaje sin cerrar</div><div class="row-desc">Avisar al responsable cuando una ficha queda abierta.</div></div><div class="row-ctrl"><div class="switch on" data-t></div></div></div>
+                <div class="row"><div class="row-info"><div class="row-label">Solicitudes de ausencia</div><div class="row-desc">Notificar nuevas solicitudes pendientes de aprobación.</div></div><div class="row-ctrl"><div class="switch on" data-t></div></div></div>
+                <div class="row"><div class="row-info"><div class="row-label">Cambios de turno</div><div class="row-desc">Avisar de solicitudes de intercambio entre empleados.</div></div><div class="row-ctrl"><div class="switch on" data-t></div></div></div>
+                <div class="row"><div class="row-info"><div class="row-label">Exceso de jornada</div><div class="row-desc">Alertar cuando se superen los límites de la regla aplicada.</div></div><div class="row-ctrl"><div class="switch on" data-t></div></div></div>
+                <div class="row"><div class="row-info"><div class="row-label">Resumen semanal por correo</div><div class="row-desc">Enviar cada lunes el resumen de horas e incidencias.</div></div><div class="row-ctrl"><div class="switch" data-t></div></div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- GENERAL -->
+          <div class="panel" data-panel="general">
+            <div class="card sec">
+              <div class="sec-head"><h2>Organización</h2><p>Datos generales del espacio de trabajo.</p></div>
+              <div class="sec-body">
+                <div class="row"><div class="row-info"><div class="row-label">Nombre de la organización</div></div><div class="row-ctrl"><input class="input wide" value="Tempora Demo" /></div></div>
+                <div class="row"><div class="row-info"><div class="row-label">Zona horaria</div></div><div class="row-ctrl"><div class="select"><select><option>Europa/Madrid (GMT+2)</option><option>Atlántico/Canarias (GMT+1)</option></select><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></div></div></div>
+                <div class="row"><div class="row-info"><div class="row-label">Idioma por defecto</div></div><div class="row-ctrl"><div class="select"><select><option>Español</option><option>English</option><option>Català</option></select><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></div></div></div>
+                <div class="row"><div class="row-info"><div class="row-label">Inicio de la semana</div></div><div class="row-ctrl"><div class="select"><select><option>Lunes</option><option>Domingo</option></select><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></div></div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SEGURIDAD -->
+          <div class="panel" data-panel="seg">
+            <div class="card sec">
+              <div class="sec-head"><h2>Seguridad</h2><p>Acceso, sesión y conservación de datos.</p></div>
+              <div class="sec-body">
+                <div class="row"><div class="row-info"><div class="row-label">Doble factor (2FA)</div><div class="row-desc">Exigir verificación adicional a los administradores.</div></div><div class="row-ctrl"><div class="switch on" data-t></div></div></div>
+                <div class="row"><div class="row-info"><div class="row-label">Cierre de sesión por inactividad</div><div class="row-desc">Tiempo antes de cerrar sesión automáticamente.</div></div><div class="row-ctrl"><input class="input num" value="30" /><span class="unit">min</span></div></div>
+                <div class="row"><div class="row-info"><div class="row-label">Conservación de registros</div><div class="row-desc">Plazo legal mínimo de conservación de fichajes (RD 8/2019).</div></div><div class="row-ctrl"><input class="input num" value="4" /><span class="unit">años</span></div></div>
+                <div class="row"><div class="row-info"><div class="row-label">Registro de auditoría</div><div class="row-desc">Guardar el historial de cambios y exportaciones.</div></div><div class="row-ctrl"><div class="switch on" data-t></div></div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- save bar -->
+          <div class="card save-bar">
+            <div class="note"><svg class="ico ico-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5h.01"/></svg> Los cambios se aplican a toda la organización.</div>
+            <button class="btn primary"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2zM7 3v5h8M7 21v-7h10v7"/></svg>Guardar cambios</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // subnav
+  document.querySelectorAll('.sub-item').forEach(function(s){
+    s.addEventListener('click',function(){
+      document.querySelectorAll('.sub-item').forEach(function(x){x.classList.remove('active')});
+      s.classList.add('active');
+      var p=s.dataset.p;
+      document.querySelectorAll('.panel').forEach(function(pn){pn.classList.toggle('active',pn.dataset.panel===p)});
+      window.scrollTo({top:0,behavior:'smooth'});
+    });
+  });
+  // toggles
+  document.querySelectorAll('[data-t]').forEach(function(t){
+    t.addEventListener('click',function(){t.classList.toggle('on')});
+  });
+  document.querySelectorAll('.nav .nav-item').forEach(function(i){
+    i.addEventListener('click',function(){
+      if(i.tagName==='A')return;
+      document.querySelectorAll('.nav .nav-item').forEach(function(n){n.classList.remove('active')});i.classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>

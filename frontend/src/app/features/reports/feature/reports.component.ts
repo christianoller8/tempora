@@ -34,43 +34,61 @@ type ReportType = 'monthly-hours' | 'overtime' | 'absenteeism' | 'coverage';
   styles: [`
     :host { display: block; }
 
-    .page-header { margin-bottom: 1.75rem; }
-    .page-title  { font-size: 1.375rem; font-weight: 700; color: var(--p-text-color); }
+    /* ── Page header ─────────────────────────────────────────────── */
+    .page-header { margin-bottom: 1.375rem; }
+    .page-title {
+      font-size: 1.5625rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+    .page-subtitle {
+      font-size: 0.8125rem;
+      color: var(--text-2);
+      margin-top: 0.25rem;
+    }
 
+    /* ── Tab navigation ──────────────────────────────────────────── */
     .type-bar {
       display: flex;
       gap: 0.5rem;
       flex-wrap: wrap;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border-soft);
+      padding-bottom: 0;
     }
 
     .type-btn {
-      padding: 0.5rem 1rem;
-      border-radius: 8px;
-      border: 1px solid var(--p-surface-border);
-      background: var(--p-surface-card);
-      color: var(--p-text-color-secondary);
-      font-size: 0.875rem;
-      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5625rem;
+      font-size: 0.84375rem;
+      font-weight: 600;
+      padding: 0.75rem 1rem;
+      color: var(--text-2);
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
       cursor: pointer;
-      transition: background 0.15s, border-color 0.15s, color 0.15s;
+      transition: var(--transition);
     }
 
-    .type-btn:hover { background: var(--p-surface-hover); color: var(--p-text-color); }
+    .type-btn:hover { color: var(--text); }
 
     .type-btn.active {
-      background: color-mix(in srgb, var(--p-primary-color) 12%, transparent);
-      border-color: var(--p-primary-color);
-      color: var(--p-primary-color);
-      font-weight: 600;
+      color: var(--text);
+      border-bottom-color: var(--primary-hover);
     }
 
+    /* ── Filter panel ────────────────────────────────────────────── */
     .filter-panel {
-      background: var(--p-surface-card);
-      border: 1px solid var(--p-surface-border);
-      border-radius: 12px;
-      padding: 1.25rem 1.5rem;
-      margin-bottom: 1.5rem;
+      background: var(--surface);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      padding: 1.25rem;
+      margin-bottom: 1.25rem;
     }
 
     .filter-row {
@@ -83,71 +101,130 @@ type ReportType = 'monthly-hours' | 'overtime' | 'absenteeism' | 'coverage';
     .filter-field {
       display: flex;
       flex-direction: column;
-      gap: 0.375rem;
+      gap: 0.5rem;
     }
 
     .filter-field label {
-      font-size: 0.8125rem;
-      font-weight: 600;
-      color: var(--p-text-color-muted, var(--p-text-color-secondary));
+      font-size: 0.65625rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      color: var(--text-3);
       text-transform: uppercase;
-      letter-spacing: 0.04em;
     }
 
     .filter-field input {
-      height: 38px;
-      padding: 0 0.75rem;
-      background: var(--p-surface-section);
-      border: 1px solid var(--p-surface-border);
-      border-radius: 8px;
-      color: var(--p-text-color);
-      font-size: 0.875rem;
-      width: 120px;
+      appearance: none;
+      height: 2.75rem;
+      padding: 0 0.875rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      width: 8rem;
       outline: none;
+      transition: var(--transition);
     }
 
-    .filter-field input:focus { border-color: var(--p-primary-color); }
+    .filter-field input:focus {
+      border-color: var(--primary-hover);
+      box-shadow: 0 0 0 3px var(--primary-soft);
+    }
 
     .action-row {
       display: flex;
-      gap: 0.5rem;
+      gap: 0.625rem;
       flex-wrap: wrap;
       margin-top: 1rem;
     }
 
+    /* ── Results panel ───────────────────────────────────────────── */
     .results-panel {
-      background: var(--p-surface-card);
-      border: 1px solid var(--p-surface-border);
-      border-radius: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
       overflow: hidden;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
+      min-width: 35rem;
     }
 
     th {
-      background: var(--p-surface-section);
-      padding: 0.5rem 1rem;
+      background: var(--surface-2);
+      padding: 0.75rem 1.125rem;
       text-align: left;
-      font-size: 0.75rem;
-      font-weight: 600;
-      text-transform: uppercase;
+      font-size: 0.625rem;
+      font-weight: 700;
       letter-spacing: 0.05em;
-      color: var(--p-text-color-secondary);
-      border-bottom: 1px solid var(--p-surface-border);
+      text-transform: uppercase;
+      color: var(--text-3);
+      border-bottom: 1px solid var(--border-soft);
     }
 
     td {
-      padding: 0.625rem 1rem;
-      font-size: 0.875rem;
-      color: var(--p-text-color);
-      border-bottom: 1px solid var(--p-surface-border);
+      padding: 0.75rem 1.125rem;
+      font-size: 0.8125rem;
+      color: var(--text);
+      border-bottom: 1px solid var(--border-soft);
+      vertical-align: middle;
     }
 
     tr:last-child td { border-bottom: none; }
-    tr:hover td { background: color-mix(in srgb, var(--p-primary-color) 4%, transparent); }
+
+    tbody tr:hover td { background: var(--primary-soft); }
+
+    tfoot td {
+      padding: 0.875rem 1.125rem;
+      font-weight: 700;
+      font-size: 0.8125rem;
+      border-top: 2px solid var(--border);
+    }
+
+    /* overflow wrapper for wide tables */
+    .tbl-wrap { overflow-x: auto; }
+
+    /* ── Dark mode overrides ─────────────────────────────────────── */
+    :host-context([data-theme="dark"]) .type-btn.active {
+      color: var(--text);
+      border-bottom-color: var(--primary-hover);
+    }
+
+    :host-context([data-theme="dark"]) .filter-panel {
+      box-shadow: var(--shadow);
+    }
+
+    :host-context([data-theme="dark"]) .filter-field input {
+      background: var(--bg);
+      border-color: var(--border);
+      color: var(--text);
+    }
+
+    :host-context([data-theme="dark"]) .filter-field input:focus {
+      border-color: var(--primary-hover);
+      box-shadow: 0 0 0 3px var(--primary-soft);
+    }
+
+    :host-context([data-theme="dark"]) .results-panel {
+      box-shadow: var(--shadow);
+    }
+
+    :host-context([data-theme="dark"]) th {
+      background: var(--surface-2);
+      border-bottom-color: var(--border-soft);
+    }
+
+    :host-context([data-theme="dark"]) td {
+      border-bottom-color: var(--border-soft);
+    }
+
+    :host-context([data-theme="dark"]) tbody tr:hover td {
+      background: var(--primary-soft);
+    }
   `],
   template: `
     <section aria-label="Reports">

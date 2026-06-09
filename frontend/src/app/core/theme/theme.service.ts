@@ -1,34 +1,52 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, computed, effect } from '@angular/core';
+
+/**
+ * Manages the app theme (dark / light) using Angular Signals.
+ * Persists preference in localStorage; falls back to system preference;
+ * writes data-theme attribute on <html> so tokens.css picks up the palette.
+ */
+
+export type Theme = 'dark' | 'light';
 
 const STORAGE_KEY = 'tempora-theme';
-const DARK_CLASS  = 'app-dark';
 
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
-  /** True = dark mode, false = light mode. */
-  readonly isDark = signal(this.resolveInitial());
+  readonly theme = signal<Theme>(this.resolveInitial());
+
+  readonly isDark = computed(() => this.theme() === 'dark');
+
+  private readonly media = window.matchMedia('(prefers-color-scheme: dark)');
 
   constructor() {
-    // Apply on construction (in case the inline script wasn't enough).
-    this.apply(this.isDark());
+    effect(() => {
+      document.documentElement.setAttribute('data-theme', this.theme());
+    });
+
+    this.media.addEventListener('change', (e) => {
+      if (!localStorage.getItem(STORAGE_KEY)) {
+        this.theme.set(e.matches ? 'dark' : 'light');
+      }
+    });
+  }
+
+  set(theme: Theme): void {
+    this.theme.set(theme);
+    localStorage.setItem(STORAGE_KEY, theme);
   }
 
   toggle(): void {
-    const next = !this.isDark();
-    this.isDark.set(next);
-    this.apply(next);
-    localStorage.setItem(STORAGE_KEY, next ? 'dark' : 'light');
+    this.set(this.isDark() ? 'light' : 'dark');
   }
 
-  private apply(dark: boolean): void {
-    document.documentElement.classList.toggle(DARK_CLASS, dark);
+  useSystem(): void {
+    localStorage.removeItem(STORAGE_KEY);
+    this.theme.set(this.media.matches ? 'dark' : 'light');
   }
 
-  private resolveInitial(): boolean {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === 'light') return false;
-    if (stored === 'dark')  return true;
-    // Default: dark.
-    return true;
+  private resolveInitial(): Theme {
+    const saved = localStorage.getItem(STORAGE_KEY) as Theme | null;
+    if (saved === 'dark' || saved === 'light') return saved;
+    return 'dark';
   }
 }

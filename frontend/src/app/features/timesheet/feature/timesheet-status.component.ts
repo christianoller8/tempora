@@ -30,68 +30,185 @@ import type { ConfirmationStatusRowDto } from '../data-access/timesheet.api';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule, DatePipe, ButtonModule, SkeletonModule, TableModule, ConfirmationBadgeComponent, TranslatePipe],
   styles: [`
-    :host { display: block; max-width: 960px; margin: 0 auto; }
+    :host {
+      display: block;
+      padding: 28px 30px 48px;
+      max-width: 1340px;
+      margin: 0 auto;
+    }
 
-    .page-header { margin-bottom: 1.75rem; }
-    .page-title  { font-size: 1.375rem; font-weight: 700; color: var(--p-text-color); }
-    .page-sub    { font-size: 0.8125rem; color: var(--p-text-color-muted, var(--p-text-color-secondary)); margin-top: 0.125rem; }
+    /* ── Page header ──────────────────────────────────────────────── */
+    .page-header { margin-bottom: 1.5rem; }
 
+    .page-title {
+      font-size: 1.5625rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+
+    .page-sub {
+      font-size: 0.8125rem;
+      color: var(--text-2);
+      margin-top: 0.25rem;
+    }
+
+    /* ── Month / period selector ──────────────────────────────────── */
     .month-selector {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
-      margin-bottom: 1.5rem;
-      flex-wrap: wrap;
-    }
-
-    .month-selector select {
-      height: 36px;
-      padding: 0 0.75rem;
-      background: var(--p-surface-section);
-      border: 1px solid var(--p-surface-border);
-      border-radius: 8px;
-      color: var(--p-text-color);
-      font-size: 0.875rem;
-      outline: none;
-      appearance: auto;
-      cursor: pointer;
-    }
-
-    .month-selector select:focus { border-color: var(--p-primary-color); }
-
-    .summary-chips {
-      display: flex;
-      gap: 1rem;
+      gap: 0.625rem;
       margin-bottom: 1.25rem;
       flex-wrap: wrap;
     }
 
-    .chip {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 0.625rem 1.25rem;
-      background: var(--p-surface-card);
-      border: 1px solid var(--p-surface-border);
-      border-radius: 10px;
-      min-width: 90px;
+    .month-selector select {
+      appearance: none;
+      height: 38px;
+      padding: 0 2.25rem 0 0.875rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      outline: none;
+      cursor: pointer;
+      transition: var(--transition);
     }
 
-    .chip-value { font-size: 1.5rem; font-weight: 700; color: var(--p-text-color); font-variant-numeric: tabular-nums; }
-    .chip-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--p-text-color-muted, var(--p-text-color-secondary)); margin-top: 2px; }
-    .chip--confirmed .chip-value { color: #15803d; }
-    .chip--pending .chip-value   { color: #b45309; }
+    .month-selector select:focus {
+      border-color: var(--primary-hover);
+      box-shadow: 0 0 0 3px var(--primary-soft);
+    }
 
+    /* ── Summary chips (KPI strip) ────────────────────────────────── */
+    .summary-chips {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .chip {
+      display: flex;
+      align-items: center;
+      gap: 0.875rem;
+      padding: 1.125rem 1.25rem;
+      background: var(--surface);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      transition: var(--transition);
+    }
+
+    .chip-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      flex: none;
+      font-size: 1.25rem;
+    }
+
+    .chip-icon--ok      { background: var(--ok-soft);      color: var(--ok); }
+    .chip-icon--warn    { background: var(--warn-soft);     color: var(--warn); }
+    .chip-icon--violet  { background: var(--primary-soft);  color: var(--accent-ico); }
+
+    .chip-body { display: flex; flex-direction: column; }
+
+    .chip-value {
+      font-size: 1.625rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .chip-label {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-2);
+      margin-top: 0.3125rem;
+    }
+
+    .chip--confirmed .chip-value { color: var(--ok); }
+    .chip--pending   .chip-value { color: var(--warn); }
+
+    /* ── Status table ─────────────────────────────────────────────── */
+    .tbl-card {
+      background: var(--surface);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    /* PrimeNG p-table header cells */
+    :host ::ng-deep .p-datatable .p-datatable-thead > tr > th {
+      font-size: 0.625rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      background: var(--surface-2);
+      border-bottom: 1px solid var(--border-soft);
+      padding: 0.8125rem 1.25rem;
+    }
+
+    :host ::ng-deep .p-datatable .p-datatable-tbody > tr > td {
+      font-size: 0.8125rem;
+      color: var(--text);
+      border-bottom: 1px solid var(--border-soft);
+      padding: 0.8125rem 1.25rem;
+      vertical-align: middle;
+    }
+
+    :host ::ng-deep .p-datatable .p-datatable-tbody > tr:last-child > td {
+      border-bottom: none;
+    }
+
+    :host ::ng-deep .p-datatable .p-datatable-tbody > tr:hover > td {
+      background: var(--surface-2);
+    }
+
+    :host ::ng-deep .p-datatable .p-sortable-column:focus {
+      outline: 2px solid var(--primary-hover);
+      outline-offset: -2px;
+    }
+
+    /* ── Empty state ──────────────────────────────────────────────── */
     .empty-state {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 0.5rem;
-      padding: 2.5rem 1rem;
-      color: var(--p-text-color-muted, var(--p-text-color-secondary));
+      padding: 3rem 1rem;
+      color: var(--text-3);
       font-size: 0.8125rem;
     }
-    .empty-state .pi { font-size: 1.75rem; opacity: 0.35; }
+
+    .empty-state .pi { font-size: 1.75rem; opacity: 0.4; }
+
+    /* ── Dark mode overrides ──────────────────────────────────────── */
+    :host-context([data-theme="dark"]) .month-selector select {
+      background: var(--surface);
+      border-color: var(--border);
+      color: var(--text);
+    }
+
+    :host-context([data-theme="dark"]) .month-selector select:focus {
+      border-color: var(--primary-hover);
+      box-shadow: 0 0 0 3px var(--primary-soft);
+    }
+
+    :host-context([data-theme="dark"]) :host ::ng-deep .p-datatable .p-datatable-tbody > tr:hover > td {
+      background: var(--p-surface-hover);
+    }
   `],
   template: `
     <!-- ── Page header ─────────────────────────────── -->

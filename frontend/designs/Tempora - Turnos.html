@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tempora — Turnos</title>
+<style>
+  :root{
+    --bg:#150F26;--surface:#1E1640;--surface-2:#241A4D;--border:#3F336A;--border-soft:rgba(63,51,106,.55);
+    --text:#FFFFFF;--text-2:rgba(255,255,255,.6);--text-3:rgba(255,255,255,.36);
+    --primary:#401BBB;--primary-hover:#5229D4;--primary-soft:rgba(64,27,187,.18);
+    --ok:#3FD79A;--ok-soft:rgba(63,215,154,.14);--warn:#F5B044;--warn-soft:rgba(245,176,68,.14);
+    --danger:#FF647C;--danger-soft:rgba(255,100,124,.14);
+    --r:12px;--r-lg:16px;--shadow:0 12px 40px -12px rgba(8,4,24,.7);--glow:0 8px 28px -8px rgba(64,27,187,.55);
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    /* shift palette */
+    --m:#6ea8ff;--m-bg:rgba(110,168,255,.16);--m-bd:rgba(110,168,255,.32);
+    --t:#f5b044;--t-bg:rgba(245,176,68,.16);--t-bd:rgba(245,176,68,.32);
+    --n:#b9a4ff;--n-bg:rgba(122,90,255,.2);--n-bd:rgba(122,90,255,.36);
+    --g:#ff8499;--g-bg:rgba(255,100,124,.16);--g-bd:rgba(255,100,124,.32);
+    --l:#3fd79a;--l-bg:rgba(63,215,154,.14);--l-bd:rgba(63,215,154,.3);
+    --p:#56c8d8;--p-bg:rgba(86,200,216,.15);--p-bd:rgba(86,200,216,.3);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiased}
+  body{line-height:1.45}
+  ::selection{background:rgba(82,41,212,.4)}
+  svg{display:block}
+  .ico{width:20px;height:20px;stroke:currentColor;stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round;flex:none}
+  .ico-sm{width:16px;height:16px}
+
+  .app{display:grid;grid-template-columns:256px 1fr;min-height:100vh}
+  /* sidebar */
+  .sidebar{background:var(--bg);border-right:1px solid var(--border-soft);display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+  .brand{display:flex;align-items:center;gap:12px;padding:22px 22px 20px}
+  .brand-mark{width:38px;height:38px;border-radius:11px;background:linear-gradient(150deg,var(--primary-hover),var(--primary));display:grid;place-items:center;box-shadow:var(--glow)}
+  .brand-mark svg{width:20px;height:20px;fill:#fff}
+  .brand-name{font-size:16px;font-weight:700}
+  .brand-sub{font-size:9.5px;font-weight:700;letter-spacing:2.4px;color:var(--text-3);margin-top:1px}
+  .nav{flex:1;padding:8px 14px;display:flex;flex-direction:column;gap:2px;overflow-y:auto}
+  .nav-item{display:flex;align-items:center;gap:13px;padding:10px 12px;border-radius:10px;color:var(--text-2);font-size:13.5px;font-weight:500;cursor:pointer;position:relative;transition:.16s}
+  .nav-item:hover{background:rgba(255,255,255,.04);color:var(--text)}
+  .nav-item.active{background:var(--primary-soft);color:#fff}
+  .nav-item.active::before{content:"";position:absolute;left:-14px;top:9px;bottom:9px;width:3px;border-radius:0 3px 3px 0;background:var(--primary-hover)}
+  .nav-item.active .ico{color:#a78bff}
+  .nav-item .ico{color:var(--text-3)}
+  .nav-item:hover .ico{color:var(--text-2)}
+  .nav-tag{margin-left:auto;font-size:8.5px;font-weight:700;letter-spacing:.6px;color:var(--text-3);border:1px solid var(--border);padding:2px 6px;border-radius:20px}
+  .sidebar-foot{padding:14px;border-top:1px solid var(--border-soft)}
+  /* main */
+  .main{display:flex;flex-direction:column;min-width:0}
+  .topbar{height:64px;background:var(--surface);border-bottom:1px solid var(--border-soft);display:flex;align-items:center;justify-content:space-between;padding:0 26px;position:sticky;top:0;z-index:30}
+  .workspace{display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:600;color:var(--text-2)}
+  .workspace .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px var(--ok-soft)}
+  .top-actions{display:flex;align-items:center;gap:8px}
+  .icon-btn{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;color:var(--text-2);cursor:pointer;border:1px solid transparent;transition:.16s;position:relative}
+  .icon-btn:hover{background:rgba(255,255,255,.04);color:#fff;border-color:var(--border-soft)}
+  .lang{font-size:12px;font-weight:700;padding:0 12px;height:38px;display:flex;align-items:center;gap:6px}
+  .notif-dot{position:absolute;top:8px;right:9px;width:7px;height:7px;border-radius:50%;background:var(--danger);border:2px solid var(--surface)}
+  .user{display:flex;align-items:center;gap:11px;padding-left:12px;margin-left:6px;border-left:1px solid var(--border-soft);cursor:pointer}
+  .user-meta{text-align:right;line-height:1.25}
+  .user-email{font-size:12.5px;font-weight:600}
+  .user-role{font-size:9px;font-weight:700;letter-spacing:1px;color:#a78bff;background:var(--primary-soft);padding:1px 7px;border-radius:5px;display:inline-block;margin-top:2px}
+  .avatar{width:38px;height:38px;border-radius:11px;background:linear-gradient(150deg,var(--primary-hover),var(--primary));display:grid;place-items:center;font-size:12.5px;font-weight:700}
+
+  .content{padding:28px 30px 48px;width:100%}
+  .page-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;gap:20px;flex-wrap:wrap}
+  .page-title{font-size:25px;font-weight:700;letter-spacing:-.3px}
+  .page-sub{font-size:13px;color:var(--text-2);margin-top:4px}
+  .head-actions{display:flex;gap:10px}
+  .btn{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;padding:9px 15px;border-radius:10px;cursor:pointer;transition:.16s;border:1px solid var(--border-soft);background:var(--surface);color:var(--text-2)}
+  .btn:hover{border-color:var(--border);color:#fff;background:var(--surface-2)}
+  .btn.primary{background:var(--primary);border-color:transparent;color:#fff;box-shadow:var(--glow)}
+  .btn.primary:hover{background:var(--primary-hover)}
+  .btn .ico{color:inherit}
+
+  .card{background:var(--surface);border:1px solid var(--border-soft);border-radius:var(--r-lg);box-shadow:var(--shadow)}
+
+  /* controls bar */
+  .controls{display:flex;align-items:center;gap:14px;padding:16px 20px;margin-bottom:18px;flex-wrap:wrap}
+  .ctrl{display:flex;align-items:center;gap:9px}
+  .ctrl label{font-size:10.5px;font-weight:700;letter-spacing:1.2px;color:var(--text-3)}
+  .select{position:relative;display:flex;align-items:center}
+  .select select{appearance:none;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:#fff;font-family:inherit;font-size:13px;font-weight:600;padding:9px 36px 9px 14px;cursor:pointer;outline:none;transition:.16s}
+  .select select:focus{border-color:var(--primary-hover);box-shadow:0 0 0 3px rgba(64,27,187,.3)}
+  .select svg{position:absolute;right:12px;pointer-events:none;color:var(--text-3)}
+  .controls .right{margin-left:auto;display:flex;align-items:center;gap:12px}
+  .draft-pill{font-size:10.5px;font-weight:700;letter-spacing:1.2px;color:var(--warn);background:var(--warn-soft);border:1px solid rgba(245,176,68,.3);padding:7px 13px;border-radius:8px}
+
+  /* legend */
+  .legend{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:14px;padding:0 2px}
+  .leg-chip{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;padding:6px 12px;border-radius:8px;border:1px solid}
+  .leg-chip .sq{width:8px;height:8px;border-radius:3px}
+  .leg-m{color:var(--m);background:var(--m-bg);border-color:var(--m-bd)}.leg-m .sq{background:var(--m)}
+  .leg-t{color:var(--t);background:var(--t-bg);border-color:var(--t-bd)}.leg-t .sq{background:var(--t)}
+  .leg-n{color:var(--n);background:var(--n-bg);border-color:var(--n-bd)}.leg-n .sq{background:var(--n)}
+  .leg-g{color:var(--g);background:var(--g-bg);border-color:var(--g-bd)}.leg-g .sq{background:var(--g)}
+  .leg-l{color:var(--l);background:var(--l-bg);border-color:var(--l-bd)}.leg-l .sq{background:var(--l)}
+  .leg-p{color:var(--p);background:var(--p-bg);border-color:var(--p-bd)}.leg-p .sq{background:var(--p)}
+  .legend .hint{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text-3);margin-left:6px}
+
+  /* grid */
+  .grid-wrap{overflow-x:auto;border-radius:var(--r-lg)}
+  .grid-wrap::-webkit-scrollbar{height:10px}
+  .grid-wrap::-webkit-scrollbar-thumb{background:var(--border);border-radius:10px}
+  .grid-wrap::-webkit-scrollbar-track{background:transparent}
+  table.cuadrante{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%}
+  .cuadrante th,.cuadrante td{border-bottom:1px solid var(--border-soft)}
+  .cuadrante thead th{position:sticky;top:0;background:var(--surface-2);z-index:2;padding:0}
+  .col-emp{position:sticky;left:0;z-index:5;background:var(--surface-2);min-width:218px;width:218px;text-align:left;padding:14px 18px;border-right:1px solid var(--border)}
+  thead .col-emp{z-index:6}
+  .col-emp .h{font-size:10.5px;font-weight:700;letter-spacing:1.2px;color:var(--text-3)}
+  .day-th{width:50px;min-width:50px;text-align:center;padding:9px 0}
+  .day-th .wd{font-size:9.5px;font-weight:700;letter-spacing:.5px;color:var(--text-3);text-transform:uppercase}
+  .day-th .dn{font-size:14px;font-weight:700;margin-top:2px}
+  .day-th.weekend{background:rgba(0,0,0,.18)}
+  .day-th.weekend .wd{color:var(--n)}
+  .day-th.today{background:var(--primary-soft)}
+  .day-th.today .dn{color:#c4b3ff}
+  .day-th.today .wd{color:#a78bff}
+
+  .emp-cell{position:sticky;left:0;z-index:4;background:var(--surface);min-width:218px;width:218px;padding:11px 18px;border-right:1px solid var(--border)}
+  tbody tr:hover .emp-cell{background:var(--surface-2)}
+  .emp-row{display:flex;align-items:center;gap:11px}
+  .emp-av{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;font-size:11.5px;font-weight:700;flex:none;color:#fff}
+  .c1{background:linear-gradient(150deg,#5229D4,#401BBB)}.c2{background:linear-gradient(150deg,#2f9e7a,#1f7d5e)}
+  .c3{background:linear-gradient(150deg,#c07a2b,#9a5e1e)}.c4{background:linear-gradient(150deg,#7A5AFF,#5229D4)}
+  .c5{background:linear-gradient(150deg,#b1456a,#8a3450)}.c6{background:linear-gradient(150deg,#3a8fb0,#286a85)}
+  .emp-name{font-size:13px;font-weight:600;line-height:1.2}
+  .emp-role{font-size:10.5px;color:var(--text-2);margin-top:1px}
+  .cell{width:50px;min-width:50px;height:48px;text-align:center;vertical-align:middle;padding:3px;position:relative}
+  .cell.weekend{background:rgba(0,0,0,.12)}
+  .cell.today{background:var(--primary-soft)}
+  .chip{display:flex;align-items:center;justify-content:center;width:100%;height:100%;border-radius:8px;font-size:12px;font-weight:700;border:1px solid;cursor:pointer;transition:.13s}
+  .chip:hover{filter:brightness(1.18);transform:translateY(-1px)}
+  .s-M{color:var(--m);background:var(--m-bg);border-color:var(--m-bd)}
+  .s-T{color:var(--t);background:var(--t-bg);border-color:var(--t-bd)}
+  .s-N{color:var(--n);background:var(--n-bg);border-color:var(--n-bd)}
+  .s-G{color:var(--g);background:var(--g-bg);border-color:var(--g-bd)}
+  .s-L{color:var(--l);background:var(--l-bg);border-color:var(--l-bd)}
+  .s-P{color:var(--p);background:var(--p-bg);border-color:var(--p-bd)}
+  .cell .add{width:100%;height:100%;border-radius:8px;border:1px dashed transparent;display:grid;place-items:center;color:transparent;cursor:pointer;transition:.13s;font-size:18px;font-weight:400}
+  .cell:hover .add{border-color:var(--border);color:var(--text-3)}
+
+  /* swap requests */
+  .section-head{display:flex;align-items:center;gap:11px;margin:30px 2px 16px}
+  .section-head .ico{color:#a78bff}
+  .section-head h2{font-size:16px;font-weight:600}
+  .section-head .count{font-size:10.5px;font-weight:700;color:var(--warn);background:var(--warn-soft);padding:3px 9px;border-radius:20px;margin-left:2px}
+  .swap{display:flex;align-items:center;gap:16px;padding:16px 20px;border-bottom:1px solid var(--border-soft)}
+  .swap:last-child{border-bottom:none}
+  .swap-people{display:flex;align-items:center;gap:11px;min-width:230px}
+  .swap-arrow{color:var(--text-3)}
+  .mini-av{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;font-size:10.5px;font-weight:700;color:#fff;flex:none}
+  .swap-info{flex:1;font-size:12.5px;color:var(--text-2)}
+  .swap-info b{color:#fff;font-weight:600}
+  .swap-tags{display:flex;gap:8px;margin-top:6px}
+  .tag-day{font-size:10.5px;font-weight:600;padding:3px 9px;border-radius:6px;background:var(--bg);border:1px solid var(--border);color:var(--text-2)}
+  .swap-actions{display:flex;gap:9px}
+  .sbtn{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;cursor:pointer;border:1px solid var(--border-soft);transition:.16s}
+  .sbtn.ok{color:var(--ok)}.sbtn.ok:hover{background:var(--ok-soft);border-color:rgba(63,215,154,.4)}
+  .sbtn.no{color:var(--danger)}.sbtn.no:hover{background:var(--danger-soft);border-color:rgba(255,100,124,.4)}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.9-7.5-10.2A4.2 4.2 0 0 1 12 7.7a4.2 4.2 0 0 1 7.5 3.1C19.5 16.1 12 21 12 21z"/></svg></div>
+      <div><div class="brand-name">Tempora</div><div class="brand-sub">HEALTHCARE</div></div>
+    </div>
+    <nav class="nav">
+      <a class="nav-item" href="Tempora — Dashboard.html"><svg class="ico" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.3V20h5v-6h4v6h5V9.3"/></svg>Panel de control</a>
+      <div class="nav-item active"><svg class="ico" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg>Turnos</div>
+      <div class="nav-item"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg>Control horario</div>
+      <div class="nav-item"><svg class="ico" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9h18M8 2.5v4M16 2.5v4M10 14l4 4M14 14l-4 4"/></svg>Ausencias</div>
+      <div class="nav-item"><svg class="ico" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><circle cx="8.5" cy="12" r="2.2"/><path d="M13 10h5M13 14h5"/></svg>Mi ficha horaria</div>
+      <div class="nav-item"><svg class="ico" viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>Estado fichas</div>
+      <div class="nav-item"><svg class="ico" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19.5c.7-3 3-4.7 5.5-4.7s4.8 1.7 5.5 4.7"/><path d="M16 5.5a3 3 0 0 1 0 5.6M18.5 19.5c-.3-1.4-1-2.6-2-3.5"/></svg>Empleados</div>
+      <div class="nav-item"><svg class="ico" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>Documentos<span class="nav-tag">PRÓXIMAMENTE</span></div>
+      <div class="nav-item"><svg class="ico" viewBox="0 0 24 24"><path d="M4 20V4M4 20h16"/><rect x="8" y="11" width="3" height="6"/><rect x="14" y="7" width="3" height="10"/></svg>Informes</div>
+      <div class="nav-item"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>Configuración</div>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="nav-item"><svg class="ico" viewBox="0 0 24 24"><path d="M15 4h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-2"/><path d="M10 17l-5-5 5-5M5 12h11"/></svg>Cerrar sesión</div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <header class="topbar">
+      <div class="workspace"><span class="dot"></span> Tempora Demo</div>
+      <div class="top-actions">
+        <div class="icon-btn"><svg class="ico" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span class="notif-dot"></span></div>
+        <div class="icon-btn lang"><svg class="ico ico-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 2.5 15 0 18M12 3c-2.5 2.5-2.5 15 0 18"/></svg> EN</div>
+        <div class="icon-btn"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12h2.5M19 12h2.5M5 5l1.8 1.8M17.2 17.2 19 19M19 5l-1.8 1.8M6.8 17.2 5 19"/></svg></div>
+        <div class="user"><div class="user-meta"><div class="user-email">admin@tempora.com</div><span class="user-role">ADMIN</span></div><div class="avatar">AD</div></div>
+      </div>
+    </header>
+
+    <div class="content">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">Turnos — Cuadrante</h1>
+          <div class="page-sub">Gestión mensual de horarios del personal</div>
+        </div>
+        <div class="head-actions">
+          <div class="btn"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>Exportar PDF</div>
+          <div class="btn"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.3-4.5M4 5v4h4M4 13a8 8 0 0 0 14.3 4.5M20 19v-4h-4"/></svg>Actualizar</div>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="card controls">
+        <div class="ctrl">
+          <label>AÑO</label>
+          <div class="select">
+            <select><option>2026</option><option>2025</option><option>2024</option></select>
+            <svg class="ico ico-sm" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+          </div>
+        </div>
+        <div class="ctrl">
+          <label>MES</label>
+          <div class="select">
+            <select><option>junio</option><option>julio</option><option>agosto</option></select>
+            <svg class="ico ico-sm" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+          </div>
+        </div>
+        <div class="btn primary"><svg class="ico ico-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Buscar</div>
+        <div class="right">
+          <span class="draft-pill">● BORRADOR</span>
+          <div class="btn primary"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Confirmar cambios</div>
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div class="legend">
+        <span class="leg-chip leg-m"><span class="sq"></span>Mañana</span>
+        <span class="leg-chip leg-t"><span class="sq"></span>Tarde</span>
+        <span class="leg-chip leg-n"><span class="sq"></span>Noche</span>
+        <span class="leg-chip leg-g"><span class="sq"></span>Guardia</span>
+        <span class="leg-chip leg-l"><span class="sq"></span>Libranza</span>
+        <span class="leg-chip leg-p"><span class="sq"></span>Permiso</span>
+        <span class="hint"><svg class="ico ico-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5h.01"/></svg>Haz clic en una celda para asignar un turno</span>
+      </div>
+
+      <!-- Grid -->
+      <div class="card grid-wrap">
+        <table class="cuadrante">
+          <thead><tr id="head-row"></tr></thead>
+          <tbody id="grid-body"></tbody>
+        </table>
+      </div>
+
+      <!-- Swap management -->
+      <div class="section-head">
+        <svg class="ico" viewBox="0 0 24 24"><path d="M7 7h11l-3-3M17 17H6l3 3"/></svg>
+        <h2>Gestión de cambios de turno</h2>
+        <span class="count">2 pendientes</span>
+      </div>
+      <div class="card">
+        <div class="swap">
+          <div class="swap-people">
+            <div class="mini-av c2">SF</div>
+            <svg class="ico ico-sm swap-arrow" viewBox="0 0 24 24"><path d="M7 7h11l-3-3M17 17H6l3 3"/></svg>
+            <div class="mini-av c4">LG</div>
+          </div>
+          <div class="swap-info">
+            <b>Sofía Fernández</b> solicita cambiar su turno con <b>Laura García</b>
+            <div class="swap-tags"><span class="tag-day">Jue 11 · Noche</span><span class="tag-day">→ Vie 12 · Mañana</span></div>
+          </div>
+          <div class="swap-actions">
+            <div class="sbtn ok"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></div>
+            <div class="sbtn no"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></div>
+          </div>
+        </div>
+        <div class="swap">
+          <div class="swap-people">
+            <div class="mini-av c3">ML</div>
+            <svg class="ico ico-sm swap-arrow" viewBox="0 0 24 24"><path d="M7 7h11l-3-3M17 17H6l3 3"/></svg>
+            <div class="mini-av c5">CM</div>
+          </div>
+          <div class="swap-info">
+            <b>Ana López</b> solicita cambiar su turno con <b>Carlos Martínez</b>
+            <div class="swap-tags"><span class="tag-day">Sáb 13 · Guardia</span><span class="tag-day">→ Dom 14 · Libranza</span></div>
+          </div>
+          <div class="swap-actions">
+            <div class="sbtn ok"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></div>
+            <div class="sbtn no"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  var WD=['L','M','X','J','V','S','D'];        // Jun 1 2026 = Monday
+  var DAYS=30, TODAY=8;
+  var employees=[
+    {n:'Emma Employee',r:'Enfermera',av:'EE',c:'c2',s:{2:'M',3:'T',4:'M',5:'N',6:'L',8:'M',9:'T',11:'N',12:'M',15:'M',16:'T',18:'N',22:'M',23:'T',25:'L',29:'M'}},
+    {n:'Sofía Fernández',r:'Enfermera',av:'SF',c:'c4',s:{1:'T',2:'N',4:'L',8:'M',9:'M',10:'T',11:'N',15:'T',16:'N',19:'L',22:'M',23:'M',26:'T',29:'N'}},
+    {n:'Laura García',r:'Enfermera',av:'LG',c:'c1',s:{1:'N',2:'G',5:'M',8:'T',9:'N',12:'M',13:'G',16:'M',17:'T',20:'G',23:'N',24:'M',27:'G',30:'M'}},
+    {n:'Ana López',r:'TCAE',av:'AL',c:'c3',s:{1:'L',2:'M',3:'M',6:'G',8:'L',10:'M',11:'M',13:'G',17:'M',18:'M',20:'G',24:'M',25:'M',27:'G'}},
+    {n:'Marina Manager',r:'Enfermera',av:'MM',c:'c6',s:{2:'M',3:'M',4:'M',5:'M',9:'M',10:'M',11:'M',12:'M',16:'M',17:'M',18:'M',23:'M',24:'M',25:'M',30:'M'}},
+    {n:'Carlos Martínez',r:'Médico',av:'CM',c:'c5',s:{1:'G',2:'L',5:'G',8:'L',11:'G',14:'L',15:'G',18:'L',22:'G',25:'L',28:'G',29:'L'}},
+    {n:'Miguel Rodríguez',r:'Fisioterapeuta',av:'MR',c:'c1',s:{1:'M',2:'P',3:'P',8:'M',9:'M',10:'M',15:'M',16:'M',17:'M',22:'M',23:'M',24:'P',29:'M',30:'M'}},
+    {n:'David Sánchez',r:'Celador',av:'DS',c:'c3',s:{1:'T',4:'T',5:'N',8:'T',11:'T',12:'N',15:'T',18:'T',19:'N',22:'T',25:'T',26:'N',29:'T'}},
+    {n:'Admin Tempora',r:'Administrativo',av:'AT',c:'c1',s:{1:'M',2:'M',3:'M',4:'M',5:'M',8:'M',9:'M',10:'M',11:'M',12:'M',15:'M',16:'M',17:'M',18:'M',19:'M',22:'M',23:'M',24:'M',25:'M',26:'M',29:'M',30:'M'}}
+  ];
+
+  function isWeekend(d){var w=(d-1)%7;return w===5||w===6;}
+
+  // header
+  var head='<th class="col-emp"><span class="h">EMPLEADO</span></th>';
+  for(var d=1;d<=DAYS;d++){
+    var cls='day-th'+(isWeekend(d)?' weekend':'')+(d===TODAY?' today':'');
+    head+='<th class="'+cls+'"><div class="wd">'+WD[(d-1)%7]+'</div><div class="dn">'+d+'</div></th>';
+  }
+  document.getElementById('head-row').innerHTML=head;
+
+  // body
+  var body='';
+  employees.forEach(function(e){
+    var row='<tr><td class="emp-cell"><div class="emp-row"><div class="emp-av '+e.c+'">'+e.av+'</div><div><div class="emp-name">'+e.n+'</div><div class="emp-role">'+e.r+'</div></div></div></td>';
+    for(var d=1;d<=DAYS;d++){
+      var cls='cell'+(isWeekend(d)?' weekend':'')+(d===TODAY?' today':'');
+      if(e.s[d]){row+='<td class="'+cls+'"><div class="chip s-'+e.s[d]+'">'+e.s[d]+'</div></td>';}
+      else{row+='<td class="'+cls+'"><div class="add">+</div></td>';}
+    }
+    row+='</tr>';
+    body+=row;
+  });
+  document.getElementById('grid-body').innerHTML=body;
+
+  // interactions
+  document.querySelectorAll('.nav .nav-item').forEach(function(i){
+    i.addEventListener('click',function(){
+      document.querySelectorAll('.nav .nav-item').forEach(function(n){n.classList.remove('active')});
+      i.classList.add('active');
+    });
+  });
+  document.querySelectorAll('.sbtn').forEach(function(b){
+    b.addEventListener('click',function(){
+      var s=b.closest('.swap');s.style.transition='.3s';s.style.opacity='.35';
+    });
+  });
+</script>
+</body>
+</html>

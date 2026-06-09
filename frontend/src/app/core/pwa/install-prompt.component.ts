@@ -17,8 +17,8 @@ import { PwaService } from './pwa.service';
       align-items: center;
       gap: 1rem;
       padding: 0.875rem 1.25rem;
-      background: var(--p-surface-card);
-      border: 1px solid var(--p-primary-color);
+      background: var(--surface);
+      border: 1px solid var(--primary);
       border-radius: 12px;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
       max-width: calc(100vw - 2rem);
@@ -27,7 +27,7 @@ import { PwaService } from './pwa.service';
 
     .install-banner__icon {
       font-size: 1.5rem;
-      color: var(--p-primary-color);
+      color: var(--primary);
       flex-shrink: 0;
     }
 
@@ -39,12 +39,12 @@ import { PwaService } from './pwa.service';
     .install-banner__title {
       font-size: 0.875rem;
       font-weight: 700;
-      color: var(--p-text-color);
+      color: var(--text);
     }
 
     .install-banner__sub {
       font-size: 0.75rem;
-      color: var(--p-text-color-muted, var(--p-text-color-secondary));
+      color: var(--text-3);
       margin-top: 2px;
     }
 

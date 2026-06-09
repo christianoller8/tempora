@@ -47,18 +47,18 @@ function entryDuration(entry: TimeEntryDto): string {
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.07em;
-      color: var(--p-text-color-muted, var(--p-text-color-secondary));
+      color: var(--text-3);
     }
 
     .detail-value {
       font-size: 0.875rem;
-      color: var(--p-text-color);
+      color: var(--text);
     }
 
     .section-title {
       font-size: 0.9375rem;
       font-weight: 700;
-      color: var(--p-text-color);
+      color: var(--text);
       display: flex;
       align-items: center;
       gap: 0.5rem;
@@ -66,7 +66,7 @@ function entryDuration(entry: TimeEntryDto): string {
       margin-top: 1.25rem;
     }
 
-    .section-title .pi { color: var(--p-primary-color); font-size: 0.875rem; }
+    .section-title .pi { color: var(--primary); font-size: 0.875rem; }
 
     .actions-row {
       display: flex;
@@ -82,7 +82,7 @@ function entryDuration(entry: TimeEntryDto): string {
       border-radius: 8px;
       padding: 0.625rem 0.875rem;
       font-size: 0.8125rem;
-      color: var(--p-text-color);
+      color: var(--text);
       display: flex;
       align-items: center;
       gap: 0.75rem;
@@ -91,8 +91,8 @@ function entryDuration(entry: TimeEntryDto): string {
     }
 
     .entries-panel {
-      background: var(--p-surface-section);
-      border: 1px solid var(--p-surface-border);
+      background: var(--surface-2);
+      border: 1px solid var(--border-soft);
       border-radius: 10px;
       overflow: hidden;
     }
@@ -103,14 +103,14 @@ function entryDuration(entry: TimeEntryDto): string {
       align-items: center;
       gap: 0.5rem;
       padding: 0.625rem 1rem;
-      border-bottom: 1px solid var(--p-surface-border);
+      border-bottom: 1px solid var(--border-soft);
       font-size: 0.8125rem;
     }
 
     .entry-row:last-child { border-bottom: none; }
 
-    .entry-time { color: var(--p-text-color); font-variant-numeric: tabular-nums; }
-    .entry-dur  { color: var(--p-text-color-muted, var(--p-text-color-secondary)); }
+    .entry-time { color: var(--text); font-variant-numeric: tabular-nums; }
+    .entry-dur  { color: var(--text-3); }
 
     .empty-entries {
       display: flex;
@@ -118,7 +118,7 @@ function entryDuration(entry: TimeEntryDto): string {
       justify-content: center;
       gap: 0.5rem;
       padding: 1.5rem;
-      color: var(--p-text-color-muted, var(--p-text-color-secondary));
+      color: var(--text-3);
       font-size: 0.8125rem;
     }
 

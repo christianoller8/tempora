@@ -64,13 +64,13 @@ function relativeTimeKey(isoString: string): { key: string; params?: Record<stri
       align-items: center;
       justify-content: space-between;
       padding: 0.75rem 1rem 0.5rem;
-      border-bottom: 1px solid var(--p-surface-border);
+      border-bottom: 1px solid var(--border-soft);
     }
 
     .notif-title {
       font-size: 0.9375rem;
       font-weight: 700;
-      color: var(--p-text-color);
+      color: var(--text);
     }
 
     .notif-empty,
@@ -81,7 +81,7 @@ function relativeTimeKey(isoString: string): { key: string; params?: Record<stri
       gap: 0.5rem;
       padding: 2rem 1rem;
       font-size: 0.8125rem;
-      color: var(--p-text-color-muted, var(--p-text-color-secondary));
+      color: var(--text-3);
     }
 
     .notif-list {
@@ -103,7 +103,7 @@ function relativeTimeKey(isoString: string): { key: string; params?: Record<stri
       background: transparent;
       width: 100%;
       text-align: left;
-      border-bottom: 1px solid var(--p-surface-border);
+      border-bottom: 1px solid var(--border-soft);
     }
 
     .notif-item:last-child {
@@ -111,22 +111,22 @@ function relativeTimeKey(isoString: string): { key: string; params?: Record<stri
     }
 
     .notif-item:hover {
-      background: color-mix(in srgb, var(--p-primary-color) 5%, transparent);
+      background: var(--primary-soft);
     }
 
     .notif-item--unread {
-      background: color-mix(in srgb, var(--p-primary-color) 8%, transparent);
+      background: var(--primary-soft);
     }
 
     .notif-item--unread:hover {
-      background: color-mix(in srgb, var(--p-primary-color) 12%, transparent);
+      background: var(--primary-soft);
     }
 
     .notif-icon {
       width: 32px;
       height: 32px;
       border-radius: 50%;
-      background: color-mix(in srgb, var(--p-primary-color) 12%, transparent);
+      background: var(--primary-soft);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -134,7 +134,7 @@ function relativeTimeKey(isoString: string): { key: string; params?: Record<stri
     }
 
     .notif-icon .pi {
-      color: var(--p-primary-color);
+      color: var(--primary);
       font-size: 0.875rem;
     }
 
@@ -145,13 +145,13 @@ function relativeTimeKey(isoString: string): { key: string; params?: Record<stri
 
     .notif-msg {
       font-size: 0.875rem;
-      color: var(--p-text-color);
+      color: var(--text);
       line-height: 1.4;
     }
 
     .notif-time {
       font-size: 0.75rem;
-      color: var(--p-text-color-muted, var(--p-text-color-secondary));
+      color: var(--text-3);
       margin-top: 2px;
     }
 
@@ -159,7 +159,7 @@ function relativeTimeKey(isoString: string): { key: string; params?: Record<stri
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: var(--p-primary-color);
+      background: var(--primary);
       flex-shrink: 0;
       margin-top: 4px;
     }

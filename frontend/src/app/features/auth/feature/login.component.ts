@@ -31,8 +31,8 @@ import { TranslatePipe } from '@ngx-translate/core';
     }
 
     .login-card {
-      background: var(--p-surface-card);
-      border: 1px solid var(--p-surface-border);
+      background: var(--surface);
+      border: 1px solid var(--border-soft);
       border-radius: 16px;
       padding: 2.5rem 2rem;
       box-shadow: 0 25px 50px rgba(0, 0, 0, 0.35);
@@ -49,7 +49,7 @@ import { TranslatePipe } from '@ngx-translate/core';
       justify-content: center;
       width: 56px;
       height: 56px;
-      background: var(--p-primary-color);
+      background: var(--primary);
       border-radius: 16px;
       margin-bottom: 1.25rem;
     }
@@ -62,13 +62,13 @@ import { TranslatePipe } from '@ngx-translate/core';
     .login-title {
       font-size: 1.375rem;
       font-weight: 700;
-      color: var(--p-text-color);
+      color: var(--text);
       margin-bottom: 0.375rem;
     }
 
     .login-subtitle {
       font-size: 0.875rem;
-      color: var(--p-text-color-muted, var(--p-text-color-secondary));
+      color: var(--text-3);
     }
 
     .field {
@@ -81,7 +81,7 @@ import { TranslatePipe } from '@ngx-translate/core';
     .field label {
       font-size: 0.8125rem;
       font-weight: 600;
-      color: var(--p-text-color-muted, var(--p-text-color-secondary));
+      color: var(--text-3);
       text-transform: uppercase;
       letter-spacing: 0.04em;
     }
@@ -89,8 +89,8 @@ import { TranslatePipe } from '@ngx-translate/core';
     .field .p-inputtext,
     .field :deep(.p-inputtext) {
       width: 100%;
-      background: var(--p-surface-section);
-      border-color: var(--p-surface-border);
+      background: var(--surface-2);
+      border-color: var(--border-soft);
     }
 
     .field :deep(.p-password) {
@@ -105,7 +105,7 @@ import { TranslatePipe } from '@ngx-translate/core';
       text-align: center;
       margin-top: 1.5rem;
       font-size: 0.75rem;
-      color: var(--p-text-color-muted, var(--p-text-color-secondary));
+      color: var(--text-3);
     }
 
     .error-message {

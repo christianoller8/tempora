@@ -40,21 +40,26 @@ const STATUS_SEVERITY: Record<AbsenceDto['status'], TagSeverity> = {
   styles: [`
     :host { display: block; max-width: 860px; margin: 0 auto; }
 
+    /* ── Page header ──────────────────────────────────────────────── */
     .page-header { margin-bottom: 1.75rem; }
-    .page-title  { font-size: 1.375rem; font-weight: 700; color: var(--p-text-color); }
-    .page-sub    { font-size: 0.8125rem; color: var(--p-text-color-muted, var(--p-text-color-secondary)); margin-top: 0.125rem; }
+    .page-title  { font-size: 1.375rem; font-weight: 700; letter-spacing: -0.02em; color: var(--text); }
+    .page-sub    { font-size: 0.8125rem; color: var(--text-2); margin-top: 0.25rem; }
 
+    /* ── Section headings ─────────────────────────────────────────── */
     .section-title {
-      font-size: 0.9375rem; font-weight: 700; color: var(--p-text-color);
-      display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.875rem; margin-top: 1.5rem;
+      font-size: 0.9375rem; font-weight: 700; color: var(--text);
+      display: flex; align-items: center; gap: 0.5rem;
+      margin-bottom: 0.875rem; margin-top: 1.5rem;
     }
-    .section-title .pi { color: var(--p-primary-color); font-size: 0.9rem; }
+    .section-title .pi { color: var(--accent-ico); font-size: 0.9rem; }
     .section-title:first-child { margin-top: 0; }
 
+    /* ── Absence history / approval panel ────────────────────────── */
     .abs-panel {
-      background: var(--p-surface-card);
-      border: 1px solid var(--p-surface-border);
-      border-radius: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
       overflow: hidden;
       margin-bottom: 1.5rem;
     }
@@ -65,110 +70,168 @@ const STATUS_SEVERITY: Record<AbsenceDto['status'], TagSeverity> = {
       align-items: center;
       gap: 0.5rem;
       padding: 0.625rem 1.25rem;
-      border-bottom: 1px solid var(--p-surface-border);
+      border-bottom: 1px solid var(--border-soft);
+      transition: background var(--transition);
     }
 
     .abs-header-row {
-      background: var(--p-surface-section);
+      background: var(--surface-2);
       padding: 0.5rem 1.25rem 0.375rem;
     }
 
     .abs-row:last-child { border-bottom: none; }
-    .abs-row:hover { background: color-mix(in srgb, var(--p-primary-color) 4%, transparent); }
+    .abs-row:hover      { background: var(--primary-soft); }
 
     .abs-col-label {
-      font-size: 0.6875rem; font-weight: 600; text-transform: uppercase;
-      letter-spacing: 0.07em; color: var(--p-text-color-muted, var(--p-text-color-secondary));
+      font-size: 0.6875rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--text-3);
     }
 
-    .abs-type  { font-size: 0.875rem; font-weight: 600; color: var(--p-text-color); }
-    .abs-dates { font-size: 0.8125rem; color: var(--p-text-color-muted, var(--p-text-color-secondary)); font-variant-numeric: tabular-nums; }
+    .abs-type  { font-size: 0.875rem; font-weight: 600; color: var(--text); }
+    .abs-dates { font-size: 0.8125rem; color: var(--text-2); font-variant-numeric: tabular-nums; }
     .abs-actions { display: flex; gap: 0.375rem; }
 
+    /* ── Row wrapper (keeps decision form attached to row) ─────────── */
+    .abs-row-wrap { border-bottom: 1px solid var(--border-soft); }
+    .abs-row-wrap:last-child { border-bottom: none; }
+    .abs-row-wrap .abs-row  { border-bottom: none; }
+
+    /* ── Empty state ──────────────────────────────────────────────── */
     .empty-state {
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       gap: 0.5rem; padding: 2.5rem 1rem;
-      color: var(--p-text-color-muted, var(--p-text-color-secondary)); font-size: 0.8125rem;
+      color: var(--text-3); font-size: 0.8125rem;
     }
-    .empty-state .pi { font-size: 1.75rem; opacity: 0.35; }
+    .empty-state .pi { font-size: 1.75rem; opacity: 0.4; }
 
-    /* ── Request form ─────────────────────────────────────────────── */
+    /* ── Decision inline form ─────────────────────────────────────── */
+    .decision-form {
+      border-top: 1px solid var(--border-soft);
+      padding: 0.625rem 1.25rem 0.75rem;
+    }
+    .decision-form label {
+      display: block;
+      font-size: 0.75rem; font-weight: 600;
+      margin-bottom: 0.25rem;
+      color: var(--text-2);
+    }
+    .decision-form textarea {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 0.8125rem;
+      outline: none; resize: vertical;
+      margin-bottom: 0.5rem;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .decision-form textarea:focus {
+      border-color: var(--primary-hover);
+      box-shadow: 0 0 0 3px var(--primary-soft);
+    }
+    .decision-form .decision-actions { display: flex; gap: 0.375rem; }
+
+    /* ── Decision comment display ─────────────────────────────────── */
+    .decision-comment {
+      display: flex; align-items: flex-start; gap: 0.375rem;
+      margin-top: 0.375rem;
+      font-size: 0.75rem; color: var(--text-2); font-style: italic;
+    }
+    .decision-comment .pi { margin-top: 2px; flex-shrink: 0; }
+
+    /* ── Request form panel ───────────────────────────────────────── */
     .form-panel {
-      background: var(--p-surface-card);
-      border: 1px solid var(--p-surface-border);
-      border-radius: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
       padding: 1.5rem;
     }
 
     .field { margin-bottom: 1rem; }
-    .field label { display: block; font-size: 0.8125rem; font-weight: 600; margin-bottom: 0.375rem; color: var(--p-text-color); }
-
-    .field select, .field input[type="date"] {
-      width: 100%; height: 38px; padding: 0 0.75rem;
-      background: var(--p-surface-section); border: 1px solid var(--p-surface-border);
-      border-radius: 8px; color: var(--p-text-color); font-size: 0.875rem;
-      outline: none; appearance: auto;
+    .field label {
+      display: block; font-size: 0.71875rem; font-weight: 600;
+      margin-bottom: 0.5rem; color: var(--text-2);
     }
-    .field select:focus, .field input:focus { border-color: var(--p-primary-color); }
+
+    .field select,
+    .field input[type="date"] {
+      width: 100%; height: 46px; padding: 0 0.875rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 0.84375rem;
+      outline: none; appearance: auto;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .field select:focus,
+    .field input[type="date"]:focus {
+      border-color: var(--primary-hover);
+      box-shadow: 0 0 0 3px var(--primary-soft);
+    }
 
     .field textarea {
-      width: 100%; padding: 0.625rem 0.75rem;
-      background: var(--p-surface-section); border: 1px solid var(--p-surface-border);
-      border-radius: 8px; color: var(--p-text-color); font-size: 0.875rem;
+      width: 100%; padding: 0.75rem 0.875rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 0.84375rem;
       outline: none; resize: vertical;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .field textarea:focus {
+      border-color: var(--primary-hover);
+      box-shadow: 0 0 0 3px var(--primary-soft);
     }
 
-    .field .error { font-size: 0.75rem; color: var(--p-red-400, #f87171); margin-top: 0.25rem; display: block; }
-    .field .hint  { font-size: 0.75rem; color: var(--p-text-color-muted, var(--p-text-color-secondary)); margin-top: 0.25rem; }
+    .field .error {
+      font-size: 0.75rem; color: var(--danger);
+      margin-top: 0.25rem; display: block;
+    }
+    .field .hint {
+      font-size: 0.75rem; color: var(--text-3); margin-top: 0.25rem;
+    }
 
-    .form-actions { display: flex; align-items: center; gap: 0.875rem; flex-wrap: wrap; margin-top: 1.25rem; }
+    .form-actions {
+      display: flex; align-items: center; gap: 0.875rem;
+      flex-wrap: wrap; margin-top: 1.25rem;
+    }
     .submit-feedback { font-size: 0.8125rem; }
-    .submit-feedback.success { color: #22c55e; }
-    .submit-feedback.error   { color: var(--p-red-400, #f87171); }
+    .submit-feedback.success { color: var(--ok); }
+    .submit-feedback.error   { color: var(--danger); }
 
-    .decision-form {
-      margin-top: 0.625rem;
-      padding-top: 0.625rem;
-      border-top: 1px solid var(--p-surface-border);
+    /* ── Dark mode overrides ──────────────────────────────────────── */
+    :host-context([data-theme="dark"]) .abs-panel {
+      box-shadow: var(--shadow);
     }
-    .decision-form label {
-      display: block;
-      font-size: 0.75rem;
-      font-weight: 600;
-      margin-bottom: 0.25rem;
-      color: var(--p-text-color-muted, var(--p-text-color-secondary));
-    }
-    .decision-form textarea {
-      width: 100%;
-      padding: 0.5rem 0.625rem;
-      background: var(--p-surface-section);
-      border: 1px solid var(--p-surface-border);
-      border-radius: 6px;
-      color: var(--p-text-color);
-      font-size: 0.8125rem;
-      outline: none;
-      resize: vertical;
-      margin-bottom: 0.5rem;
-    }
-    .decision-form textarea:focus { border-color: var(--p-primary-color); }
-    .decision-form .decision-actions { display: flex; gap: 0.375rem; }
 
-    .decision-comment {
-      display: flex;
-      align-items: flex-start;
-      gap: 0.375rem;
-      margin-top: 0.375rem;
-      font-size: 0.75rem;
-      color: var(--p-text-color-muted, var(--p-text-color-secondary));
-      font-style: italic;
+    :host-context([data-theme="dark"]) .abs-header-row {
+      background: var(--surface-2);
     }
-    .decision-comment .pi { margin-top: 2px; flex-shrink: 0; }
 
-    .abs-row-wrap {
-      border-bottom: 1px solid var(--p-surface-border);
+    :host-context([data-theme="dark"]) .form-panel {
+      box-shadow: var(--shadow);
     }
-    .abs-row-wrap:last-child { border-bottom: none; }
-    .abs-row-wrap .abs-row { border-bottom: none; }
+
+    :host-context([data-theme="dark"]) .field select,
+    :host-context([data-theme="dark"]) .field input[type="date"],
+    :host-context([data-theme="dark"]) .field textarea,
+    :host-context([data-theme="dark"]) .decision-form textarea {
+      background: var(--bg);
+      border-color: var(--border);
+    }
+
+    :host-context([data-theme="dark"]) .field select:focus,
+    :host-context([data-theme="dark"]) .field input[type="date"]:focus,
+    :host-context([data-theme="dark"]) .field textarea:focus,
+    :host-context([data-theme="dark"]) .decision-form textarea:focus {
+      border-color: var(--primary-hover);
+      box-shadow: 0 0 0 3px var(--primary-soft);
+    }
   `],
   template: `
     <!-- ── Page header ─────────────────────────────────────────────── -->

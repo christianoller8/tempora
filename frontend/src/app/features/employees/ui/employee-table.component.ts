@@ -47,7 +47,7 @@ const SKELETON_ROWS: unknown[] = [1, 2, 3, 4, 5];
       gap: 0.5rem;
       font-size: 0.9375rem;
       font-weight: 700;
-      color: var(--p-text-color);
+      color: var(--text);
     }
 
     .count-badge {
@@ -57,8 +57,8 @@ const SKELETON_ROWS: unknown[] = [1, 2, 3, 4, 5];
       min-width: 22px;
       height: 22px;
       padding: 0 6px;
-      background: color-mix(in srgb, var(--p-primary-color) 15%, transparent);
-      color: var(--p-primary-color);
+      background: var(--primary-soft);
+      color: var(--primary);
       border-radius: 11px;
       font-size: 0.75rem;
       font-weight: 700;
@@ -71,7 +71,7 @@ const SKELETON_ROWS: unknown[] = [1, 2, 3, 4, 5];
       justify-content: center;
       gap: 0.5rem;
       padding: 3rem 1rem;
-      color: var(--p-text-color-muted, var(--p-text-color-secondary));
+      color: var(--text-3);
       font-size: 0.875rem;
     }
 
@@ -82,7 +82,7 @@ const SKELETON_ROWS: unknown[] = [1, 2, 3, 4, 5];
       align-items: center;
       gap: 1rem;
       padding: 0.75rem 1rem;
-      border-bottom: 1px solid var(--p-surface-border);
+      border-bottom: 1px solid var(--border-soft);
     }
 
     :host ::ng-deep .p-datatable .p-datatable-tbody > tr {
@@ -91,7 +91,7 @@ const SKELETON_ROWS: unknown[] = [1, 2, 3, 4, 5];
     }
 
     :host ::ng-deep .p-datatable .p-datatable-tbody > tr:hover {
-      background: color-mix(in srgb, var(--p-primary-color) 5%, transparent);
+      background: var(--primary-soft);
     }
 
     :host ::ng-deep .p-datatable .p-datatable-tbody > tr.row-inactive {
@@ -112,7 +112,7 @@ const SKELETON_ROWS: unknown[] = [1, 2, 3, 4, 5];
       <ng-template pTemplate="caption">
         <div class="table-header">
           <div class="table-title">
-            <i class="pi pi-users" style="color: var(--p-primary-color); font-size:0.9rem;"></i>
+            <i class="pi pi-users" style="color: var(--primary); font-size:0.9rem;"></i>
             {{ 'EMPLOYEES.TITLE' | translate }}
             <span class="count-badge">{{ employees().length }}</span>
           </div>

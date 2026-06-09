@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" class="app-dark">
+<html lang="es" data-theme="dark">
 <head>
   <meta charset="utf-8">
   <title>Tempora — Workforce Management</title>
@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#16a34a">
+  <meta name="theme-color" content="#401BBB">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Tempora">
@@ -21,8 +21,7 @@
   <script>
     (function(){
       var t = localStorage.getItem('tempora-theme');
-      if (t === 'light') { document.documentElement.classList.remove('app-dark'); }
-      else { document.documentElement.classList.add('app-dark'); }
+      document.documentElement.setAttribute('data-theme', t === 'light' ? 'light' : 'dark');
     })();
   </script>
   <app-root></app-root>

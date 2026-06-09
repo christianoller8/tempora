@@ -14,8 +14,8 @@ body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   font-size: 14px;
   line-height: 1.5;
-  background: var(--p-surface-ground);
-  color: var(--p-text-color);
+  background: var(--bg);
+  color: var(--text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -31,7 +31,7 @@ h1, h2, h3, h4, h5, h6 {
   margin: 0;
   font-weight: 600;
   line-height: 1.25;
-  color: var(--p-text-color);
+  color: var(--text);
 }
 
 p {
@@ -39,14 +39,14 @@ p {
 }
 
 a {
-  color: var(--p-primary-color);
+  color: var(--accent-strong);
   text-decoration: none;
 }
 
 /* ─── Focus ring ─────────────────────────────────────────────────────────── */
 
 *:focus-visible {
-  outline: 2px solid var(--p-primary-color);
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -60,12 +60,12 @@ a {
 .page-header__title {
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--p-text-color);
+  color: var(--text);
 }
 
 .page-header__subtitle {
   font-size: 0.875rem;
-  color: var(--p-text-color-muted, var(--p-text-color-secondary));
+  color: var(--text-2);
   margin-top: 0.25rem;
 }
 
@@ -81,31 +81,41 @@ a {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--p-surface-400, #555);
+  background: var(--border);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--p-surface-500, #666);
+  background: var(--text-3);
 }
 
-/* ─── PrimeNG overrides ──────────────────────────────────────────────────── */
+/* ─── Extended PrimeNG bridge ────────────────────────────────────────────────
+   tokens.css bridges the basics; these mirror the remaining surface/text vars
+   so PrimeNG components react to theme changes automatically.
+   html-scoped for specificity parity with PrimeNG's own injected styles.
+   ─────────────────────────────────────────────────────────────────────────── */
 
-/* Full-width input fields */
-.p-inputtext.w-full,
-.p-password.w-full .p-inputtext,
-.p-password.w-full,
-.p-password.w-full > div {
-  width: 100%;
+html {
+  --p-surface-card:         var(--surface);
+  --p-surface-section:      var(--surface-2);
+  --p-surface-border:       var(--border-soft);
+  --p-surface-overlay:      var(--surface);
+  --p-text-color-secondary: var(--text-2);
+  --p-text-color-muted:     var(--text-3);
+  --p-primary-hover-color:  var(--primary-hover);
 }
 
-/* Button loading state */
-.p-button .p-button-label {
-  font-weight: 600;
+html[data-theme="dark"] {
+  --p-surface-hover: rgba(255, 255, 255, 0.04);
+}
+
+html[data-theme="light"] {
+  --p-surface-hover: var(--primary-soft);
 }
 
 /* ─── Semantic design tokens ─────────────────────────────────────────────── */
 
+/* Light mode (default) */
 :root {
   /* Role badges */
   --color-role-admin:           #ef4444;
@@ -122,7 +132,7 @@ a {
 
   /* Status indicators */
   --color-status-online: #22c55e;
-  --color-status-idle:   var(--p-surface-400);
+  --color-status-idle:   var(--text-3);
 
   /* Dashboard stat icon accents */
   --color-stat-green:  #22c55e;
@@ -140,7 +150,8 @@ a {
   --chart-color-8: #6366f1;
 }
 
-.app-dark {
+/* Dark mode overrides */
+[data-theme="dark"] {
   /* Role badges */
   --color-role-admin:           #f87171;
   --color-role-admin-bg:        color-mix(in srgb, #f87171 16%, transparent);
@@ -155,18 +166,18 @@ a {
   --color-role-employee-border: color-mix(in srgb, #38bdf8 28%, transparent);
 
   /* Status indicators */
-  --color-status-online: #4ade80;
-  --color-status-idle:   var(--p-surface-600);
+  --color-status-online: var(--ok);
+  --color-status-idle:   var(--text-3);
 
   /* Dashboard stat icon accents */
-  --color-stat-green:  #4ade80;
-  --color-stat-orange: #fb923c;
+  --color-stat-green:  var(--ok);
+  --color-stat-orange: var(--warn);
   --color-stat-blue:   #38bdf8;
 
   /* Chart palette */
   --chart-color-1: #4ade80;
   --chart-color-2: #38bdf8;
-  --chart-color-3: #a78bfa;
+  --chart-color-3: var(--accent-ico);
   --chart-color-4: #fb923c;
   --chart-color-5: #f472b6;
   --chart-color-6: #2dd4bf;
@@ -174,11 +185,28 @@ a {
   --chart-color-8: #818cf8;
 }
 
+/* ─── PrimeNG overrides ──────────────────────────────────────────────────── */
+
+.p-inputtext.w-full,
+.p-password.w-full .p-inputtext,
+.p-password.w-full,
+.p-password.w-full > div {
+  width: 100%;
+}
+
+.p-button .p-button-label {
+  font-weight: 600;
+}
+
 /* ─── Component polish ───────────────────────────────────────────────────── */
 
 .p-card {
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+
+[data-theme="dark"] .p-card {
+  border: 1px solid var(--border-soft);
 }
 
 .p-datatable .p-datatable-thead > tr > th {
@@ -205,10 +233,10 @@ a {
   justify-content: center;
   min-height: 100%;
   padding: 1.5rem;
-  background: var(--p-surface-ground);
+  background: var(--bg);
   background-image:
-    radial-gradient(ellipse at 30% 20%, color-mix(in srgb, var(--p-primary-color) 8%, transparent) 0%, transparent 60%),
-    radial-gradient(ellipse at 70% 80%, color-mix(in srgb, var(--p-primary-color) 5%, transparent) 0%, transparent 60%);
+    radial-gradient(ellipse at 30% 20%, color-mix(in srgb, var(--primary) 8%, transparent) 0%, transparent 60%),
+    radial-gradient(ellipse at 70% 80%, color-mix(in srgb, var(--primary) 5%, transparent) 0%, transparent 60%);
 }
 
 .auth-card {
@@ -253,8 +281,8 @@ a {
   width: 360px;
   max-height: calc(100vh - 80px);
   overflow-y: auto;
-  background: var(--p-surface-card);
-  border: 1px solid var(--p-surface-border);
-  border-radius: var(--p-border-radius-xl, 12px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
 }

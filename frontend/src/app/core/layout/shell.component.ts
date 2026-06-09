@@ -61,8 +61,8 @@ interface NavItem {
     .sidebar {
       display: flex;
       flex-direction: column;
-      background: var(--p-surface-card);
-      border-right: 1px solid var(--p-surface-border);
+      background: var(--surface);
+      border-right: 1px solid var(--border-soft);
       overflow: hidden;
       z-index: 200;
     }
@@ -72,7 +72,7 @@ interface NavItem {
       align-items: center;
       gap: 0.75rem;
       padding: 1.25rem 1.25rem 1rem;
-      border-bottom: 1px solid var(--p-surface-border);
+      border-bottom: 1px solid var(--border-soft);
     }
 
     .brand-icon-wrap {
@@ -81,7 +81,7 @@ interface NavItem {
       justify-content: center;
       width: 36px;
       height: 36px;
-      background: var(--p-primary-color);
+      background: var(--primary);
       border-radius: 10px;
       flex-shrink: 0;
     }
@@ -100,13 +100,13 @@ interface NavItem {
     .brand-name {
       font-size: 1rem;
       font-weight: 700;
-      color: var(--p-text-color);
+      color: var(--text);
       letter-spacing: -0.01em;
     }
 
     .brand-sub {
       font-size: 0.65rem;
-      color: var(--p-text-color-muted, var(--p-text-color-secondary));
+      color: var(--text-3);
       text-transform: uppercase;
       letter-spacing: 0.06em;
       font-weight: 500;
@@ -124,7 +124,7 @@ interface NavItem {
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.08em;
-      color: var(--p-text-color-muted, var(--p-text-color-secondary));
+      color: var(--text-3);
       padding: 1rem 0.5rem 0.375rem;
     }
 
@@ -144,7 +144,7 @@ interface NavItem {
       padding: 0.625rem 0.875rem;
       min-height: 44px;
       border-radius: 8px;
-      color: var(--p-text-color-muted, var(--p-text-color-secondary));
+      color: var(--text-3);
       font-size: 0.875rem;
       font-weight: 500;
       cursor: pointer;
@@ -158,13 +158,13 @@ interface NavItem {
     }
 
     .nav-link:hover {
-      background: var(--p-surface-hover, color-mix(in srgb, var(--p-primary-color) 8%, transparent));
-      color: var(--p-text-color);
+      background: var(--primary-soft);
+      color: var(--text);
     }
 
     .nav-link.active {
-      background: color-mix(in srgb, var(--p-primary-color) 15%, transparent);
-      color: var(--p-primary-color);
+      background: var(--primary-soft);
+      color: var(--primary);
     }
 
     .nav-link .pi {
@@ -174,7 +174,7 @@ interface NavItem {
     }
 
     .nav-link.active .pi {
-      color: var(--p-primary-color);
+      color: var(--primary);
     }
 
     .nav-link--soon {
@@ -189,9 +189,9 @@ interface NavItem {
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.08em;
-      color: var(--p-text-color-muted, var(--p-text-color-secondary));
-      background: var(--p-surface-section);
-      border: 1px solid var(--p-surface-border);
+      color: var(--text-3);
+      background: var(--surface-2);
+      border: 1px solid var(--border-soft);
       border-radius: 4px;
       padding: 1px 5px;
     }
@@ -199,7 +199,7 @@ interface NavItem {
     /* ── Sidebar footer ──────────────────────────────────────────────── */
     .sidebar-footer {
       padding: 0.75rem;
-      border-top: 1px solid var(--p-surface-border);
+      border-top: 1px solid var(--border-soft);
     }
 
     /* ── Main area ───────────────────────────────────────────────────── */
@@ -207,7 +207,7 @@ interface NavItem {
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      background: var(--p-surface-ground);
+      background: var(--bg);
     }
 
     /* ── Topbar ──────────────────────────────────────────────────────── */
@@ -217,8 +217,8 @@ interface NavItem {
       justify-content: space-between;
       height: 64px;
       padding: 0 1.5rem;
-      background: var(--p-surface-card);
-      border-bottom: 1px solid var(--p-surface-border);
+      background: var(--surface);
+      border-bottom: 1px solid var(--border-soft);
       flex-shrink: 0;
       gap: 0.5rem;
     }
@@ -236,7 +236,7 @@ interface NavItem {
     .topbar-org {
       font-size: 0.875rem;
       font-weight: 600;
-      color: var(--p-text-color-muted, var(--p-text-color-secondary));
+      color: var(--text-3);
       letter-spacing: 0.01em;
     }
 
@@ -256,7 +256,7 @@ interface NavItem {
     .user-email {
       font-size: 0.8125rem;
       font-weight: 600;
-      color: var(--p-text-color);
+      color: var(--text);
     }
 
     .role-badge {
@@ -271,7 +271,7 @@ interface NavItem {
     .role-badge--admin    { background: var(--color-role-admin-bg);    color: var(--color-role-admin);    border-color: var(--color-role-admin-border); }
     .role-badge--manager  { background: var(--color-role-manager-bg);  color: var(--color-role-manager);  border-color: var(--color-role-manager-border); }
     .role-badge--employee { background: var(--color-role-employee-bg); color: var(--color-role-employee); border-color: var(--color-role-employee-border); }
-    .role-badge--unknown  { background: color-mix(in srgb, var(--p-surface-400) 18%, transparent); color: var(--p-surface-400); border-color: color-mix(in srgb, var(--p-surface-400) 35%, transparent); }
+    .role-badge--unknown  { background: var(--surface-2); color: var(--text-3); border-color: var(--border-soft); }
 
     /* ── Offline banner ──────────────────────────────────────────────── */
     .offline-banner {
@@ -279,7 +279,7 @@ interface NavItem {
       align-items: center;
       gap: 0.5rem;
       padding: 0.5rem 1.5rem;
-      background: color-mix(in srgb, #f97316 15%, var(--p-surface-card));
+      background: color-mix(in srgb, #f97316 15%, var(--surface));
       border-bottom: 1px solid color-mix(in srgb, #f97316 40%, transparent);
       color: #f97316;
       font-size: 0.8125rem;
@@ -359,6 +359,66 @@ interface NavItem {
       .page-content {
         padding: 1.25rem;
       }
+    }
+
+    /* ── Dark mode ───────────────────────────────────────────────────── */
+    :host-context([data-theme="dark"]) .sidebar {
+      background: var(--bg);
+      border-right-color: var(--border-soft);
+    }
+
+    :host-context([data-theme="dark"]) .sidebar-brand {
+      border-bottom-color: var(--border-soft);
+    }
+
+    :host-context([data-theme="dark"]) .brand-icon-wrap {
+      background: linear-gradient(150deg, var(--primary-hover), var(--primary));
+      box-shadow: var(--glow);
+    }
+
+    :host-context([data-theme="dark"]) .nav-link {
+      color: var(--text-2);
+    }
+
+    :host-context([data-theme="dark"]) .nav-link .pi {
+      color: var(--text-3);
+    }
+
+    :host-context([data-theme="dark"]) .nav-link:hover {
+      background: var(--primary-soft);
+      color: var(--text);
+    }
+
+    :host-context([data-theme="dark"]) .nav-link:hover .pi {
+      color: var(--text-2);
+    }
+
+    :host-context([data-theme="dark"]) .nav-link.active {
+      background: var(--primary-soft);
+      color: var(--text);
+    }
+
+    :host-context([data-theme="dark"]) .nav-link.active .pi {
+      color: var(--accent-ico);
+    }
+
+    :host-context([data-theme="dark"]) .nav-link.active::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 8px;
+      bottom: 8px;
+      width: 3px;
+      border-radius: 0 3px 3px 0;
+      background: var(--primary-hover);
+    }
+
+    :host-context([data-theme="dark"]) .nav-soon-badge {
+      border-color: var(--border-soft);
+    }
+
+    :host-context([data-theme="dark"]) .sidebar-footer {
+      border-top-color: var(--border-soft);
     }
   `],
   template: `
@@ -495,7 +555,7 @@ interface NavItem {
           <p-avatar
             [label]="userInitials()"
             shape="circle"
-            [style]="{ background: 'var(--p-primary-color)', color: '#fff', fontWeight: '600', fontSize: '0.8rem' }"
+            [style]="{ background: 'var(--primary)', color: '#fff', fontWeight: '600', fontSize: '0.8rem' }"
           />
         </div>
       </header>

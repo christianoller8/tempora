@@ -120,7 +120,7 @@ import type { ShiftAssignment, SwapRequest } from '../data-access/shifts.api';
     .form-actions { margin-top: 1rem; }
     button[type="submit"] { padding: 0.5rem 1rem; background: #3b82f6; color: white; border: none; border-radius: 0.375rem; cursor: pointer; }
     button:disabled { opacity: 0.5; cursor: not-allowed; }
-    .success-banner { background: #dcfce7; border: 1px solid #16a34a; padding: 0.75rem; border-radius: 0.375rem; margin-bottom: 1rem; }
+    .success-banner { background: var(--ok-soft); border: 1px solid var(--ok); padding: 0.75rem; border-radius: 0.375rem; margin-bottom: 1rem; }
     .error-banner { background: #fee2e2; border: 1px solid #ef4444; padding: 0.75rem; border-radius: 0.375rem; margin-bottom: 1rem; color: #991b1b; }
     ul { list-style: none; padding: 0; }
     li { padding: 0.5rem 0; border-bottom: 1px solid #e5e7eb; }

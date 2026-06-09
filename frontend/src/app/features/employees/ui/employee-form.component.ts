@@ -37,7 +37,7 @@ import { EMPLOYEE_CATEGORY_VALUES, CONTRACT_TYPE_VALUES } from '../data-access/e
     .field label {
       font-size: 0.8125rem;
       font-weight: 600;
-      color: var(--p-text-color);
+      color: var(--text);
     }
 
     .field input[type="date"],
@@ -46,17 +46,17 @@ import { EMPLOYEE_CATEGORY_VALUES, CONTRACT_TYPE_VALUES } from '../data-access/e
       width: 100%;
       height: 38px;
       padding: 0 0.75rem;
-      background: var(--p-surface-section);
-      border: 1px solid var(--p-surface-border);
+      background: var(--surface-2);
+      border: 1px solid var(--border-soft);
       border-radius: 8px;
-      color: var(--p-text-color);
+      color: var(--text);
       font-size: 0.875rem;
       outline: none;
       box-sizing: border-box;
     }
 
     .field input:focus {
-      border-color: var(--p-primary-color);
+      border-color: var(--primary);
     }
 
     .field .error {

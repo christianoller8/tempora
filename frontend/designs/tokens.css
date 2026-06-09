@@ -1,0 +1,194 @@
+/* ============================================================
+   TEMPORA · Design Tokens
+   Healthcare time-tracking — Angular 21 + PrimeNG + @ngrx/signals
+   ------------------------------------------------------------
+   Uso:
+     <html data-theme="dark">  → modo oscuro (por defecto)
+     <html data-theme="light"> → modo claro
+
+   Alterna en runtime:
+     document.documentElement.setAttribute('data-theme', 'light');
+
+   Las dos paletas son ESPEJO: mismos nombres de variable, distinto
+   valor. Cualquier componente que use var(--token) cambia de tema
+   automáticamente sin tocar su CSS.
+   ============================================================ */
+
+/* ---------- Tokens compartidos (no dependen del tema) ---------- */
+:root{
+  /* Marca — el violeta es idéntico en ambos temas */
+  --primary:#401BBB;
+  --primary-hover:#5229D4;
+
+  /* Radios */
+  --radius-sm:8px;
+  --radius:12px;
+  --radius-lg:16px;
+  --radius-pill:20px;
+
+  /* Tipografía */
+  --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --font-mono:"SF Mono",ui-monospace,"Roboto Mono",Menlo,Consolas,monospace;
+
+  /* Transición estándar de UI */
+  --transition:.16s ease;
+}
+
+/* ============================================================
+   MODO OSCURO  (data-theme="dark")  ·  tema por defecto
+   ============================================================ */
+:root,
+:root[data-theme="dark"]{
+  /* Superficies */
+  --bg:#150F26;            /* fondo app / sidebar */
+  --surface:#1E1640;       /* cards / topbar / inputs */
+  --surface-2:#241A4D;     /* hover de fila, cabecera de tabla */
+
+  /* Bordes */
+  --border:#3F336A;        /* borde sólido (inputs, divisores fuertes) */
+  --border-soft:rgba(63,51,106,.55);
+
+  /* Texto */
+  --text:#FFFFFF;
+  --text-2:rgba(255,255,255,.60);
+  --text-3:rgba(255,255,255,.36);
+
+  /* Acento de marca sobre superficie oscura */
+  --primary-soft:rgba(64,27,187,.18);
+  --accent-ico:#A78BFF;    /* iconos/acentos violeta claro */
+  --accent-strong:#B9A4FF; /* enlaces, valores destacados */
+
+  /* Estados semánticos */
+  --ok:#3FD79A;        --ok-soft:rgba(63,215,154,.14);
+  --warn:#F5B044;      --warn-soft:rgba(245,176,68,.14);
+  --danger:#FF647C;    --danger-soft:rgba(255,100,124,.14);
+
+  /* Sombras */
+  --shadow:0 12px 40px -12px rgba(8,4,24,.70);
+  --glow:0 8px 28px -8px rgba(64,27,187,.55);
+
+  /* --- Categorías profesionales (chips) --- */
+  --cat-enf:#6EA8FF;   --cat-enf-bg:rgba(110,168,255,.16);   /* Enfermería */
+  --cat-tca:#F5B044;   --cat-tca-bg:rgba(245,176,68,.16);    /* TCAE */
+  --cat-med:#3FD79A;   --cat-med-bg:rgba(63,215,154,.14);    /* Médico */
+  --cat-fis:#56C8D8;   --cat-fis-bg:rgba(86,200,216,.15);    /* Fisioterapeuta */
+  --cat-cel:#B9A4FF;   --cat-cel-bg:rgba(122,90,255,.20);    /* Celador */
+  --cat-adm:#C7B8FF;   --cat-adm-bg:rgba(199,184,255,.12);   /* Administrativo */
+
+  /* --- Tipos de turno --- */
+  --shift-m:#6EA8FF;   --shift-m-bg:rgba(110,168,255,.16);   /* Mañana */
+  --shift-t:#F5B044;   --shift-t-bg:rgba(245,176,68,.16);    /* Tarde */
+  --shift-n:#B9A4FF;   --shift-n-bg:rgba(122,90,255,.20);    /* Noche */
+  --shift-l-bg:rgba(255,255,255,.05);                        /* Libre */
+}
+
+/* ============================================================
+   MODO CLARO  (data-theme="light")
+   Fondo lavanda sutil + tarjetas blancas + tinta violeta.
+   Acentos semánticos OSCURECIDOS para contraste AA sobre blanco.
+   ============================================================ */
+:root[data-theme="light"]{
+  /* Superficies */
+  --bg:#F4F2FB;            /* lavanda muy sutil — no blanco puro */
+  --surface:#FFFFFF;
+  --surface-2:#F0EDF9;
+
+  /* Bordes */
+  --border:#E4E0F2;
+  --border-soft:rgba(64,27,187,.12);
+
+  /* Texto — tinta violeta-oscura, no negro plano */
+  --text:#1B1430;
+  --text-2:rgba(27,20,48,.62);
+  --text-3:rgba(27,20,48,.40);
+
+  /* Acento de marca sobre superficie clara */
+  --primary-soft:rgba(64,27,187,.09);
+  --accent-ico:#5229D4;
+  --accent-strong:#401BBB;
+
+  /* Estados semánticos (oscurecidos para AA sobre blanco) */
+  --ok:#1F9D6B;        --ok-soft:rgba(31,157,107,.12);
+  --warn:#C77F1B;      --warn-soft:rgba(199,127,27,.13);
+  --danger:#E0445E;    --danger-soft:rgba(224,68,94,.11);
+
+  /* Sombras — violeta muy suave */
+  --shadow:0 16px 40px -20px rgba(64,27,187,.22);
+  --glow:0 10px 26px -10px rgba(64,27,187,.45);
+
+  /* --- Categorías profesionales (chips) --- */
+  --cat-enf:#2E6BD6;   --cat-enf-bg:rgba(110,168,255,.18);
+  --cat-tca:#B8730F;   --cat-tca-bg:rgba(245,176,68,.20);
+  --cat-med:#1F9D6B;   --cat-med-bg:rgba(31,157,107,.14);
+  --cat-fis:#1E94A6;   --cat-fis-bg:rgba(86,200,216,.18);
+  --cat-cel:#5B3FD6;   --cat-cel-bg:rgba(122,90,255,.14);
+  --cat-adm:#7A4FD0;   --cat-adm-bg:rgba(122,79,208,.13);
+
+  /* --- Tipos de turno --- */
+  --shift-m:#2E6BD6;   --shift-m-bg:rgba(110,168,255,.18);
+  --shift-t:#B8730F;   --shift-t-bg:rgba(245,176,68,.20);
+  --shift-n:#5B3FD6;   --shift-n-bg:rgba(122,90,255,.14);
+  --shift-l-bg:rgba(27,20,48,.05);
+}
+
+/* ============================================================
+   PUENTE A PrimeNG  (opcional)
+   Mapea variables del tema de PrimeNG a los tokens de Tempora.
+   Ajusta los nombres a la versión de preset que uses (Aura/Lara…).
+   ============================================================ */
+:root{
+  --p-primary-color:var(--primary);
+  --p-primary-hover-color:var(--primary-hover);
+  --p-content-background:var(--surface);
+  --p-content-border-color:var(--border);
+  --p-text-color:var(--text);
+  --p-text-muted-color:var(--text-2);
+  --p-surface-ground:var(--bg);
+  --p-border-radius:var(--radius);
+}
+
+/* ============================================================
+   PRIMITIVAS DE COMPONENTE  (atajos reutilizables)
+   ============================================================ */
+
+/* Tarjeta base */
+.tmp-card{
+  background:var(--surface);
+  border:1px solid var(--border-soft);
+  border-radius:var(--radius-lg);
+  box-shadow:var(--shadow);
+}
+
+/* Botón primario de marca */
+.tmp-btn-primary{
+  background:var(--primary);
+  color:#fff;
+  border:none;
+  border-radius:var(--radius);
+  box-shadow:var(--glow);
+  transition:background var(--transition),transform var(--transition);
+}
+.tmp-btn-primary:hover{ background:var(--primary-hover); transform:translateY(-1px); }
+
+/* Input */
+.tmp-input{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  color:var(--text);
+  font-family:var(--font-sans);
+  transition:border-color var(--transition),box-shadow var(--transition);
+}
+.tmp-input::placeholder{ color:var(--text-3); }
+.tmp-input:focus{
+  outline:none;
+  border-color:var(--primary-hover);
+  box-shadow:0 0 0 3px rgba(64,27,187,.30);
+}
+
+/* Chips de estado / categoría (combina con --cat-* y --shift-*) */
+.tmp-chip{
+  font-size:10px; font-weight:700; letter-spacing:.5px;
+  padding:4px 11px; border-radius:var(--radius-pill);
+  display:inline-flex; align-items:center; gap:6px;
+}

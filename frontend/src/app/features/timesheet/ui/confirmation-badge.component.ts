@@ -27,9 +27,9 @@ import { TranslatePipe } from '@ngx-translate/core';
     }
 
     .badge--confirmed {
-      background: color-mix(in srgb, #22c55e 18%, transparent);
-      color: #15803d;
-      border: 1px solid color-mix(in srgb, #22c55e 40%, transparent);
+      background: var(--ok-soft);
+      color: var(--ok);
+      border: 1px solid var(--ok);
     }
 
     .badge--pending {

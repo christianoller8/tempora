@@ -98,7 +98,7 @@ import type { SwapRequest, RuleCheckResult } from '../data-access/shifts.api';
     th, td { border: 1px solid #e5e7eb; padding: 0.5rem; text-align: left; font-size: 0.875rem; }
     th { background: #f8fafc; font-weight: 600; }
     .actions { display: flex; gap: 0.5rem; }
-    .btn-approve { padding: 0.25rem 0.75rem; background: #22c55e; color: white; border: none; border-radius: 0.25rem; cursor: pointer; }
+    .btn-approve { padding: 0.25rem 0.75rem; background: var(--ok); color: white; border: none; border-radius: 0.25rem; cursor: pointer; }
     .btn-reject { padding: 0.25rem 0.75rem; background: #ef4444; color: white; border: none; border-radius: 0.25rem; cursor: pointer; }
     button:disabled { opacity: 0.5; cursor: not-allowed; }
     .error-banner { background: #fee2e2; border: 1px solid #ef4444; padding: 0.75rem; border-radius: 0.375rem; margin-bottom: 1rem; color: #991b1b; }

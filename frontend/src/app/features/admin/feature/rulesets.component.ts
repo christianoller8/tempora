@@ -32,162 +32,206 @@ export interface RuleSetDto {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule, CommonModule, ButtonModule, InputTextModule, InputNumberModule, TextareaModule, MessageModule, TranslatePipe],
   styles: [`
-    :host { display: block; max-width: 680px; }
+    /* ── Host ───────────────────────────────────────────────────── */
+    :host { display: block; max-width: 720px; }
 
-    .page-header { margin-bottom: 1.75rem; }
-    .page-title  { font-size: 1.375rem; font-weight: 700; color: var(--p-text-color); }
+    /* ── Page header ─────────────────────────────────────────────── */
+    .page-header { margin-bottom: 1.5rem; }
+    .page-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
 
+    /* ── Banners ─────────────────────────────────────────────────── */
     .banner {
       display: flex;
       align-items: center;
-      gap: 0.625rem;
+      gap: 0.5rem;
       padding: 0.75rem 1rem;
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       font-size: 0.875rem;
       margin-bottom: 1rem;
+      border: 1px solid transparent;
     }
-
     .banner--success {
-      background: color-mix(in srgb, #22c55e 12%, transparent);
-      border: 1px solid color-mix(in srgb, #22c55e 35%, transparent);
-      color: #15803d;
+      background: var(--ok-soft);
+      border-color: var(--ok);
+      color: var(--ok);
     }
-
     .banner--error {
-      background: color-mix(in srgb, var(--p-red-400, #f87171) 10%, transparent);
-      border: 1px solid color-mix(in srgb, var(--p-red-400, #f87171) 30%, transparent);
-      color: var(--p-red-400, #f87171);
+      background: var(--danger-soft);
+      border-color: var(--danger);
+      color: var(--danger);
     }
 
+    /* ── Ruleset list card ───────────────────────────────────────── */
     .ruleset-list {
-      background: var(--p-surface-card);
-      border: 1px solid var(--p-surface-border);
-      border-radius: 12px;
-      padding: 1rem 1.25rem;
+      background: var(--surface);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      padding: 1.25rem 1.375rem;
       margin-bottom: 1.5rem;
+      transition: var(--transition);
     }
-
     .ruleset-list h3 {
-      font-size: 0.8125rem;
-      font-weight: 600;
+      font-size: 0.6875rem;
+      font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.06em;
-      color: var(--p-text-color-secondary);
-      margin-bottom: 0.75rem;
+      color: var(--text-3);
+      margin-bottom: 0.625rem;
     }
-
     .ruleset-list ul {
       list-style: none;
       margin: 0;
       padding: 0;
       display: flex;
       flex-direction: column;
-      gap: 0.25rem;
+      gap: 0.125rem;
     }
-
     .ruleset-list button {
       display: block;
       width: 100%;
       text-align: left;
-      padding: 0.5rem 0.75rem;
-      border-radius: 6px;
+      padding: 0.625rem 0.875rem;
+      border-radius: var(--radius-sm);
       border: 1px solid transparent;
       background: transparent;
-      color: var(--p-text-color);
+      color: var(--text-2);
       font-size: 0.875rem;
+      font-weight: 500;
       cursor: pointer;
-      transition: background 0.15s, border-color 0.15s;
+      transition: var(--transition);
+      font-family: inherit;
     }
-
     .ruleset-list button:hover {
-      background: var(--p-surface-hover);
+      background: var(--primary-soft);
+      color: var(--text);
     }
-
     .ruleset-list button[aria-pressed="true"] {
-      background: color-mix(in srgb, var(--p-primary-color) 10%, transparent);
-      border-color: var(--p-primary-color);
-      color: var(--p-primary-color);
+      background: var(--primary-soft);
+      border-color: var(--border-soft);
+      color: var(--primary);
       font-weight: 600;
     }
 
+    /* ── Form card ───────────────────────────────────────────────── */
     .form-card {
-      background: var(--p-surface-card);
-      border: 1px solid var(--p-surface-border);
-      border-radius: 12px;
-      padding: 1.5rem;
+      background: var(--surface);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      padding: 1.375rem 1.5rem;
+      transition: var(--transition);
     }
-
     .form-legend {
-      font-size: 0.9375rem;
+      font-size: 1rem;
       font-weight: 700;
-      color: var(--p-text-color);
+      color: var(--text);
       margin-bottom: 1.25rem;
       padding-bottom: 0.75rem;
-      border-bottom: 1px solid var(--p-surface-border);
+      border-bottom: 1px solid var(--border-soft);
     }
-
     fieldset { border: none; padding: 0; margin: 0; }
 
+    /* ── Fields ──────────────────────────────────────────────────── */
     .field { margin-bottom: 1.125rem; }
-
     .field label {
       display: block;
-      font-size: 0.8125rem;
-      font-weight: 600;
-      color: var(--p-text-color-muted, var(--p-text-color-secondary));
+      font-size: 0.6875rem;
+      font-weight: 700;
+      color: var(--text-2);
       text-transform: uppercase;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.06em;
       margin-bottom: 0.375rem;
     }
-
     .field input[type="text"],
     .field input[type="number"],
     .field textarea {
       width: 100%;
-      height: 38px;
-      padding: 0 0.75rem;
-      background: var(--p-surface-section);
-      border: 1px solid var(--p-surface-border);
-      border-radius: 8px;
-      color: var(--p-text-color);
+      height: 44px;
+      padding: 0 0.875rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
       font-size: 0.875rem;
-      outline: none;
       font-family: inherit;
+      outline: none;
       box-sizing: border-box;
+      transition: var(--transition);
     }
-
-    .field input:focus, .field textarea:focus { border-color: var(--p-primary-color); }
-
-    .field textarea { height: auto; padding: 0.625rem 0.75rem; resize: vertical; }
-
+    .field input[type="number"] {
+      width: 96px;
+      text-align: center;
+      font-weight: 700;
+    }
+    .field input:focus,
+    .field textarea:focus {
+      border-color: var(--primary-hover);
+      box-shadow: 0 0 0 3px var(--primary-soft);
+    }
+    .field textarea {
+      height: auto;
+      min-height: 80px;
+      padding: 0.75rem 0.875rem;
+      resize: vertical;
+      line-height: 1.5;
+    }
     .field .hint {
-      font-size: 0.75rem;
-      color: var(--p-text-color-muted, var(--p-text-color-secondary));
+      font-size: 0.6875rem;
+      font-weight: 600;
+      color: var(--accent-ico);
       margin-top: 0.25rem;
     }
-
     .field .error {
       font-size: 0.75rem;
-      color: var(--p-red-400, #f87171);
+      color: var(--danger);
       margin-top: 0.25rem;
       display: block;
     }
-
     .field-checkbox {
       display: flex;
       align-items: center;
       gap: 0.5rem;
       font-size: 0.875rem;
-      color: var(--p-text-color);
+      color: var(--text);
       cursor: pointer;
     }
 
+    /* ── Form actions ────────────────────────────────────────────── */
     .form-actions {
       display: flex;
       gap: 0.75rem;
       margin-top: 1.5rem;
       padding-top: 1rem;
-      border-top: 1px solid var(--p-surface-border);
+      border-top: 1px solid var(--border-soft);
+    }
+
+    /* ── Dark mode overrides ─────────────────────────────────────── */
+    :host-context([data-theme="dark"]) .ruleset-list,
+    :host-context([data-theme="dark"]) .form-card {
+      box-shadow: var(--shadow);
+    }
+    :host-context([data-theme="dark"]) .field input[type="text"],
+    :host-context([data-theme="dark"]) .field input[type="number"],
+    :host-context([data-theme="dark"]) .field textarea {
+      background: var(--bg);
+      border-color: var(--border);
+      color: var(--text);
+    }
+    :host-context([data-theme="dark"]) .field input:focus,
+    :host-context([data-theme="dark"]) .field textarea:focus {
+      border-color: var(--primary-hover);
+      box-shadow: 0 0 0 3px var(--primary-soft);
+    }
+    :host-context([data-theme="dark"]) .ruleset-list button[aria-pressed="true"] {
+      background: var(--primary-soft);
+      border-color: var(--border-soft);
+      color: var(--primary);
     }
   `],
   template: `

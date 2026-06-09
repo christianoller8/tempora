@@ -1,0 +1,190 @@
+/* ============================================================
+   TEMPORA · Design Tokens
+   Healthcare time-tracking — Angular 21 + PrimeNG + @ngrx/signals
+   ------------------------------------------------------------
+   Usage:
+     <html data-theme="dark">  → dark mode (default)
+     <html data-theme="light"> → light mode
+
+   Both palettes are MIRROR: same variable names, different values.
+   Any component using var(--token) switches theme without touching its CSS.
+   ============================================================ */
+
+/* ---------- Shared tokens (theme-independent) ---------- */
+:root{
+  /* Brand — purple is identical in both themes */
+  --primary:#401BBB;
+  --primary-hover:#5229D4;
+
+  /* Radii */
+  --radius-sm:8px;
+  --radius:12px;
+  --radius-lg:16px;
+  --radius-pill:20px;
+
+  /* Typography */
+  --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --font-mono:"SF Mono",ui-monospace,"Roboto Mono",Menlo,Consolas,monospace;
+
+  /* Standard UI transition */
+  --transition:.16s ease;
+}
+
+/* ============================================================
+   DARK MODE  (data-theme="dark")  ·  default theme
+   ============================================================ */
+:root,
+:root[data-theme="dark"]{
+  /* Surfaces */
+  --bg:#150F26;            /* app background / sidebar */
+  --surface:#1E1640;       /* cards / topbar / inputs */
+  --surface-2:#241A4D;     /* table header hover, row hover */
+
+  /* Borders */
+  --border:#3F336A;        /* solid border (inputs, strong dividers) */
+  --border-soft:rgba(63,51,106,.55);
+
+  /* Text */
+  --text:#FFFFFF;
+  --text-2:rgba(255,255,255,.60);
+  --text-3:rgba(255,255,255,.36);
+
+  /* Brand accent on dark surface */
+  --primary-soft:rgba(64,27,187,.18);
+  --accent-ico:#A78BFF;    /* icons/accents light purple */
+  --accent-strong:#B9A4FF; /* links, highlighted values */
+
+  /* Semantic states */
+  --ok:#3FD79A;        --ok-soft:rgba(63,215,154,.14);
+  --warn:#F5B044;      --warn-soft:rgba(245,176,68,.14);
+  --danger:#FF647C;    --danger-soft:rgba(255,100,124,.14);
+
+  /* Shadows */
+  --shadow:0 12px 40px -12px rgba(8,4,24,.70);
+  --glow:0 8px 28px -8px rgba(64,27,187,.55);
+
+  /* --- Professional category chips --- */
+  --cat-enf:#6EA8FF;   --cat-enf-bg:rgba(110,168,255,.16);   /* Enfermería */
+  --cat-tca:#F5B044;   --cat-tca-bg:rgba(245,176,68,.16);    /* TCAE */
+  --cat-med:#3FD79A;   --cat-med-bg:rgba(63,215,154,.14);    /* Médico */
+  --cat-fis:#56C8D8;   --cat-fis-bg:rgba(86,200,216,.15);    /* Fisioterapeuta */
+  --cat-cel:#B9A4FF;   --cat-cel-bg:rgba(122,90,255,.20);    /* Celador */
+  --cat-adm:#C7B8FF;   --cat-adm-bg:rgba(199,184,255,.12);   /* Administrativo */
+
+  /* --- Shift types --- */
+  --shift-m:#6EA8FF;   --shift-m-bg:rgba(110,168,255,.16);   /* Morning */
+  --shift-t:#F5B044;   --shift-t-bg:rgba(245,176,68,.16);    /* Afternoon */
+  --shift-n:#B9A4FF;   --shift-n-bg:rgba(122,90,255,.20);    /* Night */
+  --shift-l-bg:rgba(255,255,255,.05);                        /* Day off */
+}
+
+/* ============================================================
+   LIGHT MODE  (data-theme="light")
+   Subtle lavender background + white cards + violet-dark ink.
+   Semantic accents DARKENED for AA contrast on white.
+   ============================================================ */
+:root[data-theme="light"]{
+  /* Surfaces */
+  --bg:#F4F2FB;            /* very subtle lavender — not pure white */
+  --surface:#FFFFFF;
+  --surface-2:#F0EDF9;
+
+  /* Borders */
+  --border:#E4E0F2;
+  --border-soft:rgba(64,27,187,.12);
+
+  /* Text — violet-dark ink, not flat black */
+  --text:#1B1430;
+  --text-2:rgba(27,20,48,.62);
+  --text-3:rgba(27,20,48,.40);
+
+  /* Brand accent on light surface */
+  --primary-soft:rgba(64,27,187,.09);
+  --accent-ico:#5229D4;
+  --accent-strong:#401BBB;
+
+  /* Semantic states (darkened for AA on white) */
+  --ok:#1F9D6B;        --ok-soft:rgba(31,157,107,.12);
+  --warn:#C77F1B;      --warn-soft:rgba(199,127,27,.13);
+  --danger:#E0445E;    --danger-soft:rgba(224,68,94,.11);
+
+  /* Shadows — very soft violet */
+  --shadow:0 16px 40px -20px rgba(64,27,187,.22);
+  --glow:0 10px 26px -10px rgba(64,27,187,.45);
+
+  /* --- Professional category chips --- */
+  --cat-enf:#2E6BD6;   --cat-enf-bg:rgba(110,168,255,.18);
+  --cat-tca:#B8730F;   --cat-tca-bg:rgba(245,176,68,.20);
+  --cat-med:#1F9D6B;   --cat-med-bg:rgba(31,157,107,.14);
+  --cat-fis:#1E94A6;   --cat-fis-bg:rgba(86,200,216,.18);
+  --cat-cel:#5B3FD6;   --cat-cel-bg:rgba(122,90,255,.14);
+  --cat-adm:#7A4FD0;   --cat-adm-bg:rgba(122,79,208,.13);
+
+  /* --- Shift types --- */
+  --shift-m:#2E6BD6;   --shift-m-bg:rgba(110,168,255,.18);
+  --shift-t:#B8730F;   --shift-t-bg:rgba(245,176,68,.20);
+  --shift-n:#5B3FD6;   --shift-n-bg:rgba(122,90,255,.14);
+  --shift-l-bg:rgba(27,20,48,.05);
+}
+
+/* ============================================================
+   PrimeNG BRIDGE
+   Maps PrimeNG theme variables to Tempora tokens.
+   Adjust names to match your preset version (Aura / Lara…).
+   ============================================================ */
+:root{
+  --p-primary-color:var(--primary);
+  --p-primary-hover-color:var(--primary-hover);
+  --p-content-background:var(--surface);
+  --p-content-border-color:var(--border);
+  --p-text-color:var(--text);
+  --p-text-muted-color:var(--text-2);
+  --p-surface-ground:var(--bg);
+  --p-border-radius:var(--radius);
+}
+
+/* ============================================================
+   COMPONENT PRIMITIVES  (optional reusable shortcuts)
+   ============================================================ */
+
+/* Base card */
+.tmp-card{
+  background:var(--surface);
+  border:1px solid var(--border-soft);
+  border-radius:var(--radius-lg);
+  box-shadow:var(--shadow);
+}
+
+/* Primary brand button */
+.tmp-btn-primary{
+  background:var(--primary);
+  color:#fff;
+  border:none;
+  border-radius:var(--radius);
+  box-shadow:var(--glow);
+  transition:background var(--transition),transform var(--transition);
+}
+.tmp-btn-primary:hover{ background:var(--primary-hover); transform:translateY(-1px); }
+
+/* Input */
+.tmp-input{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  color:var(--text);
+  font-family:var(--font-sans);
+  transition:border-color var(--transition),box-shadow var(--transition);
+}
+.tmp-input::placeholder{ color:var(--text-3); }
+.tmp-input:focus{
+  outline:none;
+  border-color:var(--primary-hover);
+  box-shadow:0 0 0 3px rgba(64,27,187,.30);
+}
+
+/* Status / category chips (combine with --cat-* and --shift-*) */
+.tmp-chip{
+  font-size:10px; font-weight:700; letter-spacing:.5px;
+  padding:4px 11px; border-radius:var(--radius-pill);
+  display:inline-flex; align-items:center; gap:6px;
+}

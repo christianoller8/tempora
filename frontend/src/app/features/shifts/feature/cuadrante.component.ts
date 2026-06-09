@@ -52,88 +52,109 @@ const SHIFT_COLORS: Record<string, { bg: string; text: string; border: string }>
   styles: [`
     :host { display: block; }
 
-    /* ── Page header ────────────────────────────────────────── */
-    .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
-    .page-title  { font-size: 1.375rem; font-weight: 700; color: var(--p-text-color); }
-    .page-sub    { font-size: 0.8125rem; color: var(--p-text-color-muted, var(--p-text-color-secondary)); margin-top: 0.125rem; }
+    /* ── Page header ─────────────────────────────────────────── */
+    .page-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
 
-    /* ── Controls row ───────────────────────────────────────── */
+    .page-title {
+      font-size: 1.375rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+
+    .page-sub {
+      font-size: 0.8125rem;
+      color: var(--text-2);
+      margin-top: 0.25rem;
+    }
+
+    /* ── Controls row ────────────────────────────────────────── */
     .controls-row {
       display: flex;
       align-items: center;
       gap: 0.75rem;
       flex-wrap: wrap;
-      background: var(--p-surface-card);
-      border: 1px solid var(--p-surface-border);
-      border-radius: 12px;
-      padding: 0.875rem 1.125rem;
+      background: var(--surface);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      padding: 0.875rem 1.25rem;
       margin-bottom: 1.25rem;
     }
 
     .ctrl-label {
-      font-size: 0.8125rem;
-      font-weight: 600;
-      color: var(--p-text-color-muted, var(--p-text-color-secondary));
+      font-size: 0.625rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
-      letter-spacing: 0.04em;
+      color: var(--text-3);
       white-space: nowrap;
     }
 
     .native-select {
-      min-width: 120px;
+      min-width: 110px;
       height: 36px;
-      background: var(--p-surface-section);
-      border: 1px solid var(--p-surface-border);
-      border-radius: 8px;
-      color: var(--p-text-color);
-      font-size: 0.875rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 0.8125rem;
+      font-weight: 600;
       padding: 0 0.75rem;
       cursor: pointer;
       outline: none;
       appearance: auto;
+      transition: var(--transition);
     }
     .native-select:focus {
-      border-color: var(--p-primary-color);
+      border-color: var(--primary-hover);
+      box-shadow: 0 0 0 3px var(--primary-soft);
     }
 
-    .ctrl-sep {
-      flex: 1;
-    }
+    .ctrl-sep { flex: 1; }
 
-    /* ── Status badge ───────────────────────────────────────── */
+    /* ── Schedule status ─────────────────────────────────────── */
     .schedule-meta {
       display: flex;
       align-items: center;
       gap: 0.5rem;
       font-size: 0.8125rem;
-      color: var(--p-text-color-muted, var(--p-text-color-secondary));
+      color: var(--text-2);
     }
 
-    /* ── Color legend ───────────────────────────────────────── */
+    /* ── Color legend ────────────────────────────────────────── */
     .legend {
       display: flex;
       align-items: center;
       gap: 0.5rem;
       flex-wrap: wrap;
       margin-bottom: 0.875rem;
+      padding: 0 0.125rem;
     }
 
     .legend-chip {
       display: inline-flex;
       align-items: center;
-      gap: 0.25rem;
-      padding: 2px 8px;
-      border-radius: 4px;
+      gap: 0.375rem;
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
       font-size: 0.6875rem;
       font-weight: 700;
       border: 1px solid transparent;
     }
 
-    /* ── Warnings ───────────────────────────────────────────── */
+    /* ── Warnings box ────────────────────────────────────────── */
     .warnings-box {
-      background: color-mix(in srgb, var(--p-yellow-500, #eab308) 10%, transparent);
-      border: 1px solid var(--p-yellow-500, #eab308);
-      border-radius: 10px;
+      background: var(--warn-soft);
+      border: 1px solid var(--warn);
+      border-radius: var(--radius);
       padding: 0.75rem 1rem;
       margin-bottom: 1rem;
     }
@@ -141,7 +162,7 @@ const SHIFT_COLORS: Record<string, { bg: string; text: string; border: string }>
     .warnings-title {
       font-size: 0.8125rem;
       font-weight: 700;
-      color: var(--p-yellow-300, #fde047);
+      color: var(--warn);
       margin-bottom: 0.375rem;
     }
 
@@ -156,14 +177,15 @@ const SHIFT_COLORS: Record<string, { bg: string; text: string; border: string }>
 
     .warnings-list li {
       font-size: 0.75rem;
-      color: var(--p-yellow-200, #fef08a);
+      color: var(--text-2);
     }
 
-    /* ── No schedule panel ──────────────────────────────────── */
+    /* ── No schedule panel ───────────────────────────────────── */
     .no-schedule {
-      background: var(--p-surface-card);
-      border: 1px dashed var(--p-surface-border);
-      border-radius: 12px;
+      background: var(--surface);
+      border: 1px dashed var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
       padding: 3rem 2rem;
       text-align: center;
       display: flex;
@@ -172,11 +194,11 @@ const SHIFT_COLORS: Record<string, { bg: string; text: string; border: string }>
       gap: 1rem;
     }
 
-    .no-schedule .pi { font-size: 2.5rem; color: var(--p-primary-color); opacity: 0.5; }
-    .no-schedule h3  { font-size: 1.125rem; font-weight: 700; color: var(--p-text-color); margin: 0; }
-    .no-schedule p   { font-size: 0.875rem; color: var(--p-text-color-muted, var(--p-text-color-secondary)); margin: 0; }
+    .no-schedule .pi { font-size: 2.5rem; color: var(--primary); opacity: 0.5; }
+    .no-schedule h3  { font-size: 1.125rem; font-weight: 700; color: var(--text); margin: 0; }
+    .no-schedule p   { font-size: 0.875rem; color: var(--text-2); margin: 0; }
 
-    /* ── Swaps section ──────────────────────────────────────── */
+    /* ── Swaps section ───────────────────────────────────────── */
     .section-header {
       display: flex;
       align-items: center;
@@ -188,19 +210,37 @@ const SHIFT_COLORS: Record<string, { bg: string; text: string; border: string }>
     .section-title {
       font-size: 0.9375rem;
       font-weight: 700;
-      color: var(--p-text-color);
+      color: var(--text);
       display: flex;
       align-items: center;
       gap: 0.5rem;
     }
 
-    .section-title .pi { color: var(--p-primary-color); }
+    .section-title .pi { color: var(--accent-ico); }
 
     .swaps-panel {
-      background: var(--p-surface-card);
-      border: 1px solid var(--p-surface-border);
-      border-radius: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
       overflow: hidden;
+    }
+
+    .swap-header-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr auto;
+      gap: 0.5rem;
+      padding: 0.5rem 1.25rem 0.375rem;
+      background: var(--surface-2);
+      border-bottom: 1px solid var(--border-soft);
+    }
+
+    .swap-col-label {
+      font-size: 0.625rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-3);
     }
 
     .swap-row {
@@ -209,42 +249,33 @@ const SHIFT_COLORS: Record<string, { bg: string; text: string; border: string }>
       align-items: center;
       gap: 0.5rem;
       padding: 0.875rem 1.25rem;
-      border-bottom: 1px solid var(--p-surface-border);
+      border-bottom: 1px solid var(--border-soft);
+      transition: var(--transition);
     }
 
     .swap-row:last-child { border-bottom: none; }
-    .swap-row:hover { background: color-mix(in srgb, var(--p-primary-color) 4%, transparent); }
 
-    .swap-header-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr auto;
-      gap: 0.5rem;
-      padding: 0.5rem 1.25rem 0.375rem;
-      background: var(--p-surface-section);
-      border-bottom: 1px solid var(--p-surface-border);
-    }
-
-    .swap-col-label {
-      font-size: 0.6875rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.07em;
-      color: var(--p-text-color-muted, var(--p-text-color-secondary));
+    .swap-row:hover {
+      background: var(--primary-soft);
     }
 
     .swap-id {
       font-size: 0.75rem;
       font-family: monospace;
-      color: var(--p-text-color-muted, var(--p-text-color-secondary));
+      color: var(--text-2);
     }
 
     .swap-reason {
       font-size: 0.8125rem;
-      color: var(--p-text-color);
+      color: var(--text);
       font-style: italic;
     }
 
-    .swap-date { font-size: 0.8125rem; color: var(--p-text-color-muted, var(--p-text-color-secondary)); }
+    .swap-date {
+      font-size: 0.75rem;
+      color: var(--text-2);
+      margin-top: 0.125rem;
+    }
 
     .swap-actions { display: flex; gap: 0.375rem; }
 
@@ -254,19 +285,33 @@ const SHIFT_COLORS: Record<string, { bg: string; text: string; border: string }>
       justify-content: center;
       gap: 0.5rem;
       padding: 2rem;
-      color: var(--p-text-color-muted, var(--p-text-color-secondary));
+      color: var(--text-3);
       font-size: 0.8125rem;
     }
 
-    /* ── Assignment dialog ──────────────────────────────────── */
-    :host ::ng-deep .assign-dialog .p-dialog { background: var(--p-surface-card); border: 1px solid var(--p-surface-border); border-radius: 14px; }
-    :host ::ng-deep .assign-dialog .p-dialog-header { background: var(--p-surface-section); border-bottom: 1px solid var(--p-surface-border); padding: 1rem 1.25rem; border-radius: 14px 14px 0 0; }
-    :host ::ng-deep .assign-dialog .p-dialog-title { font-size: 0.9375rem; font-weight: 700; color: var(--p-text-color); }
+    /* ── Assignment dialog ───────────────────────────────────── */
+    :host ::ng-deep .assign-dialog .p-dialog {
+      background: var(--surface);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+    }
+    :host ::ng-deep .assign-dialog .p-dialog-header {
+      background: var(--surface-2);
+      border-bottom: 1px solid var(--border-soft);
+      padding: 1rem 1.25rem;
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    }
+    :host ::ng-deep .assign-dialog .p-dialog-title {
+      font-size: 0.9375rem;
+      font-weight: 700;
+      color: var(--text);
+    }
     :host ::ng-deep .assign-dialog .p-dialog-content { padding: 1.25rem; }
 
     .assign-ctx {
       font-size: 0.8125rem;
-      color: var(--p-text-color-muted, var(--p-text-color-secondary));
+      color: var(--text-2);
       margin-bottom: 1rem;
     }
 
@@ -283,18 +328,17 @@ const SHIFT_COLORS: Record<string, { bg: string; text: string; border: string }>
       justify-content: center;
       gap: 0.375rem;
       padding: 0.875rem 0.5rem;
-      border-radius: 10px;
+      border-radius: var(--radius);
       cursor: pointer;
       border: 2px solid transparent;
       transition: transform 0.15s, filter 0.15s;
     }
 
-    .template-card:hover { transform: translateY(-2px); filter: brightness(1.1); }
-    .template-card.selected { border-color: var(--p-primary-color) !important; }
-
+    .template-card:hover  { transform: translateY(-2px); filter: brightness(1.1); }
+    .template-card.selected { border-color: var(--primary) !important; box-shadow: var(--glow); }
     .template-card.assigned { opacity: 0.6; }
 
-    .tmpl-label { font-size: 1.5rem; font-weight: 900; }
+    .tmpl-label { font-size: 1.5rem;   font-weight: 900; }
     .tmpl-name  { font-size: 0.8125rem; font-weight: 700; }
     .tmpl-times { font-size: 0.6875rem; opacity: 0.8; }
 
@@ -304,7 +348,23 @@ const SHIFT_COLORS: Record<string, { bg: string; text: string; border: string }>
       justify-content: space-between;
       margin-top: 1rem;
       padding-top: 1rem;
-      border-top: 1px solid var(--p-surface-border);
+      border-top: 1px solid var(--border-soft);
+    }
+
+    /* ── Dark mode overrides ─────────────────────────────────── */
+    :host-context([data-theme="dark"]) .controls-row,
+    :host-context([data-theme="dark"]) .swaps-panel,
+    :host-context([data-theme="dark"]) .no-schedule {
+      box-shadow: var(--shadow);
+    }
+
+    :host-context([data-theme="dark"]) .warnings-box {
+      border-color: var(--warn);
+      background: var(--warn-soft);
+    }
+
+    :host-context([data-theme="dark"]) .warnings-list li {
+      color: var(--text-2);
     }
   `],
   template: `

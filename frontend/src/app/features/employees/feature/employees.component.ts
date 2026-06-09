@@ -43,74 +43,164 @@ const STATUS_FILTER_OPTIONS = [
     TranslatePipe,
   ],
   styles: [`
+    /* ── Host ─────────────────────────────────────────────────────── */
     :host { display: block; }
 
+    /* ── Page header ─────────────────────────────────────────────── */
     .page-header {
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.375rem;
       flex-wrap: wrap;
       gap: 1rem;
     }
 
     .page-title {
-      font-size: 1.375rem;
+      font-size: 1.5625rem;
       font-weight: 700;
-      color: var(--p-text-color);
+      letter-spacing: -0.02em;
+      color: var(--text);
     }
 
     .page-sub {
       font-size: 0.8125rem;
-      color: var(--p-text-color-muted, var(--p-text-color-secondary));
-      margin-top: 0.125rem;
+      color: var(--text-2);
+      margin-top: 0.25rem;
     }
 
+    /* ── Filter / toolbar ───────────────────────────────────────── */
     .filter-bar {
       display: flex;
       align-items: center;
       gap: 0.75rem;
       flex-wrap: wrap;
-      margin-bottom: 1.25rem;
+      margin-bottom: 1.125rem;
     }
 
-    .filter-bar input[type="text"] {
-      height: 38px;
-      padding: 0 0.75rem;
-      background: var(--p-surface-card);
-      border: 1px solid var(--p-surface-border);
-      border-radius: 8px;
-      color: var(--p-text-color);
-      font-size: 0.875rem;
-      outline: none;
+    .search-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      flex: 1;
       min-width: 220px;
+      max-width: 360px;
+    }
+
+    .search-wrap .search-ico {
+      position: absolute;
+      left: 0.875rem;
+      color: var(--text-3);
+      pointer-events: none;
+      width: 16px;
+      height: 16px;
+    }
+
+    .search-wrap input[type="text"] {
+      width: 100%;
+      height: 44px;
+      padding: 0 0.875rem 0 2.625rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 0.84375rem;
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
       box-sizing: border-box;
     }
 
-    .filter-bar input[type="text"]:focus { border-color: var(--p-primary-color); }
+    .search-wrap input[type="text"]::placeholder { color: var(--text-3); }
 
+    .search-wrap input[type="text"]:focus {
+      border-color: var(--primary-hover);
+      box-shadow: 0 0 0 3px var(--primary-soft);
+    }
+
+    /* PrimeNG select override */
+    :host ::ng-deep .filter-bar .p-select {
+      min-width: 175px;
+      height: 44px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+
+    :host ::ng-deep .filter-bar .p-select:focus-within {
+      border-color: var(--primary-hover);
+      box-shadow: 0 0 0 3px var(--primary-soft);
+    }
+
+    :host ::ng-deep .filter-bar .p-select .p-select-label {
+      color: var(--text);
+      padding: 0 0.875rem;
+    }
+
+    :host ::ng-deep .filter-bar .p-select .p-select-dropdown {
+      color: var(--text-3);
+    }
+
+    /* ── Table card ─────────────────────────────────────────────── */
     .table-panel {
-      background: var(--p-surface-card);
-      border: 1px solid var(--p-surface-border);
-      border-radius: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
       overflow: hidden;
     }
 
+    /* ── Empty state ────────────────────────────────────────────── */
     .empty-state {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       gap: 0.5rem;
-      padding: 3rem 1rem;
-      color: var(--p-text-color-muted, var(--p-text-color-secondary));
-      font-size: 0.875rem;
+      padding: 2.875rem 1rem;
+      color: var(--text-3);
+      font-size: 0.8125rem;
     }
 
     .empty-state .pi { font-size: 2rem; opacity: 0.35; }
 
-    :host ::ng-deep .filter-bar .p-select {
-      min-width: 180px;
+    /* ── Dark mode overrides ────────────────────────────────────── */
+    :host-context([data-theme="dark"]) .page-title {
+      color: var(--text);
+    }
+
+    :host-context([data-theme="dark"]) .page-sub {
+      color: var(--text-2);
+    }
+
+    :host-context([data-theme="dark"]) .search-wrap input[type="text"] {
+      background: var(--surface);
+      border-color: var(--border);
+      color: var(--text);
+    }
+
+    :host-context([data-theme="dark"]) .search-wrap input[type="text"]:focus {
+      border-color: var(--primary-hover);
+      box-shadow: 0 0 0 3px var(--primary-soft);
+    }
+
+    :host-context([data-theme="dark"]) .table-panel {
+      background: var(--surface);
+      border-color: var(--border-soft);
+      box-shadow: var(--shadow);
+    }
+
+    :host-context([data-theme="dark"]) ::ng-deep .filter-bar .p-select {
+      background: var(--surface);
+      border-color: var(--border);
+      color: var(--text);
+    }
+
+    :host-context([data-theme="dark"]) ::ng-deep .filter-bar .p-select .p-select-label {
+      color: var(--text);
     }
   `],
   template: `

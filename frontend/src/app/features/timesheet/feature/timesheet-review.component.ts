@@ -33,120 +33,193 @@ import { ConfirmationBadgeComponent } from '../ui/confirmation-badge.component';
   imports: [ReactiveFormsModule, DatePipe, DecimalPipe, ButtonModule, SkeletonModule, ToastModule, ConfirmationBadgeComponent, TranslatePipe],
   providers: [MessageService],
   styles: [`
-    :host { display: block; max-width: 760px; margin: 0 auto; }
+    /* ── Host ───────────────────────────────────────────────────── */
+    :host {
+      display: block;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 28px 30px 48px;
+      color: var(--text);
+    }
 
-    .page-header { margin-bottom: 1.75rem; }
-    .page-title  { font-size: 1.375rem; font-weight: 700; color: var(--p-text-color); }
-    .page-sub    { font-size: 0.8125rem; color: var(--p-text-color-muted, var(--p-text-color-secondary)); margin-top: 0.125rem; }
+    /* ── Page header ─────────────────────────────────────────────── */
+    .page-header { margin-bottom: 1.5rem; }
 
+    .page-title {
+      font-size: 1.5625rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+
+    .page-sub {
+      font-size: 0.8125rem;
+      color: var(--text-2);
+      margin-top: 0.25rem;
+    }
+
+    /* ── Month selector (controls bar) ──────────────────────────── */
     .month-selector {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
-      margin-bottom: 1.5rem;
+      gap: 0.875rem;
+      padding: 0.9375rem 1.25rem;
+      margin-bottom: 1.125rem;
+      background: var(--surface);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
       flex-wrap: wrap;
     }
 
     .month-selector select {
-      height: 36px;
-      padding: 0 0.75rem;
-      background: var(--p-surface-section);
-      border: 1px solid var(--p-surface-border);
-      border-radius: 8px;
-      color: var(--p-text-color);
-      font-size: 0.875rem;
-      outline: none;
-      appearance: auto;
+      appearance: none;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      padding: 0.5625rem 2.25rem 0.5625rem 0.875rem;
       cursor: pointer;
+      outline: none;
+      transition: var(--transition);
     }
 
-    .month-selector select:focus { border-color: var(--p-primary-color); }
+    .month-selector select:focus {
+      border-color: var(--primary-hover);
+      box-shadow: 0 0 0 3px var(--primary-soft);
+    }
 
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* ── Summary stats panel ─────────────────────────────────────── */
     .panel {
-      background: var(--p-surface-card);
-      border: 1px solid var(--p-surface-border);
-      border-radius: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
       padding: 1.25rem 1.5rem;
-      margin-bottom: 1.25rem;
+      margin-bottom: 1.125rem;
     }
 
     .panel-title {
-      font-size: 0.875rem;
-      font-weight: 700;
-      color: var(--p-text-color);
+      font-size: 0.90625rem;
+      font-weight: 600;
+      color: var(--text);
       margin-bottom: 1rem;
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.5625rem;
     }
+
+    .panel-title .pi { color: var(--accent-ico); }
 
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 1rem;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1.125rem;
     }
 
-    .stat {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
+    .stat { display: flex; flex-direction: column; gap: 0.375rem; }
 
     .stat-label {
-      font-size: 0.75rem;
-      color: var(--p-text-color-muted, var(--p-text-color-secondary));
-      font-weight: 500;
+      font-size: 0.65625rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
       text-transform: uppercase;
-      letter-spacing: 0.06em;
+      color: var(--text-2);
     }
 
     .stat-value {
-      font-size: 1.375rem;
+      font-size: 1.875rem;
       font-weight: 700;
-      color: var(--p-text-color);
+      letter-spacing: -0.03em;
+      color: var(--text);
       font-variant-numeric: tabular-nums;
     }
 
+    .stat-value small {
+      font-size: 0.9375rem;
+      color: var(--text-2);
+      font-weight: 600;
+    }
+
+    .stat-value.pos { color: var(--ok); }
+    .stat-value.neg { color: var(--danger); }
+
+    /* ── Status row ──────────────────────────────────────────────── */
     .status-row {
       display: flex;
       align-items: center;
       gap: 1rem;
       flex-wrap: wrap;
+      margin-top: 1.25rem;
     }
 
+    .status-row > span {
+      font-size: 0.8125rem;
+      color: var(--text-2);
+    }
+
+    /* ── Signature / locked banner ───────────────────────────────── */
     .locked-banner {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
-      padding: 0.875rem 1rem;
-      background: color-mix(in srgb, #22c55e 10%, var(--p-surface-card));
-      border: 1px solid color-mix(in srgb, #22c55e 35%, transparent);
-      border-radius: 10px;
-      margin-bottom: 1.25rem;
+      gap: 1.125rem;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1.125rem;
+      background: var(--surface);
+      border: 1px solid var(--warn-soft);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      background-image: linear-gradient(100deg, var(--warn-soft), transparent 70%);
+      transition: var(--transition);
+    }
+
+    .locked-banner.signed {
+      border-color: var(--ok-soft);
+      background-image: linear-gradient(100deg, var(--ok-soft), transparent 70%);
     }
 
     .locked-banner .pi {
       font-size: 1.125rem;
-      color: #15803d;
+      color: var(--warn);
       flex-shrink: 0;
     }
 
+    .locked-banner.signed .pi { color: var(--ok); }
+
     .locked-banner-text {
+      flex: 1;
       font-size: 0.875rem;
-      color: var(--p-text-color);
+      color: var(--text);
     }
 
-    .locked-banner-text strong { color: #15803d; }
+    .locked-banner-text strong { color: var(--warn); }
+    .locked-banner.signed .locked-banner-text strong { color: var(--ok); }
 
+    /* ── Open entries warning ────────────────────────────────────── */
     .open-entries-warning {
       font-size: 0.8125rem;
-      color: var(--p-orange-500, #f59e0b);
+      color: var(--warn);
       display: flex;
       align-items: center;
       gap: 0.375rem;
       margin-top: 0.5rem;
     }
 
+    /* ── Confirm actions ─────────────────────────────────────────── */
     .confirm-actions {
       margin-top: 1.25rem;
       display: flex;
@@ -155,16 +228,40 @@ import { ConfirmationBadgeComponent } from '../ui/confirmation-badge.component';
       flex-wrap: wrap;
     }
 
+    .confirm-actions > span {
+      font-size: 0.8125rem;
+      color: var(--text-2);
+    }
+
+    /* ── Empty state ─────────────────────────────────────────────── */
     .empty-state {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 0.5rem;
       padding: 2.5rem 1rem;
-      color: var(--p-text-color-muted, var(--p-text-color-secondary));
+      color: var(--text-3);
       font-size: 0.8125rem;
     }
-    .empty-state .pi { font-size: 1.75rem; opacity: 0.35; }
+
+    .empty-state .pi {
+      font-size: 1.75rem;
+      opacity: 0.4;
+    }
+
+    /* ── Dark mode overrides ─────────────────────────────────────── */
+    :host-context([data-theme="dark"]) .month-selector select {
+      background: var(--bg);
+      border-color: var(--border);
+      color: var(--text);
+    }
+
+    :host-context([data-theme="dark"]) .month-selector select:focus {
+      border-color: var(--primary-hover);
+      box-shadow: 0 0 0 3px var(--primary-soft);
+    }
+
+    :host-context([data-theme="dark"]) .panel-title .pi { color: var(--accent-ico, #a78bff); }
   `],
   template: `
     <p-toast position="top-right" />
