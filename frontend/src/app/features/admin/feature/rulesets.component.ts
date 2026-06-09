@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
-import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { ApiService } from '../../../core/http/api.service';
 import { firstValueFrom } from 'rxjs';
 
@@ -21,7 +22,7 @@ type SettingsSection = 'reglas' | 'fichaje' | 'notif' | 'org' | 'seg';
 @Component({
   selector: 'app-rulesets',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, CommonModule, TranslatePipe],
+  imports: [ReactiveFormsModule, FormsModule, CommonModule, TranslatePipe, ToggleSwitchModule],
   styles: [`
     :host { display: block; }
 
@@ -335,6 +336,87 @@ type SettingsSection = 'reglas' | 'fichaje' | 'notif' | 'org' | 'seg';
     .btn-submit:hover:not(:disabled) { background: var(--primary-hover); }
     .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
 
+    /* ── Setting rows (fichaje / notif / org / seg) ─────────── */
+    .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 16px 22px;
+      border-bottom: 1px solid var(--border-soft);
+    }
+
+    .setting-row:last-child { border-bottom: none; }
+
+    .setting-info { flex: 1; min-width: 0; }
+
+    .setting-label {
+      font-size: 0.84375rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .setting-desc {
+      font-size: 0.75rem;
+      color: var(--text-2);
+      margin-top: 3px;
+    }
+
+    .setting-ctrl {
+      flex: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .num-input {
+      width: 80px;
+      height: 44px;
+      padding: 0 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 0.875rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      text-align: center;
+      outline: none;
+      font-family: inherit;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+
+    .num-input:focus {
+      border-color: var(--primary-hover);
+      box-shadow: 0 0 0 3px var(--primary-soft);
+    }
+
+    .unit-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-3);
+    }
+
+    /* ── Save bar ────────────────────────────────────────────── */
+    .save-bar {
+      background: var(--surface);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 22px;
+    }
+
+    .save-note {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.75rem;
+      color: var(--text-3);
+    }
+
     /* ── Coming-soon placeholder ─────────────────────────────── */
     .coming-soon {
       display: flex;
@@ -620,6 +702,107 @@ type SettingsSection = 'reglas' | 'fichaje' | 'notif' | 'org' | 'seg';
 
         }
 
+        <!-- ── FICHAJE ───────────────────────────────────────── -->
+        @else if (activeSection() === 'fichaje') {
+
+          <div class="sec-card">
+            <div class="sec-head">
+              <h2>Reglas de fichaje</h2>
+              <p>Cómo y desde dónde puede fichar el personal.</p>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">Geolocalización al fichar</div>
+                <div class="setting-desc">Solicita la ubicación del dispositivo en cada fichaje.</div>
+              </div>
+              <div class="setting-ctrl">
+                <p-toggleswitch
+                  [ngModel]="fichajeGeo()"
+                  (ngModelChange)="fichajeGeo.set($event)"
+                  aria-label="Geolocalización al fichar"
+                />
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">Restringir a centros autorizados</div>
+                <div class="setting-desc">Solo permite fichar dentro del radio de las sedes registradas.</div>
+              </div>
+              <div class="setting-ctrl">
+                <p-toggleswitch
+                  [ngModel]="fichajeRestrict()"
+                  (ngModelChange)="fichajeRestrict.set($event)"
+                  aria-label="Restringir a centros autorizados"
+                />
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">Pausa de comida automática</div>
+                <div class="setting-desc">Descuenta el tiempo de pausa configurado en jornadas largas.</div>
+              </div>
+              <div class="setting-ctrl">
+                <input
+                  class="num-input"
+                  type="number"
+                  [ngModel]="fichajeLunch()"
+                  (ngModelChange)="fichajeLunch.set($event)"
+                  min="0"
+                  aria-label="Pausa de comida en minutos"
+                />
+                <span class="unit-label">min</span>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">Tolerancia de entrada</div>
+                <div class="setting-desc">Margen sin marcar incidencia respecto al turno previsto.</div>
+              </div>
+              <div class="setting-ctrl">
+                <input
+                  class="num-input"
+                  type="number"
+                  [ngModel]="fichajeTolerance()"
+                  (ngModelChange)="fichajeTolerance.set($event)"
+                  min="0"
+                  aria-label="Tolerancia de entrada en minutos"
+                />
+                <span class="unit-label">min</span>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">Cierre automático de fichajes abiertos</div>
+                <div class="setting-desc">Cierra fichas sin salida pasada la medianoche y genera incidencia.</div>
+              </div>
+              <div class="setting-ctrl">
+                <p-toggleswitch
+                  [ngModel]="fichajeAutoClose()"
+                  (ngModelChange)="fichajeAutoClose.set($event)"
+                  aria-label="Cierre automático de fichajes abiertos"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="save-bar">
+            <div class="save-note">
+              <i class="pi pi-info-circle" aria-hidden="true"></i>
+              Los cambios se aplican a toda la organización.
+            </div>
+            <button type="button" class="btn-submit" (click)="onSaveFichaje()">
+              <i class="pi pi-save" aria-hidden="true"></i>
+              Guardar cambios
+            </button>
+          </div>
+
+        }
+
         <!-- ── OTHER SECTIONS (placeholder) ─────────────────── -->
         @else {
           <div class="sec-card">
@@ -647,6 +830,13 @@ export class RulesetsComponent implements OnInit {
   protected readonly activeSection = signal<SettingsSection>('reglas');
   protected readonly deletingId    = signal<string | null>(null);
 
+  // Fichaje settings state
+  protected readonly fichajeGeo        = signal(true);
+  protected readonly fichajeRestrict   = signal(true);
+  protected readonly fichajeLunch      = signal(30);
+  protected readonly fichajeTolerance  = signal(10);
+  protected readonly fichajeAutoClose  = signal(false);
+
   protected readonly form = this.fb.nonNullable.group({
     name:              ['', Validators.required],
     isDefault:         [false],
@@ -658,6 +848,10 @@ export class RulesetsComponent implements OnInit {
   });
 
   get f() { return this.form.controls; }
+
+  protected onSaveFichaje(): void {
+    // TODO: wire to PATCH /settings/fichaje when backend endpoint is available
+  }
 
   async ngOnInit(): Promise<void> {
     await this.loadRuleSets();
