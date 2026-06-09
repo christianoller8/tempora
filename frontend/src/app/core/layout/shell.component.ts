@@ -144,7 +144,7 @@ interface NavItem {
       padding: 0.625rem 0.875rem;
       min-height: 44px;
       border-radius: 8px;
-      color: var(--text-3);
+      color: var(--text);
       font-size: 0.875rem;
       font-weight: 500;
       cursor: pointer;
@@ -377,11 +377,11 @@ interface NavItem {
     }
 
     :host-context([data-theme="dark"]) .nav-link {
-      color: var(--text-2);
+      color: color-mix(in srgb, var(--text) 75%, transparent);
     }
 
     :host-context([data-theme="dark"]) .nav-link .pi {
-      color: var(--text-3);
+      color: color-mix(in srgb, var(--text) 55%, transparent);
     }
 
     :host-context([data-theme="dark"]) .nav-link:hover {

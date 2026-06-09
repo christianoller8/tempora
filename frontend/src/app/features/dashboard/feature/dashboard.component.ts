@@ -214,7 +214,38 @@ import { ThemeService } from '../../../core/theme/theme.service';
       text-align: center;
     }
 
-    .empty-state .pi { font-size: 2.125rem; }
+    .empty-state .pi { font-size: 2.5rem; }
+
+    .empty-state__title {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-2);
+    }
+
+    .empty-state__sub {
+      font-size: 0.75rem;
+      color: var(--text-3);
+      margin-top: -4px;
+    }
+
+    .chart-placeholder {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      justify-content: center;
+      padding: 4px 0 8px;
+    }
+
+    .chart-placeholder__bar {
+      width: 26px;
+      border-radius: 3px 3px 0 0;
+      border: 2px dashed var(--border-soft);
+      opacity: 0.5;
+    }
+
+    .stats-row--3col {
+      grid-template-columns: repeat(3, 1fr);
+    }
 
     /* ── Status pill (online badge) ─────────────────────────────────── */
     .pill--ok {
@@ -543,126 +574,11 @@ import { ThemeService } from '../../../core/theme/theme.service';
       </div>
     }
 
-    <!-- ── EMPLOYEE VIEW ─────────────────────────────────────────── -->
-    @if (!loading() && !error() && data() && isEmployee()) {
-      <!-- Employee stats -->
-      <div class="stats-row">
-        <div class="stat-card">
-          <div class="stat-icon-row">
-            <div class="stat-icon" [class.stat-icon--green]="myOpenEntry()" [class.stat-icon--primary]="!myOpenEntry()">
-              <i class="pi pi-clock"></i>
-            </div>
-            <span class="my-status-dot" [class.active]="myOpenEntry()" [class.idle]="!myOpenEntry()"></span>
-          </div>
-          <div class="stat-number" style="font-size:1.125rem; font-weight:700; line-height:1.3;">
-            {{ myOpenEntry() ? ('DASHBOARD.CLOCKED_IN_STATUS' | translate) : ('DASHBOARD.CLOCKED_OUT_STATUS' | translate) }}
-          </div>
-          <div class="stat-label">{{ 'DASHBOARD.MY_STATUS' | translate }}</div>
-        </div>
+    <!-- ── MAIN DATA VIEW ────────────────────────────────────────── -->
+    @if (!loading() && !error() && data()) {
 
-        <div class="stat-card">
-          <div class="stat-icon-row">
-            <div class="stat-icon stat-icon--green"><i class="pi pi-stopwatch"></i></div>
-          </div>
-          <div class="stat-number">{{ myTodayHours() }}</div>
-          <div class="stat-label">{{ 'DASHBOARD.TODAY' | translate }}</div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-icon-row">
-            <div class="stat-icon stat-icon--blue"><i class="pi pi-chart-bar"></i></div>
-          </div>
-          <div class="stat-number">{{ myWeekHours() }}</div>
-          <div class="stat-label">{{ 'DASHBOARD.THIS_WEEK' | translate }}</div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-icon-row">
-            <div class="stat-icon stat-icon--orange"><i class="pi pi-calendar"></i></div>
-          </div>
-          <div class="stat-number">{{ myUpcomingShifts().length }}</div>
-          <div class="stat-label">{{ 'DASHBOARD.UPCOMING_SHIFTS' | translate }}</div>
-        </div>
-      </div>
-
-      <!-- Employee mid row: today's activity + upcoming shifts -->
-      <div class="mid-row">
-
-        <!-- Today's time activity -->
-        <div class="panel">
-          <div class="panel-header">
-            <div class="panel-title"><i class="pi pi-list"></i>{{ 'DASHBOARD.TODAY_ACTIVITY' | translate }}</div>
-          </div>
-          <div class="panel-body">
-            @if (myTodayEntries().length === 0) {
-              <div class="empty-state">
-                <i class="pi pi-clock"></i>
-                <span>{{ 'DASHBOARD.NO_ENTRIES_TODAY' | translate }}</span>
-              </div>
-            } @else {
-              @for (entry of myTodayEntries(); track entry.id) {
-                <div class="feed-row">
-                  <div>
-                    <div class="feed-time">{{ entry.clockIn | date:'HH:mm' }}</div>
-                    <div class="feed-duration">
-                      @if (entry.clockOut) { → {{ entry.clockOut | date:'HH:mm' }} }
-                      @else { {{ 'DASHBOARD.RUNNING' | translate }} }
-                    </div>
-                  </div>
-                  <div style="text-align:right;">
-                    <div class="feed-duration">{{ entryDuration(entry) }}</div>
-                  </div>
-                  <p-tag
-                    [value]="entry.status === 'OPEN' ? ('STATUS.OPEN' | translate) : ('STATUS.CLOSED' | translate)"
-                    [severity]="entry.status === 'OPEN' ? 'success' : 'secondary'"
-                    [rounded]="true" [style]="{ fontSize: '0.7rem' }"
-                  />
-                </div>
-              }
-            }
-          </div>
-        </div>
-
-        <!-- Upcoming shifts -->
-        <div class="panel">
-          <div class="panel-header">
-            <div class="panel-title"><i class="pi pi-calendar"></i>{{ 'DASHBOARD.UPCOMING_SHIFTS' | translate }}</div>
-            @if (upcomingLoading()) {
-              <i class="pi pi-spin pi-spinner" style="font-size:0.875rem; color:var(--primary);"></i>
-            }
-          </div>
-          <div class="panel-body">
-            @if (myUpcomingShifts().length === 0 && !upcomingLoading()) {
-              <div class="empty-state">
-                <i class="pi pi-calendar"></i>
-                <span>{{ 'DASHBOARD.NO_UPCOMING_SHIFTS' | translate }}</span>
-              </div>
-            } @else {
-              @for (shift of myUpcomingShifts(); track shift.id) {
-                <div class="shift-row">
-                  <div class="shift-date-block">
-                    <span class="shift-day">{{ shift.date | date:'d' }}</span>
-                    <span class="shift-month">{{ shift.date | date:'MMM' }}</span>
-                  </div>
-                  <div>
-                    <div class="shift-name">{{ shift.templateName }}</div>
-                    <div class="shift-times">{{ shift.times }}</div>
-                  </div>
-                  <p-tag [value]="(shift.date | date:'EEE') ?? ''" severity="secondary" [rounded]="true" [style]="{ fontSize: '0.7rem' }" />
-                </div>
-              }
-            }
-          </div>
-        </div>
-
-      </div>
-    }
-
-    <!-- ── ADMIN / MANAGER DATA ───────────────────────────────────── -->
-    @if (!loading() && !error() && data() && !isEmployee()) {
-
-      <!-- Stats row -->
-      <div class="stats-row">
+      <!-- Stats row — 3 cards for EMPLOYEE, 4 for ADMIN/MANAGER -->
+      <div class="stats-row" [class.stats-row--3col]="isEmployee()">
         <div class="stat-card">
           <div class="stat-icon-row">
             <div class="stat-icon stat-icon--primary"><i class="pi pi-users"></i></div>
@@ -687,142 +603,233 @@ import { ThemeService } from '../../../core/theme/theme.service';
           <div class="stat-label">{{ 'DASHBOARD.ON_ABSENCE' | translate }}</div>
         </div>
 
-        <div class="stat-card">
-          <div class="stat-icon-row">
-            <div class="stat-icon stat-icon--blue"><i class="pi pi-arrows-h"></i></div>
+        @if (!isEmployee()) {
+          <div class="stat-card">
+            <div class="stat-icon-row">
+              <div class="stat-icon stat-icon--blue"><i class="pi pi-arrows-h"></i></div>
+            </div>
+            <div class="stat-number">{{ stats().pendingSwaps }}</div>
+            <div class="stat-label">{{ 'DASHBOARD.PENDING_SWAPS' | translate }}</div>
           </div>
-          <div class="stat-number">{{ stats().pendingSwaps }}</div>
-          <div class="stat-label">{{ 'DASHBOARD.PENDING_SWAPS' | translate }}</div>
-        </div>
+        }
       </div>
 
-      <!-- Mid row: live feed + incidents -->
-      <div class="mid-row">
+      <!-- ── EMPLOYEE mid section ──────────────────────────────── -->
+      @if (isEmployee()) {
+        <div class="mid-row">
 
-        <!-- Live clock-in feed -->
-        <div class="panel">
-          <div class="panel-header">
-            <div class="panel-title">
-              <i class="pi pi-wifi"></i>
-              {{ 'DASHBOARD.LIVE_FEED_TITLE' | translate }}
+          <!-- Today's time activity -->
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title"><i class="pi pi-list"></i>{{ 'DASHBOARD.TODAY_ACTIVITY' | translate }}</div>
             </div>
-            <p-tag
-              [value]="'DASHBOARD.ONLINE_BADGE' | translate:{ count: feed().length }"
-              severity="success"
-              [rounded]="true"
-              [style]="{ fontSize: '0.7rem' }"
-            />
-          </div>
-          <div class="panel-body">
-            @if (feed().length === 0) {
-              <div class="empty-state">
-                <i class="pi pi-moon"></i>
-                <span>{{ 'DASHBOARD.NO_ONE_CLOCKED' | translate }}</span>
-              </div>
-            } @else {
-              @for (entry of feed(); track entry.employeeId) {
-                <div class="feed-row">
-                  <div>
-                    <div class="feed-name">{{ entry.fullName }}</div>
-                    <div class="feed-category">{{ entry.category | lowercase | titlecase }}</div>
-                  </div>
-                  <div style="text-align:right;">
-                    <div class="feed-time">{{ entry.clockInTime | date:'HH:mm' }}</div>
-                    <div class="feed-duration">{{ entry.duration }}</div>
-                  </div>
-                  <span class="online-dot" title="Online"></span>
+            <div class="panel-body">
+              @if (myTodayEntries().length === 0) {
+                <div class="empty-state">
+                  <i class="pi pi-clock"></i>
+                  <span>{{ 'DASHBOARD.NO_ENTRIES_TODAY' | translate }}</span>
                 </div>
+              } @else {
+                @for (entry of myTodayEntries(); track entry.id) {
+                  <div class="feed-row">
+                    <div>
+                      <div class="feed-time">{{ entry.clockIn | date:'HH:mm' }}</div>
+                      <div class="feed-duration">
+                        @if (entry.clockOut) { → {{ entry.clockOut | date:'HH:mm' }} }
+                        @else { {{ 'DASHBOARD.RUNNING' | translate }} }
+                      </div>
+                    </div>
+                    <div style="text-align:right;">
+                      <div class="feed-duration">{{ entryDuration(entry) }}</div>
+                    </div>
+                    <p-tag
+                      [value]="entry.status === 'OPEN' ? ('STATUS.OPEN' | translate) : ('STATUS.CLOSED' | translate)"
+                      [severity]="entry.status === 'OPEN' ? 'success' : 'secondary'"
+                      [rounded]="true" [style]="{ fontSize: '0.7rem' }"
+                    />
+                  </div>
+                }
               }
-            }
-          </div>
-        </div>
-
-        <!-- Daily incidents -->
-        <div class="panel">
-          <div class="panel-header">
-            <div class="panel-title">
-              <i class="pi pi-exclamation-triangle"></i>
-              {{ 'DASHBOARD.INCIDENTS_TITLE' | translate }}
             </div>
-            @if (incidents().length > 0) {
+          </div>
+
+          <!-- Upcoming shifts -->
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title"><i class="pi pi-calendar"></i>{{ 'DASHBOARD.UPCOMING_SHIFTS' | translate }}</div>
+              @if (upcomingLoading()) {
+                <i class="pi pi-spin pi-spinner" style="font-size:0.875rem; color:var(--primary);"></i>
+              }
+            </div>
+            <div class="panel-body">
+              @if (myUpcomingShifts().length === 0 && !upcomingLoading()) {
+                <div class="empty-state">
+                  <i class="pi pi-calendar"></i>
+                  <span>{{ 'DASHBOARD.NO_UPCOMING_SHIFTS' | translate }}</span>
+                </div>
+              } @else {
+                @for (shift of myUpcomingShifts(); track shift.id) {
+                  <div class="shift-row">
+                    <div class="shift-date-block">
+                      <span class="shift-day">{{ shift.date | date:'d' }}</span>
+                      <span class="shift-month">{{ shift.date | date:'MMM' }}</span>
+                    </div>
+                    <div>
+                      <div class="shift-name">{{ shift.templateName }}</div>
+                      <div class="shift-times">{{ shift.times }}</div>
+                    </div>
+                    <p-tag [value]="(shift.date | date:'EEE') ?? ''" severity="secondary" [rounded]="true" [style]="{ fontSize: '0.7rem' }" />
+                  </div>
+                }
+              }
+            </div>
+          </div>
+
+        </div>
+      }
+
+      <!-- ── ADMIN / MANAGER mid section + chart ───────────────── -->
+      @if (!isEmployee()) {
+
+        <!-- Mid row: live feed + incidents -->
+        <div class="mid-row">
+
+          <!-- Live clock-in feed -->
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">
+                <i class="pi pi-wifi"></i>
+                {{ 'DASHBOARD.LIVE_FEED_TITLE' | translate }}
+              </div>
               <p-tag
-                [value]="'DASHBOARD.ALERTS_BADGE' | translate:{ count: incidents().length }"
-                severity="warn"
+                [value]="'DASHBOARD.ONLINE_BADGE' | translate:{ count: feed().length }"
+                severity="success"
                 [rounded]="true"
                 [style]="{ fontSize: '0.7rem' }"
               />
+            </div>
+            <div class="panel-body">
+              @if (feed().length === 0) {
+                <div class="empty-state">
+                  <i class="pi pi-moon"></i>
+                  <span class="empty-state__title">No hay fichajes activos ahora mismo</span>
+                  <span class="empty-state__sub">El equipo está fuera de turno</span>
+                </div>
+              } @else {
+                @for (entry of feed(); track entry.employeeId) {
+                  <div class="feed-row">
+                    <div>
+                      <div class="feed-name">{{ entry.fullName }}</div>
+                      <div class="feed-category">{{ entry.category | lowercase | titlecase }}</div>
+                    </div>
+                    <div style="text-align:right;">
+                      <div class="feed-time">{{ entry.clockInTime | date:'HH:mm' }}</div>
+                      <div class="feed-duration">{{ entry.duration }}</div>
+                    </div>
+                    <span class="online-dot" title="Online"></span>
+                  </div>
+                }
+              }
+            </div>
+          </div>
+
+          <!-- Daily incidents -->
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">
+                <i class="pi pi-exclamation-triangle"></i>
+                {{ 'DASHBOARD.INCIDENTS_TITLE' | translate }}
+              </div>
+              @if (incidents().length > 0) {
+                <p-tag
+                  [value]="'DASHBOARD.ALERTS_BADGE' | translate:{ count: incidents().length }"
+                  severity="warn"
+                  [rounded]="true"
+                  [style]="{ fontSize: '0.7rem' }"
+                />
+              }
+            </div>
+            <div class="panel-body">
+              @if (incidents().length === 0) {
+                <div class="empty-state">
+                  <i class="pi pi-check-circle"></i>
+                  <span class="empty-state__title">Todo en orden</span>
+                  <span class="empty-state__sub">Sin incidencias registradas hoy</span>
+                </div>
+              } @else {
+                @if (incidentCloseError()) {
+                  <div style="padding: 0.75rem 1.25rem;">
+                    <p-message severity="error" [text]="incidentCloseError()!" styleClass="w-full" />
+                  </div>
+                }
+                @for (inc of incidents(); track inc.id) {
+                  <div class="incident-row">
+                    <span class="incident-dot incident-dot--{{ inc.severity }}"></span>
+                    <div style="flex:1; min-width:0;">
+                      <div class="incident-label">{{ inc.label }}</div>
+                      <div class="incident-detail">{{ inc.detail }}</div>
+                    </div>
+                    @if (inc.employeeId) {
+                      <p-button
+                        [label]="'DASHBOARD.CLOSE_SESSION' | translate"
+                        icon="pi pi-sign-out"
+                        size="small"
+                        severity="danger"
+                        [text]="true"
+                        [loading]="closingIncidentId() === inc.id"
+                        [disabled]="closingIncidentId() !== null"
+                        [pTooltip]="'DASHBOARD.CLOSE_SESSION_TOOLTIP' | translate"
+                        tooltipPosition="left"
+                        (onClick)="closeIncident(inc)"
+                      />
+                    }
+                  </div>
+                }
+              }
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Weekly hours bar chart -->
+        <div class="chart-panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <i class="pi pi-chart-bar"></i>
+              {{ 'DASHBOARD.WEEKLY_CHART_TITLE' | translate }} — {{ weekLabel }}
+            </div>
+            @if (weeklyHours().length > 0) {
+              <span style="font-size: 0.75rem; color: var(--text-3);">
+                {{ 'DASHBOARD.EMPLOYEES_ACTIVITY' | translate:{ count: weeklyHours().length } }}
+              </span>
             }
           </div>
-          <div class="panel-body">
-            @if (incidents().length === 0) {
-              <div class="empty-state">
-                <i class="pi pi-check-circle"></i>
-                <span>{{ 'DASHBOARD.NO_INCIDENTS' | translate }}</span>
+          <div class="chart-body">
+            @if (weeklyHours().length === 0) {
+              <div class="empty-state" style="padding-top: 2rem;">
+                <div class="chart-placeholder" aria-hidden="true">
+                  <div class="chart-placeholder__bar" style="height:48px"></div>
+                  <div class="chart-placeholder__bar" style="height:30px"></div>
+                  <div class="chart-placeholder__bar" style="height:64px"></div>
+                  <div class="chart-placeholder__bar" style="height:22px"></div>
+                  <div class="chart-placeholder__bar" style="height:56px"></div>
+                  <div class="chart-placeholder__bar" style="height:38px"></div>
+                  <div class="chart-placeholder__bar" style="height:44px"></div>
+                </div>
+                <span class="empty-state__title">Sin actividad registrada esta semana</span>
               </div>
             } @else {
-              @if (incidentCloseError()) {
-                <div style="padding: 0.75rem 1.25rem;">
-                  <p-message severity="error" [text]="incidentCloseError()!" styleClass="w-full" />
-                </div>
-              }
-              @for (inc of incidents(); track inc.id) {
-                <div class="incident-row">
-                  <span class="incident-dot incident-dot--{{ inc.severity }}"></span>
-                  <div style="flex:1; min-width:0;">
-                    <div class="incident-label">{{ inc.label }}</div>
-                    <div class="incident-detail">{{ inc.detail }}</div>
-                  </div>
-                  @if (inc.employeeId) {
-                    <p-button
-                      [label]="'DASHBOARD.CLOSE_SESSION' | translate"
-                      icon="pi pi-sign-out"
-                      size="small"
-                      severity="danger"
-                      [text]="true"
-                      [loading]="closingIncidentId() === inc.id"
-                      [disabled]="closingIncidentId() !== null"
-                      [pTooltip]="'DASHBOARD.CLOSE_SESSION_TOOLTIP' | translate"
-                      tooltipPosition="left"
-                      (onClick)="closeIncident(inc)"
-                    />
-                  }
-                </div>
-              }
+              <p-chart
+                type="bar"
+                [data]="chartData()"
+                [options]="chartOptions()"
+                [style]="{ height: (weeklyHours().length * 36 + 40) + 'px', minHeight: '200px' }"
+              />
             }
           </div>
         </div>
 
-      </div>
-
-      <!-- Weekly hours bar chart -->
-      <div class="chart-panel">
-        <div class="panel-header">
-          <div class="panel-title">
-            <i class="pi pi-chart-bar"></i>
-            {{ 'DASHBOARD.WEEKLY_CHART_TITLE' | translate }} — {{ weekLabel }}
-          </div>
-          @if (weeklyHours().length > 0) {
-            <span style="font-size: 0.75rem; color: var(--text-3);">
-              {{ 'DASHBOARD.EMPLOYEES_ACTIVITY' | translate:{ count: weeklyHours().length } }}
-            </span>
-          }
-        </div>
-        <div class="chart-body">
-          @if (weeklyHours().length === 0) {
-            <div class="empty-state" style="padding-top: 3rem;">
-              <i class="pi pi-chart-bar"></i>
-              <span>{{ 'DASHBOARD.NO_CHART_DATA' | translate }}</span>
-            </div>
-          } @else {
-            <p-chart
-              type="bar"
-              [data]="chartData()"
-              [options]="chartOptions()"
-              [style]="{ height: (weeklyHours().length * 36 + 40) + 'px', minHeight: '200px' }"
-            />
-          }
-        </div>
-      </div>
+      }
 
     }
   `,
