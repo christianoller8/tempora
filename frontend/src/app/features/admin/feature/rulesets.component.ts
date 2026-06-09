@@ -803,6 +803,99 @@ type SettingsSection = 'reglas' | 'fichaje' | 'notif' | 'org' | 'seg';
 
         }
 
+        <!-- ── NOTIFICACIONES ────────────────────────────────── -->
+        @else if (activeSection() === 'notif') {
+
+          <div class="sec-card">
+            <div class="sec-head">
+              <h2>Notificaciones</h2>
+              <p>Avisos por correo y dentro de la aplicación.</p>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">Fichaje sin cerrar</div>
+                <div class="setting-desc">Avisar al responsable cuando una ficha queda abierta.</div>
+              </div>
+              <div class="setting-ctrl">
+                <p-toggleswitch
+                  [ngModel]="notifOpenEntry()"
+                  (ngModelChange)="notifOpenEntry.set($event)"
+                  aria-label="Fichaje sin cerrar"
+                />
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">Solicitudes de ausencia</div>
+                <div class="setting-desc">Notificar nuevas solicitudes pendientes de aprobación.</div>
+              </div>
+              <div class="setting-ctrl">
+                <p-toggleswitch
+                  [ngModel]="notifAbsenceRequests()"
+                  (ngModelChange)="notifAbsenceRequests.set($event)"
+                  aria-label="Solicitudes de ausencia"
+                />
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">Cambios de turno</div>
+                <div class="setting-desc">Avisar de solicitudes de intercambio entre empleados.</div>
+              </div>
+              <div class="setting-ctrl">
+                <p-toggleswitch
+                  [ngModel]="notifShiftSwaps()"
+                  (ngModelChange)="notifShiftSwaps.set($event)"
+                  aria-label="Cambios de turno"
+                />
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">Exceso de jornada</div>
+                <div class="setting-desc">Alertar cuando se superen los límites de la regla aplicada.</div>
+              </div>
+              <div class="setting-ctrl">
+                <p-toggleswitch
+                  [ngModel]="notifOvertime()"
+                  (ngModelChange)="notifOvertime.set($event)"
+                  aria-label="Exceso de jornada"
+                />
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">Resumen semanal por correo</div>
+                <div class="setting-desc">Enviar cada lunes el resumen de horas e incidencias.</div>
+              </div>
+              <div class="setting-ctrl">
+                <p-toggleswitch
+                  [ngModel]="notifWeeklySummary()"
+                  (ngModelChange)="notifWeeklySummary.set($event)"
+                  aria-label="Resumen semanal por correo"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="save-bar">
+            <div class="save-note">
+              <i class="pi pi-info-circle" aria-hidden="true"></i>
+              Los cambios se aplican a toda la organización.
+            </div>
+            <button type="button" class="btn-submit" (click)="onSaveNotif()">
+              <i class="pi pi-save" aria-hidden="true"></i>
+              Guardar cambios
+            </button>
+          </div>
+
+        }
+
         <!-- ── OTHER SECTIONS (placeholder) ─────────────────── -->
         @else {
           <div class="sec-card">
@@ -849,8 +942,19 @@ export class RulesetsComponent implements OnInit {
 
   get f() { return this.form.controls; }
 
+  // Notificaciones settings state
+  protected readonly notifOpenEntry       = signal(true);
+  protected readonly notifAbsenceRequests = signal(true);
+  protected readonly notifShiftSwaps      = signal(true);
+  protected readonly notifOvertime        = signal(true);
+  protected readonly notifWeeklySummary   = signal(false);
+
   protected onSaveFichaje(): void {
     // TODO: wire to PATCH /settings/fichaje when backend endpoint is available
+  }
+
+  protected onSaveNotif(): void {
+    // TODO: wire to PATCH /settings/notificaciones when backend endpoint is available
   }
 
   async ngOnInit(): Promise<void> {
