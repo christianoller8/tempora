@@ -3,6 +3,7 @@ import { FormBuilder, Validators, ReactiveFormsModule, FormsModule } from '@angu
 import { CommonModule } from '@angular/common';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
+import { SelectModule } from 'primeng/select';
 import { ApiService } from '../../../core/http/api.service';
 import { firstValueFrom } from 'rxjs';
 
@@ -22,7 +23,7 @@ type SettingsSection = 'reglas' | 'fichaje' | 'notif' | 'org' | 'seg';
 @Component({
   selector: 'app-rulesets',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, FormsModule, CommonModule, TranslatePipe, ToggleSwitchModule],
+  imports: [ReactiveFormsModule, FormsModule, CommonModule, TranslatePipe, ToggleSwitchModule, SelectModule],
   styles: [`
     :host { display: block; }
 
@@ -387,6 +388,25 @@ type SettingsSection = 'reglas' | 'fichaje' | 'notif' | 'org' | 'seg';
     }
 
     .num-input:focus {
+      border-color: var(--primary-hover);
+      box-shadow: 0 0 0 3px var(--primary-soft);
+    }
+
+    .wide-input {
+      width: 220px;
+      height: 44px;
+      padding: 0 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 0.84375rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+
+    .wide-input:focus {
       border-color: var(--primary-hover);
       box-shadow: 0 0 0 3px var(--primary-soft);
     }
@@ -896,6 +916,89 @@ type SettingsSection = 'reglas' | 'fichaje' | 'notif' | 'org' | 'seg';
 
         }
 
+        <!-- ── ORGANIZACIÓN ──────────────────────────────────── -->
+        @else if (activeSection() === 'org') {
+
+          <div class="sec-card">
+            <div class="sec-head">
+              <h2>Organización</h2>
+              <p>Datos generales del espacio de trabajo.</p>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">Nombre de la organización</div>
+              </div>
+              <div class="setting-ctrl">
+                <input
+                  class="wide-input"
+                  type="text"
+                  [ngModel]="orgName()"
+                  (ngModelChange)="orgName.set($event)"
+                  aria-label="Nombre de la organización"
+                />
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">Zona horaria</div>
+              </div>
+              <div class="setting-ctrl">
+                <p-select
+                  [options]="timezoneOptions"
+                  [ngModel]="orgTimezone()"
+                  (ngModelChange)="orgTimezone.set($event)"
+                  [style]="{ width: '220px' }"
+                  aria-label="Zona horaria"
+                />
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">Idioma por defecto</div>
+              </div>
+              <div class="setting-ctrl">
+                <p-select
+                  [options]="languageOptions"
+                  [ngModel]="orgLanguage()"
+                  (ngModelChange)="orgLanguage.set($event)"
+                  [style]="{ width: '220px' }"
+                  aria-label="Idioma por defecto"
+                />
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">Inicio de la semana</div>
+              </div>
+              <div class="setting-ctrl">
+                <p-select
+                  [options]="weekStartOptions"
+                  [ngModel]="orgWeekStart()"
+                  (ngModelChange)="orgWeekStart.set($event)"
+                  [style]="{ width: '220px' }"
+                  aria-label="Inicio de la semana"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="save-bar">
+            <div class="save-note">
+              <i class="pi pi-info-circle" aria-hidden="true"></i>
+              Los cambios se aplican a toda la organización.
+            </div>
+            <button type="button" class="btn-submit" (click)="onSaveOrg()">
+              <i class="pi pi-save" aria-hidden="true"></i>
+              Guardar cambios
+            </button>
+          </div>
+
+        }
+
         <!-- ── OTHER SECTIONS (placeholder) ─────────────────── -->
         @else {
           <div class="sec-card">
@@ -955,6 +1058,20 @@ export class RulesetsComponent implements OnInit {
 
   protected onSaveNotif(): void {
     // TODO: wire to PATCH /settings/notificaciones when backend endpoint is available
+  }
+
+  // Organización settings state
+  protected readonly orgName      = signal('Tempora Demo');
+  protected readonly orgTimezone  = signal('Europa/Madrid (GMT+2)');
+  protected readonly orgLanguage  = signal('Español');
+  protected readonly orgWeekStart = signal('Lunes');
+
+  protected readonly timezoneOptions  = ['Europa/Madrid (GMT+2)', 'Europa/Londres (GMT+1)', 'América/Nueva_York (GMT-5)'];
+  protected readonly languageOptions  = ['Español', 'English'];
+  protected readonly weekStartOptions = ['Lunes', 'Domingo'];
+
+  protected onSaveOrg(): void {
+    // TODO: wire to PATCH /settings/organizacion when backend endpoint is available
   }
 
   async ngOnInit(): Promise<void> {
