@@ -111,6 +111,10 @@ export class ShiftsApi {
     return this.api.post<AssignmentResult>('/shifts/assignments', dto);
   }
 
+  deleteAssignment(id: string): Observable<void> {
+    return this.api.delete<void>(`/shifts/assignments/${id}`);
+  }
+
   // --- Swaps ---
   listSwaps(params?: { status?: string }): Observable<SwapRequest[]> {
     return this.api.get<SwapRequest[]>('/shifts/swaps', params);

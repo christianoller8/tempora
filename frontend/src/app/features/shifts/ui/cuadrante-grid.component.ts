@@ -23,13 +23,13 @@ export interface AssignmentClickEvent {
 }
 
 const SHIFT_CONFIG: Record<string, { label: string; bg: string; text: string; border: string }> = {
-  MANANA:   { label: 'M',  bg: 'rgba(59,130,246,0.22)',  text: '#93c5fd', border: 'rgba(59,130,246,0.5)'  },
-  TARDE:    { label: 'T',  bg: 'rgba(249,115,22,0.22)',  text: '#fdba74', border: 'rgba(249,115,22,0.5)'  },
-  NOCHE:    { label: 'N',  bg: 'rgba(139,92,246,0.22)',  text: '#c4b5fd', border: 'rgba(139,92,246,0.5)'  },
-  GUARDIA:  { label: 'G',  bg: 'rgba(239,68,68,0.22)',   text: '#fca5a5', border: 'rgba(239,68,68,0.5)'   },
-  RETEN:    { label: 'R',  bg: 'rgba(234,179,8,0.22)',   text: '#fde047', border: 'rgba(234,179,8,0.5)'   },
-  REFUERZO: { label: 'RF', bg: 'rgba(20,184,166,0.22)',  text: '#5eead4', border: 'rgba(20,184,166,0.5)'  },
-  LIBRANZA: { label: 'L',  bg: 'rgba(34,197,94,0.14)',   text: '#86efac', border: 'rgba(34,197,94,0.4)'   },
+  MANANA:   { label: 'M',  bg: 'rgba(59,130,246,0.22)',  text: '#1d4ed8', border: 'rgba(59,130,246,0.5)'  },
+  TARDE:    { label: 'T',  bg: 'rgba(249,115,22,0.22)',  text: '#c2410c', border: 'rgba(249,115,22,0.5)'  },
+  NOCHE:    { label: 'N',  bg: 'rgba(139,92,246,0.22)',  text: '#6d28d9', border: 'rgba(139,92,246,0.5)'  },
+  GUARDIA:  { label: 'G',  bg: 'rgba(239,68,68,0.22)',   text: '#b91c1c', border: 'rgba(239,68,68,0.5)'   },
+  RETEN:    { label: 'R',  bg: 'rgba(234,179,8,0.22)',   text: '#a16207', border: 'rgba(234,179,8,0.5)'   },
+  REFUERZO: { label: 'RF', bg: 'rgba(20,184,166,0.22)',  text: '#0f766e', border: 'rgba(20,184,166,0.5)'  },
+  LIBRANZA: { label: 'L',  bg: 'rgba(34,197,94,0.14)',   text: '#15803d', border: 'rgba(34,197,94,0.4)'   },
 };
 
 interface AbsenceCfg { label: string; bg: string; text: string; border: string; typeLabel: string; }
@@ -175,7 +175,6 @@ const ABSENCE_FALLBACK: AbsenceCfg = { label: 'AUS', bg: AMBER_BG, text: AMBER_T
     .emp-cat {
       font-size: 0.625rem;
       color: var(--text-2);
-      text-transform: capitalize;
       margin-top: 1px;
     }
 
@@ -208,9 +207,9 @@ const ABSENCE_FALLBACK: AbsenceCfg = { label: 'AUS', bg: AMBER_BG, text: AMBER_T
       align-items: center;
       justify-content: center;
       width: 100%;
-      height: 32px;
+      height: 36px;
       border-radius: 6px;
-      font-size: 0.65rem;
+      font-size: 0.75rem;
       font-weight: 800;
       letter-spacing: 0.04em;
       border: 1px solid transparent;
@@ -360,7 +359,7 @@ export class CuadranteGridComponent {
 
   readonly assignmentClick = output<AssignmentClickEvent>();
 
-  private readonly DAY_LABELS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+  private readonly DAY_LABELS = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
 
   readonly days = computed(() => {
     const y = this.year(), m = this.month();
@@ -430,6 +429,19 @@ export class CuadranteGridComponent {
   }
 
   formatCategory(cat: string): string {
-    return cat.replace(/_/g, ' ').toLowerCase();
+    const map: Record<string, string> = {
+      MEDICO:               'Médico',
+      ENFERMERO:            'Enfermero/a',
+      TCAE:                 'TCAE',
+      FISIOTERAPEUTA:       'Fisioterapeuta',
+      TERAPEUTA_OCUPACIONAL:'Terapeuta Ocupacional',
+      PSICOLOGO:            'Psicólogo',
+      TRABAJADOR_SOCIAL:    'Trabajador Social',
+      CELADOR:              'Celador',
+      ADMINISTRATIVO:       'Administrativo',
+      COCINERO:             'Cocinero',
+      AUXILIAR_SERVICIOS:   'Auxiliar de Servicios',
+    };
+    return map[cat] ?? cat.replace(/_/g, ' ').toLowerCase();
   }
 }

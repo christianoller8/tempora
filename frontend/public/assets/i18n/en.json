@@ -111,7 +111,9 @@
     "WEEKLY_CHART_TITLE": "Weekly Hours",
     "ONLINE_BADGE": "{{count}} online",
     "ALERTS_BADGE": "{{count}} alerts",
-    "EMPLOYEES_ACTIVITY": "{{count}} employee(s) with activity",
+    "ALERTS_BADGE_ONE": "1 alert",
+    "EMPLOYEES_ACTIVITY": "{{count}} employees with activity",
+    "EMPLOYEES_ACTIVITY_ONE": "1 employee with activity",
     "NO_ONE_CLOCKED": "No one is clocked in right now",
     "NO_INCIDENTS": "No incidents today — all clear!",
     "NO_CHART_DATA": "No closed time entries this week yet",
@@ -339,7 +341,9 @@
     "SWAP_YOUR_REQUESTS": "Your Swap Requests",
     "RULE_VIOLATION": "Swap blocked by rule violations:",
     "SUBMITTING": "Submitting...",
-    "REQUEST_SWAP": "Request Swap"
+    "REQUEST_SWAP": "Request Swap",
+    "SCHEDULE_PUBLISH": "Publish",
+    "SCHEDULE_PUBLISH_TOOLTIP": "Publish this draft and enforce rule checks"
   },
   "REPORTS": {
     "TITLE": "Reports",

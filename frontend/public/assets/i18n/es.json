@@ -111,7 +111,9 @@
     "WEEKLY_CHART_TITLE": "Horas semanales",
     "ONLINE_BADGE": "{{count}} en línea",
     "ALERTS_BADGE": "{{count}} alertas",
-    "EMPLOYEES_ACTIVITY": "{{count}} empleado(s) con actividad",
+    "ALERTS_BADGE_ONE": "1 alerta",
+    "EMPLOYEES_ACTIVITY": "{{count}} empleados con actividad",
+    "EMPLOYEES_ACTIVITY_ONE": "1 empleado con actividad",
     "NO_ONE_CLOCKED": "Nadie tiene la ficha activa ahora mismo",
     "NO_INCIDENTS": "Sin incidencias hoy — todo en orden",
     "NO_CHART_DATA": "Sin fichajes cerrados esta semana",
@@ -339,7 +341,9 @@
     "SWAP_YOUR_REQUESTS": "Tus solicitudes de cambio",
     "RULE_VIOLATION": "Cambio bloqueado por incumplimiento de reglas:",
     "SUBMITTING": "Enviando...",
-    "REQUEST_SWAP": "Solicitar cambio"
+    "REQUEST_SWAP": "Solicitar cambio",
+    "SCHEDULE_PUBLISH": "Publicar",
+    "SCHEDULE_PUBLISH_TOOLTIP": "Publicar este borrador y verificar reglas"
   },
   "REPORTS": {
     "TITLE": "Informes",

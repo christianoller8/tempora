@@ -130,12 +130,12 @@ export function deriveIncidents(d: DashboardData): Incident[] {
   for (const entry of d.openEntries) {
     if (entry.clockIn.slice(0, 10) < today) {
       const emp  = empMap.get(entry.employeeId);
-      const name = emp ? `${emp.firstName} ${emp.lastName}` : 'Unknown';
+      const name = emp ? `${emp.firstName} ${emp.lastName}` : 'Desconocido';
       incidents.push({
         id:         `missed-${entry.id}`,
         severity:   'danger',
-        label:      'Missed clock-out',
-        detail:     `${name} — clocked in ${entry.clockIn.slice(0, 10)}, never clocked out`,
+        label:      'Fichaje no cerrado',
+        detail:     `${name} — fichó el ${entry.clockIn.slice(0, 10)}, nunca cerró el fichaje`,
         employeeId: entry.employeeId,
       });
     }
@@ -146,12 +146,12 @@ export function deriveIncidents(d: DashboardData): Incident[] {
     const runningH = (now - new Date(entry.clockIn).getTime()) / 3_600_000;
     if (runningH > 9 && entry.clockIn.slice(0, 10) === today) {
       const emp  = empMap.get(entry.employeeId);
-      const name = emp ? `${emp.firstName} ${emp.lastName}` : 'Unknown';
+      const name = emp ? `${emp.firstName} ${emp.lastName}` : 'Desconocido';
       incidents.push({
         id:       `overtime-${entry.id}`,
         severity: 'warn',
-        label:    'Session > 9 h',
-        detail:   `${name} — ${runningH.toFixed(1)} h since clock-in`,
+        label:    'Sesión > 9 h',
+        detail:   `${name} — ${runningH.toFixed(1)} h desde el fichaje`,
       });
     }
   }
@@ -170,12 +170,12 @@ export function deriveIncidents(d: DashboardData): Incident[] {
       const gapH = (new Date(sorted[i].clockIn).getTime() - new Date(sorted[i-1].clockOut!).getTime()) / 3_600_000;
       if (gapH > 0 && gapH < 12) {
         const emp  = empMap.get(empId);
-        const name = emp ? `${emp.firstName} ${emp.lastName}` : 'Unknown';
+        const name = emp ? `${emp.firstName} ${emp.lastName}` : 'Desconocido';
         incidents.push({
           id:       `rest-${sorted[i].id}`,
           severity: 'warn',
-          label:    'Short rest period',
-          detail:   `${name} — only ${gapH.toFixed(1)} h rest (min 12 h)`,
+          label:    'Período de descanso corto',
+          detail:   `${name} — solo ${gapH.toFixed(1)} h de descanso (mín. 12 h)`,
         });
       }
     }
@@ -202,6 +202,7 @@ export function deriveWeeklyHours(d: DashboardData): WeeklyHoursEntry[] {
         hours: Math.round(hours * 10) / 10,
       };
     })
+    .filter(e => e.hours > 0)
     .sort((a, b) => b.hours - a.hours);
 }
 

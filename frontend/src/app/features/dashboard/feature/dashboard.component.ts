@@ -711,7 +711,7 @@ import { ThemeService } from '../../../core/theme/theme.service';
             <div class="panel-body">
               @if (feed().length === 0) {
                 <div class="empty-state">
-                  <i class="pi pi-moon"></i>
+                  <i class="pi pi-clock"></i>
                   <span class="empty-state__title">No hay fichajes activos ahora mismo</span>
                   <span class="empty-state__sub">El equipo está fuera de turno</span>
                 </div>
@@ -742,7 +742,7 @@ import { ThemeService } from '../../../core/theme/theme.service';
               </div>
               @if (incidents().length > 0) {
                 <p-tag
-                  [value]="'DASHBOARD.ALERTS_BADGE' | translate:{ count: incidents().length }"
+                  [value]="(incidents().length === 1 ? 'DASHBOARD.ALERTS_BADGE_ONE' : 'DASHBOARD.ALERTS_BADGE') | translate:{ count: incidents().length }"
                   severity="warn"
                   [rounded]="true"
                   [style]="{ fontSize: '0.7rem' }"
@@ -800,7 +800,7 @@ import { ThemeService } from '../../../core/theme/theme.service';
             </div>
             @if (weeklyHours().length > 0) {
               <span style="font-size: 0.75rem; color: var(--text-3);">
-                {{ 'DASHBOARD.EMPLOYEES_ACTIVITY' | translate:{ count: weeklyHours().length } }}
+                {{ (weeklyHours().length === 1 ? 'DASHBOARD.EMPLOYEES_ACTIVITY_ONE' : 'DASHBOARD.EMPLOYEES_ACTIVITY') | translate:{ count: weeklyHours().length } }}
               </span>
             }
           </div>
