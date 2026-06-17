@@ -23,6 +23,7 @@ import {
 } from './schedules.service';
 import {
   createAssignment,
+  deleteAssignment,
   listAssignments,
 } from './assignments.service';
 import {
@@ -137,9 +138,20 @@ export async function listAssignmentsHandler(req: Request, res: Response, next: 
 }
 
 export async function createAssignmentHandler(req: Request, res: Response, next: NextFunction) {
+  console.log('[createAssignment] body:', JSON.stringify(req.body));
   try {
     const result = await createAssignment(req.body, (req as RequestWithUser).user.organizationId, (req as RequestWithUser).user.userId, getDb());
     res.status(201).json(result);
+  } catch (err) {
+    console.error('[createAssignment] error:', err);
+    next(err);
+  }
+}
+
+export async function deleteAssignmentHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    await deleteAssignment(req.params['id']!, (req as RequestWithUser).user.organizationId, (req as RequestWithUser).user.userId, getDb());
+    res.status(204).send();
   } catch (err) { next(err); }
 }
 

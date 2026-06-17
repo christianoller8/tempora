@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createAssignment } from './assignments.service';
+import { createAssignment, deleteAssignment } from './assignments.service';
 import type { TenantClient } from '../../db/tenant';
 import { ApiError } from '../../middleware/error';
 
@@ -39,8 +39,12 @@ function makeMockDb(overrides: Partial<Record<string, unknown>> = {}): TenantCli
     shiftTemplate: { findUnique: vi.fn().mockResolvedValue(defaultTemplate) },
     ruleSet: { findFirst: vi.fn().mockResolvedValue(null) }, // null → use defaults
     shiftAssignment: {
+      findUnique: vi.fn().mockResolvedValue(defaultAssignment),
+      findFirst: vi.fn().mockResolvedValue(null), // null = no existing assignment → CREATE path
       findMany: vi.fn().mockResolvedValue([]),
       create: vi.fn().mockResolvedValue(defaultAssignment),
+      update: vi.fn().mockResolvedValue(defaultAssignment),
+      delete: vi.fn().mockResolvedValue(defaultAssignment),
     },
     absence: { findMany: vi.fn().mockResolvedValue([]) }, // P4-9: approved absences
     $queryRaw: vi.fn().mockResolvedValue([{ total: 0 }]),
@@ -150,5 +154,45 @@ describe('createAssignment', () => {
     await createAssignment(baseDto, 'org-1', 'user-1', db);
     const [, cfg] = vi.mocked(ruleEngine.check).mock.calls[0]!;
     expect(cfg.minRestHours).toBe(10); // org override applied
+  });
+});
+
+describe('deleteAssignment', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('deletes assignment and audits when schedule is DRAFT', async () => {
+    const db = makeMockDb();
+    await expect(deleteAssignment('assign-1', 'org-1', 'user-1', db)).resolves.toBeUndefined();
+    expect((db as ReturnType<typeof makeMockDb>).shiftAssignment.delete).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 'assign-1' } }),
+    );
+  });
+
+  it('throws 404 when assignment not found', async () => {
+    const db = makeMockDb({
+      shiftAssignment: {
+        findUnique: vi.fn().mockResolvedValue(null),
+        findFirst: vi.fn().mockResolvedValue(null),
+        findMany: vi.fn().mockResolvedValue([]),
+        create: vi.fn(),
+        update: vi.fn(),
+        delete: vi.fn(),
+      },
+    });
+    const err = await deleteAssignment('missing', 'org-1', 'user-1', db).catch(e => e);
+    expect(err).toBeInstanceOf(ApiError);
+    expect(err.status).toBe(404);
+    expect(err.code).toBe('NOT_FOUND');
+  });
+
+  it('throws 409 when schedule is not DRAFT', async () => {
+    const db = makeMockDb({
+      shiftSchedule: { findUnique: vi.fn().mockResolvedValue({ id: 'sched-1', status: 'PUBLISHED' }) },
+    });
+    const err = await deleteAssignment('assign-1', 'org-1', 'user-1', db).catch(e => e);
+    expect(err).toBeInstanceOf(ApiError);
+    expect(err.status).toBe(409);
+    expect(err.code).toBe('SCHEDULE_NOT_DRAFT');
+    expect((db as ReturnType<typeof makeMockDb>).shiftAssignment.delete).not.toHaveBeenCalled();
   });
 });

@@ -4,6 +4,7 @@ import { ApiError } from '../../middleware/error';
 import { auditWriter } from '../../audit/audit-writer';
 import { ruleEngine } from '../rules/index';
 import type { RuleContext, RuleSetConfig, RuleCheckResult } from '../rules/types';
+import { getYtdOvertimeHours } from '../time-tracking/time.service';
 import type { z } from 'zod';
 import type { ShiftAssignmentSchema } from '@tempora/shared';
 
@@ -76,15 +77,10 @@ export async function createAssignment(
     orderBy: { date: 'asc' },
   });
 
-  // Fetch annual overtime accumulator.
-  const overtimeEntries = await db.$queryRaw<[{ total: number }]>`
-    SELECT COALESCE(SUM(overtime_hours), 0)::float AS total
-    FROM overtime_entries
-    WHERE employee_id = ${dto.employeeId}::uuid
-      AND year = ${candidateDate.getFullYear()}
-  `.catch(() => [{ total: 0 }]);
-
-  const annualOt = (overtimeEntries[0]?.total) ?? 0;
+  // Fetch annual overtime accumulator via time_entries (no overtime_entries table yet).
+  const annualOt = await getYtdOvertimeHours(
+    dto.employeeId, organizationId, candidateDate.getFullYear(), db,
+  ).catch(() => 0);
 
   // Load approved absences for the employee in the relevant period (FR-RULES-6, P4-9).
   const approvedAbsences = await db.absence.findMany({
@@ -107,13 +103,15 @@ export async function createAssignment(
       startsAt: template.startTime,
       endsAt: template.endTime,
     },
-    recentAssignments: recentAssignments.map((ra) => ({
-      date: ra.date.toISOString().slice(0, 10),
-      startsAt: ra.shiftTemplate.startTime,
-      endsAt: ra.shiftTemplate.endTime,
-    })),
+    recentAssignments: recentAssignments
+      .filter((ra) => ra.shiftTemplate != null)
+      .map((ra) => ({
+        date: (ra.date as Date).toISOString().slice(0, 10),
+        startsAt: ra.shiftTemplate.startTime,
+        endsAt: ra.shiftTemplate.endTime,
+      })),
     weekAssignments: weekWindowAssignments.map((wa) => ({
-      date: wa.date.toISOString().slice(0, 10),
+      date: (wa.date as Date).toISOString().slice(0, 10),
       restDay: false, // assignments are work days; rest days are absent from the list
     })),
     annualOvertimeHours: annualOt,
@@ -136,17 +134,36 @@ export async function createAssignment(
     );
   }
 
-  // Persist assignment.
-  const assignment = await db.shiftAssignment.create({
-    data: {
-      organizationId,
+  // Upsert assignment — replace if one already exists for this employee+date in this schedule.
+  // Use gte/lt range to avoid timestamp-vs-date equality issues with @db.Date.
+  const dayStart = new Date(dto.date + 'T00:00:00.000Z');
+  const dayEnd   = new Date(dto.date + 'T23:59:59.999Z');
+  const existing = await db.shiftAssignment.findFirst({
+    where: {
       scheduleId: dto.scheduleId,
       employeeId: dto.employeeId,
-      shiftTemplateId: dto.shiftTemplateId,
-      departmentId: dto.departmentId ?? null,
-      date: new Date(dto.date),
+      date: { gte: dayStart, lte: dayEnd },
     },
   });
+
+  let assignment: ShiftAssignment;
+  if (existing) {
+    assignment = await db.shiftAssignment.update({
+      where: { id: existing.id },
+      data: { shiftTemplateId: dto.shiftTemplateId },
+    });
+  } else {
+    assignment = await db.shiftAssignment.create({
+      data: {
+        organizationId,
+        scheduleId: dto.scheduleId,
+        employeeId: dto.employeeId,
+        shiftTemplateId: dto.shiftTemplateId,
+        departmentId: dto.departmentId ?? null,
+        date: new Date(dto.date),
+      },
+    });
+  }
 
   // Write audit row.
   await auditWriter.write(db, actorId, organizationId, {
@@ -163,6 +180,36 @@ export async function createAssignment(
 
   const warnings = results.filter((r) => r.type === 'warn');
   return { assignment, warnings };
+}
+
+export async function deleteAssignment(
+  id: string,
+  organizationId: string,
+  actorId: string,
+  db: TenantClient,
+): Promise<void> {
+  const assignment = await db.shiftAssignment.findUnique({ where: { id } });
+  if (!assignment) throw new ApiError(404, 'NOT_FOUND', `ShiftAssignment ${id} not found`);
+
+  const schedule = await db.shiftSchedule.findUnique({ where: { id: assignment.scheduleId } });
+  if (!schedule) throw new ApiError(404, 'NOT_FOUND', `ShiftSchedule not found`);
+  if (schedule.status !== 'DRAFT') {
+    throw new ApiError(409, 'SCHEDULE_NOT_DRAFT', 'Cannot remove assignments from a published schedule');
+  }
+
+  await db.shiftAssignment.delete({ where: { id } });
+
+  await auditWriter.write(db, actorId, organizationId, {
+    action: 'DELETE',
+    entityType: 'ShiftAssignment',
+    entityId: id,
+    before: {
+      employeeId: assignment.employeeId,
+      shiftTemplateId: assignment.shiftTemplateId,
+      date: (assignment.date as Date).toISOString().slice(0, 10),
+      scheduleId: assignment.scheduleId,
+    },
+  });
 }
 
 export async function listAssignments(

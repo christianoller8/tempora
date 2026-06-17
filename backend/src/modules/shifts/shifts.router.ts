@@ -23,6 +23,7 @@ import {
   publishScheduleHandler,
   listAssignmentsHandler,
   createAssignmentHandler,
+  deleteAssignmentHandler,
   listSwapsHandler,
   requestSwapHandler,
   approveSwapHandler,
@@ -97,6 +98,12 @@ shiftsRouter.post(
   requireRole(['ADMIN', 'MANAGER']),
   validate(ShiftAssignmentSchema),
   createAssignmentHandler,
+);
+
+shiftsRouter.delete(
+  '/assignments/:id',
+  requireRole(['ADMIN', 'MANAGER']),
+  deleteAssignmentHandler,
 );
 
 // ---- CambioTurno (swap) routes (/shifts/swaps) ----
